@@ -15,7 +15,7 @@ var rootCmd = &cobra.Command{
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(_ *cobra.Command, _ []string) {
-		fmt.Println("SSL")
+		fmt.Println("Run sshman --help for more help")
 	},
 }
 
