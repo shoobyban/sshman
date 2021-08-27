@@ -3,7 +3,6 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -15,12 +14,19 @@ import (
 var registerServerCmd = &cobra.Command{
 	Use:   "server",
 	Short: "Register a server",
-	Long: `To register a user:
-	sshman register server {alias} {server_address:port} {user} {~/.ssh/working_keyfile} [group1 group2 ...]`,
+	Long: `
+	To register a server:
+sshman register server {alias} {server_address:port} {user} {~/.ssh/working_keyfile.pub} [group1 group2 ...]
+For example:
+sshman register server google my.google.com:22 myuser ~/.ssh/google.pub deploy hosting google
+`,
 	Run: func(_ *cobra.Command, args []string) {
-		if len(args) < 2 {
-			fmt.Println(`To register a user:
-			sshman register user email sshkey.pub {group1 group2 ...}`)
+		if len(args) < 4 {
+			fmt.Print(`To register a server:
+sshman register server {alias} {server_address:port} {user} {~/.ssh/working_keyfile.pub} [group1 group2 ...]
+For example:
+sshman register server google my.google.com:22 myuser ~/.ssh/google.pub deploy hosting google
+`)
 			os.Exit(0)
 		}
 		conf := readConfig()
@@ -37,36 +43,29 @@ var registerServerCmd = &cobra.Command{
 				os.Exit(0)
 			}
 		}
-		registerUser(conf, args...)
+		registerServer(conf, args...)
 	},
 }
 
 func init() {
-	registerCmd.AddCommand(registerUserCmd)
+	registerCmd.AddCommand(registerServerCmd)
 }
 
-func registerUser(C *config, args ...string) error {
-	b, err := ioutil.ReadFile(args[1])
-	if err != nil {
-		slog.Errorf("error reading public key file: '%s' %v", args[1], err)
+func registerServer(C *config, args ...string) error {
+	alias := args[0]
+	if _, err := os.Stat(args[3]); os.IsNotExist(err) {
+		slog.Fatalf("no such file '%s'", args[3])
 		return err
 	}
-	parts := strings.Split(strings.TrimSuffix(string(b), "\n"), " ")
-	if len(parts) != 3 {
-		slog.Errorf("not a proper public key file")
+	server := hostentry{
+		Host:   args[1],
+		User:   args[2],
+		Key:    args[3],
+		Users:  []string{},
+		Groups: args[4:],
 	}
-	lsum := checksum(parts[1])
-	newuser := user{
-		KeyType: parts[0],
-		Key:     parts[1],
-		Name:    parts[2],
-		Email:   args[0],
-	}
-	if len(args) > 2 {
-		newuser.Groups = args[2:]
-	}
-	C.Users[lsum] = newuser
-	slog.Infof("Registering %s %s %s %s", parts[0], parts[2], args[0], lsum)
+	C.Hosts[alias] = server
+	slog.Infof("Registering %s to server %s with %s user", alias, args[1], args[1])
 	writeConfig(C)
 	return nil
 }
