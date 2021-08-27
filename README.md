@@ -128,3 +128,15 @@ $ sshman list users
 
 Will return a mapping of email to groups.
 
+### (Possible) Future Plans
+
+- [ ] Reuse stored ssh key for modifying user
+- [ ] Registering server to download information without the need of running update
+- [ ] Testing connection after creating authorized_keys entry
+- [ ] Tests, refactor for testability
+- [ ] Group management commands like addgroup (will reupload all group users to group servers)
+- [ ] Complete CRUD for missing use cases
+- [ ] More backend
+- [ ] Registering using password auth
+- [ ] Text UI
+- [ ] Web interface
