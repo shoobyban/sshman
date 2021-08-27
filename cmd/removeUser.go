@@ -1,7 +1,8 @@
 package cmd
 
 import (
-	"github.com/apioapp/slog"
+	"log"
+
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +18,7 @@ var removeUserCmd = &cobra.Command{
 		}
 		for id, user := range cfg.Users {
 			if args[0] == user.Email {
-				slog.Infof("deleting %s from configuration", user.Email)
+				log.Printf("deleting %s from configuration\n", user.Email)
 				delete(cfg.Users, id)
 			}
 		}

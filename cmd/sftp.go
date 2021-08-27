@@ -41,7 +41,7 @@ func connect(keyfile, host, user string) (*SFTP, error) {
 		},
 		Timeout: 3 * time.Second,
 		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-			//slog.Infof("host: %s %v", hostname, remote)
+			//log.Printf("host: %s %v\n", hostname, remote)
 			return nil
 		},
 	}
