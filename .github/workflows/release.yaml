@@ -15,6 +15,8 @@ jobs:
             goos: freebsd
           - goarch: arm64
             goos: openbsd
+          - goarch: arm64
+            goos: windows
     steps:
     - uses: actions/checkout@v2
     - uses: wangyoucao577/go-release-action@v1.19
