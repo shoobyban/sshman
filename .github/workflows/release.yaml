@@ -8,15 +8,17 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        goos: [linux, windows, darwin]
-        goarch: ["386", amd64, arm64]
-        exclude:  
-          - goarch: "386"
-            goos: darwin
+        goos: [linux, windows, darwin, freebsd, openbsd]
+        goarch: [amd64, arm64]
+        exclude:
+          - goarch: arm64
+            goos: freebsd
+          - goarch: arm64
+            goos: openbsd
     steps:
     - uses: actions/checkout@v2
     - uses: wangyoucao577/go-release-action@v1.19
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        goos: linux
-        goarch: amd64
+        goos: ${{ matrix.goos }}
+        goarch: ${{ matrix.goarch }}
