@@ -1,7 +1,8 @@
 package cmd
 
 import (
-	"github.com/apioapp/slog"
+	"log"
+
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +18,7 @@ var removeServerCmd = &cobra.Command{
 		}
 		for alias := range cfg.Hosts {
 			if args[0] == alias {
-				slog.Infof("deleting %s from configuration", alias)
+				log.Printf("deleting %s from configuration\n", alias)
 				delete(cfg.Hosts, alias)
 			}
 		}

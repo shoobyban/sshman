@@ -1,9 +1,9 @@
 package cmd
 
 import (
+	"log"
 	"strings"
 
-	"github.com/apioapp/slog"
 	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 )
@@ -32,12 +32,12 @@ func readUsers(_ *cobra.Command, C *config) {
 		}
 		client, err := connect(key, host.Host, host.User)
 		if err != nil {
-			slog.Errorf("error connecting %s: %v", alias, err)
+			log.Printf("Error: error connecting %s: %v\n", alias, err)
 			continue
 		}
 		b, err := client.Read()
 		if err != nil {
-			slog.Errorf("error reading authorized keys on %s: %v", alias, err)
+			log.Printf("Error: error reading authorized keys on %s: %v\n", alias, err)
 			continue
 		}
 		client.Close()
@@ -50,7 +50,7 @@ func readUsers(_ *cobra.Command, C *config) {
 			}
 			parts := strings.Split(line, " ")
 			if len(parts) != 3 {
-				slog.Errorf("Not good line: '%s'", line)
+				log.Printf("Error: Not good line: '%s'\n", line)
 			}
 			lsum := checksum(parts[1])
 			if _, ok := C.Users[lsum]; !ok {

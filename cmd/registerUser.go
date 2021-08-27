@@ -4,10 +4,10 @@ import (
 	"bufio"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 
-	"github.com/apioapp/slog"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +30,7 @@ var registerUserCmd = &cobra.Command{
 			reader := bufio.NewReader(os.Stdin)
 			response, err := reader.ReadString('\n')
 			if err != nil {
-				slog.Fatalf("error opening stdout %v", err)
+				log.Printf("Error: error opening stdout %v\n", err)
 			}
 			response = strings.ToLower(strings.TrimSpace(response))
 			if response != "y" && response != "yes" {
@@ -48,12 +48,12 @@ func init() {
 func registerUser(C *config, args ...string) error {
 	b, err := ioutil.ReadFile(args[1])
 	if err != nil {
-		slog.Errorf("error reading public key file: '%s' %v", args[1], err)
+		log.Printf("Error: error reading public key file: '%s' %v\n", args[1], err)
 		return err
 	}
 	parts := strings.Split(strings.TrimSuffix(string(b), "\n"), " ")
 	if len(parts) != 3 {
-		slog.Errorf("not a proper public key file")
+		log.Printf("Error: not a proper public key file\n")
 	}
 	lsum := checksum(parts[1])
 	newuser := user{
@@ -66,7 +66,7 @@ func registerUser(C *config, args ...string) error {
 		newuser.Groups = args[2:]
 	}
 	C.Users[lsum] = newuser
-	slog.Infof("Registering %s %s %s %s", parts[0], parts[2], args[0], lsum)
+	log.Printf("Registering %s %s %s %s\n", parts[0], parts[2], args[0], lsum)
 	writeConfig(C)
 	return nil
 }

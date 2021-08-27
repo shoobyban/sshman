@@ -3,10 +3,10 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
-	"github.com/apioapp/slog"
 	"github.com/spf13/cobra"
 )
 
@@ -36,7 +36,7 @@ sshman register server google my.google.com:22 myuser ~/.ssh/google.pub deploy h
 			reader := bufio.NewReader(os.Stdin)
 			response, err := reader.ReadString('\n')
 			if err != nil {
-				slog.Fatalf("error opening stdout %v", err)
+				log.Fatalf("error opening stdout %v\n", err)
 			}
 			response = strings.ToLower(strings.TrimSpace(response))
 			if response != "y" && response != "yes" {
@@ -54,7 +54,7 @@ func init() {
 func registerServer(C *config, args ...string) error {
 	alias := args[0]
 	if _, err := os.Stat(args[3]); os.IsNotExist(err) {
-		slog.Fatalf("no such file '%s'", args[3])
+		log.Fatalf("no such file '%s'\n", args[3])
 		return err
 	}
 	server := hostentry{
@@ -65,7 +65,7 @@ func registerServer(C *config, args ...string) error {
 		Groups: args[4:],
 	}
 	C.Hosts[alias] = server
-	slog.Infof("Registering %s to server %s with %s user", alias, args[1], args[1])
+	log.Printf("Registering %s to server %s with %s user\n", alias, args[1], args[1])
 	writeConfig(C)
 	return nil
 }

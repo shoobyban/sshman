@@ -1,9 +1,9 @@
 package cmd
 
 import (
+	"log"
 	"strings"
 
-	"github.com/apioapp/slog"
 	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 )
@@ -18,10 +18,10 @@ var addCmd = &cobra.Command{
 		for _, email := range args {
 			u := findByEmail(conf, email)
 			if u != nil {
-				//slog.Infof("User %#v", u)
+				//log.Printf("User %#v\n", u)
 				addUser(conf, u)
 			} else {
-				slog.Infof("No such user")
+				log.Printf("No such user\n")
 			}
 		}
 	},
@@ -44,12 +44,12 @@ func addUser(C *config, newuser *user) {
 		}
 		client, err := connect(key, host.Host, host.User)
 		if err != nil {
-			slog.Errorf("error connecting %s: %v", alias, err)
+			log.Printf("Error: error connecting %s: %v\n", alias, err)
 			continue
 		}
 		b, err := client.Read()
 		if err != nil {
-			slog.Errorf("error reading authorized keys on %s: %v", alias, err)
+			log.Printf("Error: error reading authorized keys on %s: %v\n", alias, err)
 			continue
 		}
 		userlist := []string{}
@@ -62,7 +62,7 @@ func addUser(C *config, newuser *user) {
 			}
 			parts := strings.Split(line, " ")
 			if len(parts) != 3 {
-				slog.Errorf("Not good line: '%s'", line)
+				log.Printf("Error: Not good line: '%s'\n", line)
 			}
 			if parts[0] == newuser.KeyType &&
 				parts[1] == newuser.Key &&
@@ -91,7 +91,7 @@ func addUser(C *config, newuser *user) {
 
 			err = client.Write(strings.Join(lines, "\n") + "\n")
 			if err != nil {
-				slog.Errorf("error writing %s: %v", alias, err)
+				log.Printf("Error: error writing %s: %v\n", alias, err)
 			}
 			userlist = append(userlist, newuser.Email)
 		}
