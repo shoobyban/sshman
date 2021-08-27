@@ -62,7 +62,7 @@ $ sshman register user email@test.com ~/.ssh/user1.pub production-team staging-s
 To run auto discovery users on registered servers, or to refresh the configuration if any 3rd party has changed `~/.ssh/authorized_keys` files, run:
 
 ```sh
-$ sshman read -f
+$ sshman update
 ```
 
 ### Adding user to server
