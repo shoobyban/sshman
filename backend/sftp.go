@@ -1,4 +1,4 @@
-package cmd
+package backend
 
 import (
 	"fmt"
@@ -14,11 +14,22 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-type SFTP struct {
+type SFTPConn struct {
 	client *sftp.Client
 }
 
-func connect(keyfile, host, user string) (*SFTP, error) {
+type SFTP interface {
+	Connect(keyfile, host, user string) error
+	Write(data string) error
+	Read() ([]byte, error)
+	Close()
+}
+
+func NewSFTP() *SFTPConn {
+	return &SFTPConn{}
+}
+
+func (s *SFTPConn) Connect(keyfile, host, user string) error {
 	if strings.HasPrefix(keyfile, "~/") {
 		home, _ := os.UserHomeDir()
 		keyfile = filepath.Join(home, "/", keyfile[2:])
@@ -47,17 +58,18 @@ func connect(keyfile, host, user string) (*SFTP, error) {
 	}
 	connection, err := ssh.Dial("tcp", host, config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to dial: %s", err)
+		return fmt.Errorf("failed to dial: %s", err)
 	}
 
 	client, err := sftp.NewClient(connection)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return &SFTP{client: client}, nil
+	s.client = client
+	return nil
 }
 
-func (s *SFTP) Write(data string) error {
+func (s *SFTPConn) Write(data string) error {
 	if data == "" {
 		return fmt.Errorf("empty data, not writing it")
 	}
@@ -72,7 +84,7 @@ func (s *SFTP) Write(data string) error {
 	return nil
 }
 
-func (s *SFTP) Read() ([]byte, error) {
+func (s *SFTPConn) Read() ([]byte, error) {
 	f, err := s.client.Open(".ssh/authorized_keys")
 	if err != nil {
 		return nil, err
@@ -81,6 +93,6 @@ func (s *SFTP) Read() ([]byte, error) {
 	return ioutil.ReadAll(f)
 }
 
-func (s *SFTP) Close() {
+func (s *SFTPConn) Close() {
 	s.client.Close()
 }

@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/shoobyban/sshman/backend"
 	"github.com/spf13/cobra"
 )
 
@@ -29,10 +30,10 @@ sshman register server google my.google.com:22 myuser ~/.ssh/google.pub deploy h
 `)
 			os.Exit(0)
 		}
-		conf := readConfig()
-		u := findByEmail(conf, args[0])
-		if u != nil {
-			fmt.Printf("User already exists with this email, overwrite [y/n]: ")
+		conf := backend.ReadConfig(backend.NewSFTP())
+		_, exists := conf.Hosts[args[0]]
+		if exists {
+			fmt.Printf("Host already exists with this alias, overwrite [y/n]: ")
 			reader := bufio.NewReader(os.Stdin)
 			response, err := reader.ReadString('\n')
 			if err != nil {
@@ -43,29 +44,10 @@ sshman register server google my.google.com:22 myuser ~/.ssh/google.pub deploy h
 				os.Exit(0)
 			}
 		}
-		registerServer(conf, args...)
+		conf.RegisterServer(args...)
 	},
 }
 
 func init() {
 	registerCmd.AddCommand(registerServerCmd)
-}
-
-func registerServer(C *config, args ...string) error {
-	alias := args[0]
-	if _, err := os.Stat(args[3]); os.IsNotExist(err) {
-		log.Fatalf("no such file '%s'\n", args[3])
-		return err
-	}
-	server := hostentry{
-		Host:   args[1],
-		User:   args[2],
-		Key:    args[3],
-		Users:  []string{},
-		Groups: args[4:],
-	}
-	C.Hosts[alias] = server
-	log.Printf("Registering %s to server %s with %s user\n", alias, args[1], args[1])
-	writeConfig(C)
-	return nil
 }

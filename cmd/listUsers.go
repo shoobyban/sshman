@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/shoobyban/sshman/backend"
 	"github.com/spf13/cobra"
 )
 
@@ -12,7 +13,7 @@ var listUsersCmd = &cobra.Command{
 	Short: "List users",
 	Long:  `Lists registered users`,
 	Run: func(_ *cobra.Command, _ []string) {
-		conf := readConfig()
+		conf := backend.ReadConfig(backend.NewSFTP())
 		for _, user := range conf.Users {
 			fmt.Printf("%-25s\t%v\n", user.Email, user.Groups)
 		}
