@@ -45,6 +45,7 @@ sshman register server google my.google.com:22 myuser ~/.ssh/google.pub deploy h
 			}
 		}
 		conf.RegisterServer(args...)
+		conf.Update(args[0])
 	},
 }
 

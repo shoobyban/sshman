@@ -128,15 +128,24 @@ $ sshman list users
 
 Will return a mapping of email to groups.
 
+### Renaming users and servers
+
+Rename a user (modify email) or server (modify alias).
+```sh
+$ ./sshman rename user oldemail@server.com newemail@server.com
+
+$ ./sshman rename server oldalias newalias
+```
+
 ### (Possible) Future Plans
 
-- [ ] Reuse stored ssh key for modifying user
-- [ ] Registering server to download information without the need of running update
-- [ ] Testing connection after creating authorized_keys entry
-- [ ] Tests, refactor for testability
+- [x] Reuse stored ssh key for modifying user
+- [x] Registering server to download information without the need of running update
+- [x] Tests, refactor for testability
 - [ ] Group management commands like addgroup (will reupload all group users to group servers)
+- [ ] Testing connection after creating authorized_keys entry
 - [ ] Complete CRUD for missing use cases
-- [ ] More backend
+- [ ] More backend (currently .ssh/.sshman configuration file)
 - [ ] Registering using password auth
 - [ ] Text UI
 - [ ] Web interface
