@@ -218,8 +218,17 @@ func (c *config) UnregisterServer(alias string) bool {
 	return false
 }
 
-func (c *config) Update() {
-	for alias, host := range c.Hosts {
+func (c *config) Update(aliases ...string) {
+	hosts := c.Hosts
+	if len(aliases) > 0 {
+		hosts = map[string]Hostentry{}
+		for _, a := range aliases {
+			if host, ok := c.Hosts[a]; ok {
+				hosts[a] = host
+			}
+		}
+	}
+	for alias, host := range hosts {
 		log.Printf("Reading %s\n", host.Alias)
 		sum, lines, err := host.read()
 		if err != nil {
