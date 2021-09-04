@@ -117,6 +117,14 @@ func TestRegisterUnregisterUser(t *testing.T) {
 	if len(cfg.Users) != 5 {
 		t.Errorf("Registering user did not work %#v", len(cfg.Users))
 	}
+	g := cfg.GetGroups()
+	if grp, ok := g["groupa"]; ok {
+		if !contains(grp.Users, "bar@email") {
+			t.Errorf("Group users doesn't have bar@email: %v", grp.Users)
+		}
+	} else {
+		t.Errorf("Group users doesn't have bar@email: %v", g)
+	}
 	cfg.UnregisterUser("bar@email")
 	if len(cfg.Users) != 4 {
 		t.Errorf("Unregistering user did not work %v", len(cfg.Users))
