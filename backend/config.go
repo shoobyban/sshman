@@ -72,6 +72,16 @@ func (c *config) getServers(group string) []Hostentry {
 	return servers
 }
 
+func (c *config) getUsers(group string) []User {
+	var users []User
+	for _, user := range c.Users {
+		if contains(user.Groups, group) {
+			users = append(users, user)
+		}
+	}
+	return users
+}
+
 // AddUserToHosts adds user to all allowed hosts' authorized_keys files
 func (c *config) AddUserToHosts(newuser *User) {
 	for alias, host := range c.Hosts {
@@ -205,7 +215,7 @@ func (c *config) RegisterUser(oldgroups []string, args ...string) error {
 	c.Users[lsum] = newuser
 	log.Printf("Registering %s %s %s %s\n", parts[0], parts[2], args[0], lsum)
 	c.Write()
-	return newuser.updateGroups(c, oldgroups, groups)
+	return newuser.UpdateGroups(c, oldgroups)
 }
 
 // UnregisterServer removes a server from the config

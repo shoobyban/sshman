@@ -130,9 +130,6 @@ func (h *Hostentry) delUser(u *User) error {
 			log.Printf("Error: Not good line: '%s'\n", line)
 		}
 		lsum := checksum(parts[1])
-		if _, ok := h.Config.Users[lsum]; !ok {
-			delete(h.Config.Users, lsum)
-		}
 		if parts[1] == u.Key {
 			found = true
 			continue
@@ -149,8 +146,44 @@ func (h *Hostentry) delUser(u *User) error {
 			return err
 		}
 		log.Printf("Removed %s from %s\n", u.Email, h.Alias)
+	} else {
+		log.Printf("user %s not on %s\n", u.Email, h.Alias)
 	}
 	h.Checksum = sum
 	h.Users = userlist
+	return nil
+}
+
+func (h *Hostentry) UpdateGroups(c *config, oldgroups []string) error {
+	added, removed := updates(oldgroups, h.Groups)
+	for _, group := range added {
+		users := c.getUsers(group)
+		for _, u := range users {
+			if !h.hasUser(u.Email) {
+				log.Printf("Adding %s to %s\n", u.Email, h.Alias)
+				err := h.addUser(&u)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+	for _, group := range removed {
+		users := c.getUsers(group)
+		for _, u := range users {
+			if match(u.Groups, h.Groups) {
+				continue
+			}
+			if h.hasUser(u.Email) {
+				log.Printf("Removing %s from %s\n", u.Email, h.Alias)
+				err := h.delUser(&u)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+	c.Hosts[h.Alias] = *h
+	c.Write()
 	return nil
 }

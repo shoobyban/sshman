@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// registerCmd represents the register command
+// registerCmd represents the rename command
 var renameCmd = &cobra.Command{
 	Use:   "rename",
 	Short: "Rename a user (modify email) or server (modify alias)",
