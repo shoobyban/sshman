@@ -3,11 +3,11 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 
+	"github.com/shoobyban/sshman/backend"
 	"github.com/spf13/cobra"
 )
 
@@ -23,8 +23,9 @@ var registerUserCmd = &cobra.Command{
 			sshman register user email sshkey.pub {group1 group2 ...}`)
 			os.Exit(0)
 		}
-		conf := readConfig()
-		u := findByEmail(conf, args[0])
+		conf := backend.ReadConfig(backend.NewSFTP())
+		var oldgroups []string
+		u := conf.GetUserByEmail(args[0])
 		if u != nil {
 			fmt.Printf("User already exists with this email, overwrite [y/n]: ")
 			reader := bufio.NewReader(os.Stdin)
@@ -37,36 +38,10 @@ var registerUserCmd = &cobra.Command{
 				os.Exit(0)
 			}
 		}
-		registerUser(conf, args...)
+		conf.RegisterUser(oldgroups, args...)
 	},
 }
 
 func init() {
 	registerCmd.AddCommand(registerUserCmd)
-}
-
-func registerUser(C *config, args ...string) error {
-	b, err := ioutil.ReadFile(args[1])
-	if err != nil {
-		log.Printf("Error: error reading public key file: '%s' %v\n", args[1], err)
-		return err
-	}
-	parts := strings.Split(strings.TrimSuffix(string(b), "\n"), " ")
-	if len(parts) != 3 {
-		log.Printf("Error: not a proper public key file\n")
-	}
-	lsum := checksum(parts[1])
-	newuser := user{
-		KeyType: parts[0],
-		Key:     parts[1],
-		Name:    parts[2],
-		Email:   args[0],
-	}
-	if len(args) > 2 {
-		newuser.Groups = args[2:]
-	}
-	C.Users[lsum] = newuser
-	log.Printf("Registering %s %s %s %s\n", parts[0], parts[2], args[0], lsum)
-	writeConfig(C)
-	return nil
 }

@@ -3,6 +3,7 @@ package cmd
 import (
 	"log"
 
+	"github.com/shoobyban/sshman/backend"
 	"github.com/spf13/cobra"
 )
 
@@ -12,17 +13,14 @@ var removeServerCmd = &cobra.Command{
 	Short: "Remove a server from config",
 	Long:  `Remove a server from the configuration`,
 	Run: func(_ *cobra.Command, args []string) {
-		cfg := readConfig()
+		cfg := backend.ReadConfig(backend.NewSFTP())
 		if len(args) < 1 {
 			return
 		}
-		for alias := range cfg.Hosts {
-			if args[0] == alias {
-				log.Printf("deleting %s from configuration\n", alias)
-				delete(cfg.Hosts, alias)
-			}
+		if cfg.UnregisterServer(args[0]) {
+			log.Printf("deleting %s from configuration\n", args[0])
 		}
-		writeConfig(cfg)
+
 	},
 }
 

@@ -3,6 +3,7 @@ package cmd
 import (
 	"log"
 
+	"github.com/shoobyban/sshman/backend"
 	"github.com/spf13/cobra"
 )
 
@@ -12,17 +13,13 @@ var removeUserCmd = &cobra.Command{
 	Short: "Remove user from config",
 	Long:  `Remove a user by email from the configuration`,
 	Run: func(_ *cobra.Command, args []string) {
-		cfg := readConfig()
+		cfg := backend.ReadConfig(backend.NewSFTP())
 		if len(args) < 1 {
 			return
 		}
-		for id, user := range cfg.Users {
-			if args[0] == user.Email {
-				log.Printf("deleting %s from configuration\n", user.Email)
-				delete(cfg.Users, id)
-			}
+		if cfg.UnregisterUser(args[0]) {
+			log.Printf("deleting %s from configuration\n", args[0])
 		}
-		writeConfig(cfg)
 	},
 }
 
