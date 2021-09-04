@@ -25,7 +25,7 @@ var registerUserCmd = &cobra.Command{
 		}
 		conf := backend.ReadConfig(backend.NewSFTP())
 		var oldgroups []string
-		u := conf.GetUserByEmail(args[0])
+		_, u := conf.GetUserByEmail(args[0])
 		if u != nil {
 			fmt.Printf("User already exists with this email, overwrite [y/n]: ")
 			reader := bufio.NewReader(os.Stdin)

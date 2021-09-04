@@ -18,7 +18,7 @@ var removeUserCmd = &cobra.Command{
 			return
 		}
 		if cfg.UnregisterUser(args[0]) {
-			log.Printf("deleting %s from configuration\n", args[0])
+			log.Printf("Deleted %s from configuration\n", args[0])
 		}
 	},
 }

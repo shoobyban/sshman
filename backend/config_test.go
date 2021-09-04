@@ -23,8 +23,8 @@ func TestGetUserByEmail(t *testing.T) {
 	cfg := testConfig("foo", map[string]Hostentry{}, map[string]User{
 		"a": {Email: "foo@email", Name: "foo"},
 	}, &SFTPMock{})
-	u := cfg.GetUserByEmail("foo@email")
-	if u.Name != "foo" {
+	_, u := cfg.GetUserByEmail("foo@email")
+	if u == nil || u.Name != "foo" {
 		t.Errorf("GetUserByEmail doesn't work, %v", u)
 	}
 }
@@ -40,7 +40,11 @@ func TestAddUser(t *testing.T) {
 	}, map[string]User{
 		"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot"},
 	}, sftp)
-	cfg.AddUserToHosts(cfg.GetUserByEmail("foo@email"))
+	_, u := cfg.GetUserByEmail("foo@email")
+	if u == nil {
+		t.Errorf("can't find user")
+	}
+	cfg.AddUserToHosts(u)
 	testServers := sftp.GetServers()
 	if !strings.Contains(testServers["a:22"].File, "ssh-rsa keydata aroot") {
 		t.Errorf("User not upoaded to server a:22")

@@ -15,7 +15,7 @@ var addCmd = &cobra.Command{
 	Run: func(_ *cobra.Command, args []string) {
 		conf := backend.ReadConfig(backend.NewSFTP())
 		for _, email := range args {
-			u := conf.GetUserByEmail(email)
+			_, u := conf.GetUserByEmail(email)
 			if u != nil {
 				conf.AddUserToHosts(u)
 			} else {
