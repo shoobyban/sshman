@@ -104,7 +104,7 @@ func (h *Hostentry) addUser(u *User) error {
 	h.Users = append(h.Users, u.Email)
 	var lines []string
 	for _, email := range h.Users {
-		userentry := h.Config.GetUserByEmail(email)
+		_, userentry := h.Config.GetUserByEmail(email)
 		if userentry.Email == email {
 			lines = append(lines, userentry.KeyType+" "+userentry.Key+" "+userentry.Name)
 		}

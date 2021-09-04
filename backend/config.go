@@ -44,13 +44,13 @@ func ReadConfig(conn SFTP) *config {
 }
 
 // GetUserByEmail get a user from config by email
-func (c *config) GetUserByEmail(email string) *User {
-	for _, u := range c.Users {
-		if u.Email == email {
-			return &u
+func (c *config) GetUserByEmail(email string) (string, *User) {
+	for key, user := range c.Users {
+		if user.Email == email {
+			return key, &user
 		}
 	}
-	return nil
+	return "", nil
 }
 
 func (c *config) Write() {
