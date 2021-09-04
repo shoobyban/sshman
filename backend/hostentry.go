@@ -148,6 +148,7 @@ func (h *Hostentry) delUser(u *User) error {
 			log.Printf("Error: error writing %s: %v\n", h.Alias, err)
 			return err
 		}
+		log.Printf("Removed %s from %s\n", u.Email, h.Alias)
 	}
 	h.Checksum = sum
 	h.Users = userlist

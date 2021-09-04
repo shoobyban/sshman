@@ -1,5 +1,7 @@
 package backend
 
+import "log"
+
 type User struct {
 	KeyType string   `json:"type"`
 	Name    string   `json:"name"`
@@ -15,6 +17,7 @@ func (u *User) updateGroups(C *config, oldgroups, newgroups []string) error {
 		for _, server := range servers {
 			server.readUsers()
 			if !server.hasUser(u.Email) {
+				log.Printf("Adding %s to %s\n", u.Email, server.Alias)
 				err := server.addUser(u)
 				if err != nil {
 					return err

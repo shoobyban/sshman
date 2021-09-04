@@ -6,8 +6,6 @@ import (
 	"log"
 	"os"
 	"strings"
-
-	"github.com/schollz/progressbar/v3"
 )
 
 type Group struct {
@@ -76,9 +74,7 @@ func (c *config) getServers(group string) []Hostentry {
 
 // AddUserToHosts adds user to all allowed hosts' authorized_keys files
 func (c *config) AddUserToHosts(newuser *User) {
-	bar := progressbar.Default(int64(len(c.Hosts)))
 	for alias, host := range c.Hosts {
-		bar.Add(1)
 		if len(newuser.Groups) != 0 && !match(newuser.Groups, host.Groups) {
 			continue
 		}
@@ -115,11 +111,13 @@ func (c *config) AddUserToHosts(newuser *User) {
 		}
 
 		if have {
+			log.Printf("User %s is already on %s\n", newuser.Email, host.Alias)
 			host.Checksum = sum
 			host.Users = userlist
 			c.Hosts[alias] = host
 			continue
 		} else {
+			log.Printf("Adding %s to %s\n", newuser.Email, host.Alias)
 			lines = deleteEmpty(append(lines, newuser.KeyType+" "+newuser.Key+" "+newuser.Name))
 
 			err = c.conn.Write(strings.Join(lines, "\n") + "\n")
@@ -137,9 +135,7 @@ func (c *config) AddUserToHosts(newuser *User) {
 
 // DelUserFromHosts removes user's key from all hosts' authorized_keys files
 func (c *config) DelUserFromHosts(deluser *User) {
-	bar := progressbar.Default(int64(len(c.Hosts)))
 	for alias, host := range c.Hosts {
-		bar.Add(1)
 		err := host.delUser(deluser)
 		if err != nil {
 			log.Printf("Can't delete user %s from host %s %v\n", deluser.Email, host.Alias, err)
@@ -223,9 +219,8 @@ func (c *config) UnregisterServer(alias string) bool {
 }
 
 func (c *config) Update() {
-	bar := progressbar.Default(int64(len(c.Hosts)))
 	for alias, host := range c.Hosts {
-		bar.Add(1)
+		log.Printf("Reading %s\n", host.Alias)
 		sum, lines, err := host.read()
 		if err != nil {
 			log.Printf("Error: error reading authorized keys on %s: %v\n", alias, err)
