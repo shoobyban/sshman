@@ -1,11 +1,10 @@
 # SSH Manager - manage authorized_key file on remote servers
 
-This is a simple tool that I came up after having to on-boarding and off-boarding developers on a
-very colourful palette of environments from AWS to 3rd party hosting providers.
+This is a simple tool that I came up after having to on-boarding and off-boarding developers on a very colourful palette of environments from AWS to 3rd party hosting providers.
 
-As every one of my creations this tool is solving _my_ problem. It does not warranty your problem will be solved,
-but in that highly unlikely event please let me know, fixes and pull requests, issues are all very welcome without
-again the promise that I'll do anything, I'm normally really busy, apologies.
+As every one of my creations this tool is solving _my_ problem. It does not warranty your problem will be solved, but in that highly unlikely event please let me know, fixes and pull requests, issues are all very welcome without again the promise that I'll do anything, I'm normally really busy, apologies.
+
+**Caution**: Plan your group memberships carefully, keep your management key out of any groups so you don't accidentally remove management key from any server, locking yourself out.
 
 ## Installation
 
@@ -136,6 +135,19 @@ $ ./sshman rename user oldemail@server.com newemail@server.com
 
 $ ./sshman rename server oldalias newalias
 ```
+
+### Modifying user and server groupping
+
+Modify user's groups, or remove groups from user to allow global access:
+```sh
+$ ./sshman groups user email@server.com group1 group2
+```
+
+Modify server groups or remove from all groups:
+```sh
+$ ./sshman groups server serveralias group1 group2
+```
+Note: Removing server from a group will remove all users that are on the server only because of that group. If the server is in another group, the users that are in both groups will not be removed.
 
 ### (Possible) Future Plans
 

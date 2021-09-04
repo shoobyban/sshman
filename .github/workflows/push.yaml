@@ -1,0 +1,24 @@
+name: Develop Test
+
+on: 
+  push:
+    branches-ignore: 
+      - wip
+
+jobs:
+  Test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Checkout submodules
+      uses: textbook/git-checkout-submodule-action@master
+      with:
+        remote: true
+    - name: Install Go
+      uses: actions/setup-go@v1
+      with:
+        go-version: '1.17.x'
+    - name: Checkout code
+      uses: actions/checkout@v1
+    - name: Tests
+      run: make test

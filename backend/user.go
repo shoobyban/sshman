@@ -10,15 +10,27 @@ type User struct {
 	Groups  []string `json:"groups"`
 }
 
-func (u *User) updateGroups(C *config, oldgroups, newgroups []string) error {
-	changes := updates(oldgroups, newgroups)
-	for _, group := range changes {
+func (u *User) UpdateGroups(C *config, oldgroups []string) error {
+	added, removed := updates(oldgroups, u.Groups)
+	for _, group := range added {
 		servers := C.getServers(group)
 		for _, server := range servers {
 			server.readUsers()
 			if !server.hasUser(u.Email) {
 				log.Printf("Adding %s to %s\n", u.Email, server.Alias)
 				err := server.addUser(u)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+	for _, group := range removed {
+		servers := C.getServers(group)
+		for _, server := range servers {
+			server.readUsers()
+			if server.hasUser(u.Email) {
+				err := server.delUser(u)
 				if err != nil {
 					return err
 				}

@@ -41,8 +41,7 @@ func contains(slice []string, s string) bool {
 	return false
 }
 
-func updates(oldItems, newItems []string) []string {
-	var changes []string
+func updates(oldItems, newItems []string) (added []string, removed []string) {
 	ma := make(map[string]struct{}, len(oldItems))
 	mb := make(map[string]struct{}, len(newItems))
 	for _, x := range newItems {
@@ -50,14 +49,14 @@ func updates(oldItems, newItems []string) []string {
 	}
 	for _, x := range oldItems {
 		if _, found := mb[x]; !found {
-			changes = append(changes, x)
+			removed = append(removed, x)
 		}
 		ma[x] = struct{}{}
 	}
 	for _, x := range newItems {
 		if _, found := ma[x]; !found {
-			changes = append(changes, x)
+			added = append(added, x)
 		}
 	}
-	return changes
+	return
 }
