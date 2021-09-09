@@ -25,11 +25,13 @@ func (u *User) UpdateGroups(C *config, oldgroups []string) error {
 			}
 		}
 	}
+	log.Printf("Removed list: %v ( %v %v)\n", removed, oldgroups, u.Groups)
 	for _, group := range removed {
 		servers := C.getServers(group)
 		for _, server := range servers {
 			server.readUsers()
 			if server.hasUser(u.Email) {
+				log.Printf("Removing %s from %s\n", u.Email, server.Alias)
 				err := server.delUser(u)
 				if err != nil {
 					return err

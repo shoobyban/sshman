@@ -213,7 +213,7 @@ func (c *config) RegisterUser(oldgroups []string, args ...string) error {
 		Groups:  groups,
 	}
 	c.Users[lsum] = newuser
-	log.Printf("Registering %s %s %s %s\n", parts[0], parts[2], args[0], lsum)
+	log.Printf("Registering %s %s %s %s %v\n", parts[0], parts[2], args[0], lsum, groups)
 	c.Write()
 	return newuser.UpdateGroups(c, oldgroups)
 }
