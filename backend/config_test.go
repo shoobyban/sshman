@@ -193,3 +193,49 @@ func TestGetGroups(t *testing.T) {
 		}
 	}
 }
+
+func TestUpdateGroups(t *testing.T) {
+	cfg := testConfig("foo", map[string]Hostentry{
+		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"a", "b"}},
+		"b": {Alias: "b", Host: "b:22", User: "aroot", Groups: []string{"a", "c"}},
+	}, map[string]User{
+		"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
+	}, &SFTPMock{})
+	h := cfg.Hosts["a"]
+	old := h.Groups
+	h.Groups = []string{"a"}
+	h.UpdateGroups(cfg, old)
+	g := cfg.GetGroups()
+	if len(g) != 2 {
+		t.Errorf("GetGroups did not work, groups: %v", g)
+	}
+	if grp, ok := g["a"]; ok {
+		if len(grp.Servers) != 2 {
+			t.Errorf("Group a servers incorrect: %v", grp.Servers)
+		}
+		if len(grp.Users) != 1 {
+			t.Errorf("Group a users incorrect: %v", grp.Users)
+		}
+	}
+}
+
+func TestGetServers(t *testing.T) {
+	cfg := testConfig("foo", map[string]Hostentry{
+		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"a", "b"}},
+		"b": {Alias: "b", Host: "b:22", User: "aroot", Groups: []string{"a", "c"}},
+	}, map[string]User{
+		"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
+	}, &SFTPMock{})
+	servers := cfg.getServers("a")
+	if len(servers) != 2 {
+		t.Errorf("getservers error: %v", servers)
+	}
+	servers = cfg.getServers("b")
+	if len(servers) != 1 {
+		t.Errorf("getservers error: %v", servers)
+	}
+	servers = cfg.getServers("c")
+	if len(servers) != 1 {
+		t.Errorf("getservers error: %v", servers)
+	}
+}

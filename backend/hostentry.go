@@ -109,6 +109,7 @@ func (h *Hostentry) addUser(u *User) error {
 			lines = append(lines, userentry.KeyType+" "+userentry.Key+" "+userentry.Name)
 		}
 	}
+	h.Users = append(h.Users, u.Email)
 	return h.write(lines)
 }
 
@@ -145,9 +146,6 @@ func (h *Hostentry) delUser(u *User) error {
 			log.Printf("Error: error writing %s: %v\n", h.Alias, err)
 			return err
 		}
-		log.Printf("Removed %s from %s\n", u.Email, h.Alias)
-	} else {
-		log.Printf("user %s not on %s\n", u.Email, h.Alias)
 	}
 	h.Checksum = sum
 	h.Users = userlist
