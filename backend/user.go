@@ -12,6 +12,7 @@ type User struct {
 
 func (u *User) UpdateGroups(C *config, oldgroups []string) error {
 	added, removed := updates(oldgroups, u.Groups)
+	log.Printf("added: %v removed: %v\n", added, removed)
 	for _, group := range added {
 		servers := C.getServers(group)
 		for _, server := range servers {
@@ -25,7 +26,6 @@ func (u *User) UpdateGroups(C *config, oldgroups []string) error {
 			}
 		}
 	}
-	log.Printf("Removed list: %v ( %v %v)\n", removed, oldgroups, u.Groups)
 	for _, group := range removed {
 		servers := C.getServers(group)
 		for _, server := range servers {
