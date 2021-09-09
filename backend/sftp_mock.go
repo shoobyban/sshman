@@ -27,14 +27,6 @@ func (s *SFTPMock) Connect(keyfileContent, host, user string) error {
 	return nil
 }
 
-func (s *SFTPMock) SetServers(srvs map[string]SFTPMockServer) {
-	s.testServers = srvs
-}
-
-func (s *SFTPMock) SetExpectedData(data string) {
-	s.expected = data
-}
-
 func (s *SFTPMock) GetServers() map[string]SFTPMockServer {
 	return s.testServers
 }
@@ -44,7 +36,7 @@ func (s *SFTPMock) Write(data string) error {
 		return fmt.Errorf("empty data, not writing it")
 	}
 	if s.expected != "" && data != s.expected {
-		return fmt.Errorf("Data is not as expected: '%s' instead of '%s'", data, s.expected)
+		return fmt.Errorf("data is not as expected: '%s' instead of '%s'", data, s.expected)
 	}
 	s.server.File = data
 	s.testServers[s.alias] = s.server

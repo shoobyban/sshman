@@ -24,7 +24,6 @@ var registerUserCmd = &cobra.Command{
 			os.Exit(0)
 		}
 		conf := backend.ReadConfig(backend.NewSFTP())
-		var oldgroups []string
 		_, u := conf.GetUserByEmail(args[0])
 		if u != nil {
 			fmt.Printf("User already exists with this email, overwrite [y/n]: ")
@@ -38,7 +37,7 @@ var registerUserCmd = &cobra.Command{
 				os.Exit(0)
 			}
 		}
-		conf.RegisterUser(oldgroups, args...)
+		conf.RegisterUser(u.Groups, args...)
 	},
 }
 
