@@ -21,9 +21,9 @@ func deleteEmpty(s []string) []string {
 	return r
 }
 
-func match(aa, bb []string) bool {
-	for _, a := range aa {
-		for _, b := range bb {
+func match(group1, group2 []string) bool {
+	for _, a := range group1 {
+		for _, b := range group2 {
 			if a == b {
 				return true
 			}

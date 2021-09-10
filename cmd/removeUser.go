@@ -13,7 +13,7 @@ var removeUserCmd = &cobra.Command{
 	Short: "Remove user from config",
 	Long:  `Remove a user by email from the configuration`,
 	Run: func(_ *cobra.Command, args []string) {
-		cfg := backend.ReadConfig(backend.NewSFTP())
+		cfg := backend.ReadConfig()
 		if len(args) < 1 {
 			return
 		}

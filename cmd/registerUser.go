@@ -23,7 +23,7 @@ var registerUserCmd = &cobra.Command{
 			sshman register user email sshkey.pub {group1 group2 ...}`)
 			os.Exit(0)
 		}
-		conf := backend.ReadConfig(backend.NewSFTP())
+		conf := backend.ReadConfig()
 		_, u := conf.GetUserByEmail(args[0])
 		if u != nil {
 			fmt.Printf("User already exists with this email, overwrite [y/n]: ")

@@ -13,7 +13,7 @@ var listUsersCmd = &cobra.Command{
 	Short: "List users",
 	Long:  `Lists registered users`,
 	Run: func(_ *cobra.Command, _ []string) {
-		conf := backend.ReadConfig(backend.NewSFTP())
+		conf := backend.ReadConfig()
 		for _, user := range conf.Users {
 			fmt.Printf("%-25s\t%v\n", user.Email, user.Groups)
 		}

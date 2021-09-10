@@ -15,27 +15,30 @@ func (u *User) UpdateGroups(C *config, oldgroups []string) error {
 	log.Printf("added: %v removed: %v\n", added, removed)
 	for _, group := range added {
 		servers := C.getServers(group)
-		for _, server := range servers {
-			server.readUsers()
-			if !server.hasUser(u.Email) {
-				log.Printf("Adding %s to %s\n", u.Email, server.Alias)
-				err := server.addUser(u)
+		for _, h := range servers {
+			h.readUsers()
+			if !h.hasUser(u.Email) {
+				err := h.addUser(u)
 				if err != nil {
-					return err
+					log.Printf("Error adding %s to %s\n", u.Email, h.Alias)
+					continue
 				}
+				log.Printf("Added %s to %s\n", u.Email, h.Alias)
 			}
 		}
 	}
+
 	for _, group := range removed {
 		servers := C.getServers(group)
-		for _, server := range servers {
-			server.readUsers()
-			if server.hasUser(u.Email) {
-				log.Printf("Removing %s from %s\n", u.Email, server.Alias)
-				err := server.delUser(u)
+		for _, h := range servers {
+			h.readUsers()
+			if h.hasUser(u.Email) {
+				err := h.delUser(u)
 				if err != nil {
-					return err
+					log.Printf("Error removing %s from %s\n", u.Email, h.Alias)
+					continue
 				}
+				log.Printf("Removed %s from %s\n", u.Email, h.Alias)
 			}
 		}
 	}

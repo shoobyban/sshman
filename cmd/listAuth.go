@@ -13,7 +13,7 @@ var listAuthCmd = &cobra.Command{
 	Short: "List who's on what server",
 	Long:  `List who's in authorized_key on what server`,
 	Run: func(_ *cobra.Command, _ []string) {
-		conf := backend.ReadConfig(backend.NewSFTP())
+		conf := backend.ReadConfig()
 		for alias, host := range conf.Hosts {
 			fmt.Printf("%-25s: %v\n", alias, host.GetUsers())
 		}

@@ -30,7 +30,7 @@ sshman register server google my.google.com:22 myuser ~/.ssh/google.pub deploy h
 `)
 			os.Exit(0)
 		}
-		conf := backend.ReadConfig(backend.NewSFTP())
+		conf := backend.ReadConfig()
 		_, exists := conf.Hosts[args[0]]
 		if exists {
 			fmt.Printf("Host already exists with this alias, overwrite [y/n]: ")

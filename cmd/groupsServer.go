@@ -15,7 +15,7 @@ var groupsServerCmd = &cobra.Command{
 $ ./sshman groups server serveralias group1 group2
 `,
 	Run: func(_ *cobra.Command, args []string) {
-		cfg := backend.ReadConfig(backend.NewSFTP())
+		cfg := backend.ReadConfig()
 		if len(args) < 1 {
 			return
 		}

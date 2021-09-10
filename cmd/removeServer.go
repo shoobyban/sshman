@@ -13,7 +13,7 @@ var removeServerCmd = &cobra.Command{
 	Short: "Remove a server from config",
 	Long:  `Remove a server from the configuration`,
 	Run: func(_ *cobra.Command, args []string) {
-		cfg := backend.ReadConfig(backend.NewSFTP())
+		cfg := backend.ReadConfig()
 		if len(args) < 1 {
 			return
 		}
