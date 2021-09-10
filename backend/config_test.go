@@ -107,7 +107,7 @@ func TestRegisterUnregisterUser(t *testing.T) {
 		},
 	}
 	cfg := testConfig("foo", map[string]Hostentry{
-		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"groupa"}},
+		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"groupa"}, Users: []string{"foo@email"}},
 		"b": {Alias: "b", Host: "b:22", User: "aroot"},
 	}, map[string]User{
 		"asdfasdf":                     {Email: "foo@email", KeyType: "ssh-rsa", Key: "foo", Name: "rootuser", Groups: []string{"groupa"}},
@@ -237,5 +237,28 @@ func TestGetServers(t *testing.T) {
 	servers = cfg.getServers("c")
 	if len(servers) != 1 {
 		t.Errorf("getservers error: %v", servers)
+	}
+}
+
+func TestGetUsers(t *testing.T) {
+	cfg := testConfig("foo", map[string]Hostentry{
+		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"a", "b"}, Users: []string{"foo@email"}},
+		"b": {Alias: "b", Host: "b:22", User: "aroot", Groups: []string{"a", "c"}},
+	}, map[string]User{
+		"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
+	}, &SFTPMock{})
+	h := cfg.Hosts["a"]
+	if len(h.GetUsers()) != 1 {
+		t.Errorf("host not returning users")
+	}
+	if !h.hasUser("foo@email") {
+		t.Errorf("hasuser doesn't work")
+	}
+	h = cfg.Hosts["b"]
+	if len(h.GetUsers()) != 0 {
+		t.Errorf("host returning users when")
+	}
+	if h.hasUser("foo@email") {
+		t.Errorf("hasuser returns true when no user")
 	}
 }
