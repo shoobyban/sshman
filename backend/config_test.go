@@ -22,7 +22,7 @@ func testConfig(key string, hosts map[string]Hostentry, users map[string]User, c
 func TestGetUserByEmail(t *testing.T) {
 	cfg := testConfig("foo", map[string]Hostentry{}, map[string]User{
 		"a": {Email: "foo@email", Name: "foo"},
-	}, &SFTPMock{})
+	}, &SFTPConn{mock: true})
 	_, u := cfg.GetUserByEmail("foo@email")
 	if u == nil || u.Name != "foo" {
 		t.Errorf("GetUserByEmail doesn't work, %v", u)
@@ -30,21 +30,17 @@ func TestGetUserByEmail(t *testing.T) {
 }
 
 func TestAddUser(t *testing.T) {
-	sftp := &SFTPMock{testServers: map[string]SFTPMockServer{
+	sftp := &SFTPConn{mock: true, testServers: map[string]SFTPMockServer{
 		"a:22": {Host: "a:22", User: "test", File: "ssh-rsa foo rootuser\nssh-rsa bar1 user-a.com\n"},
 		"b:22": {Host: "b:22", User: "test", File: "ssh-rsa foo rootuser\nssh-rsa bar2 user-b.com\n"},
 	}}
 	cfg := testConfig("foo", map[string]Hostentry{
-		"a": {Alias: "a", Host: "a:22", User: "aroot"},
-		"b": {Alias: "b", Host: "b:22", User: "aroot"},
+		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"a"}},
+		"b": {Alias: "b", Host: "b:22", User: "aroot", Groups: []string{"a", "b"}},
 	}, map[string]User{
-		"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot"},
+		"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
 	}, sftp)
-	_, u := cfg.GetUserByEmail("foo@email")
-	if u == nil {
-		t.Errorf("can't find user")
-	}
-	cfg.AddUserToHosts(u)
+	cfg.AddUserByEmail("foo@email")
 	testServers := sftp.GetServers()
 	if !strings.Contains(testServers["a:22"].File, "ssh-rsa keydata aroot") {
 		t.Errorf("User not upoaded to server a:22")
@@ -55,7 +51,7 @@ func TestAddUser(t *testing.T) {
 }
 
 func TestDelUser(t *testing.T) {
-	sftp := &SFTPMock{testServers: map[string]SFTPMockServer{
+	sftp := &SFTPConn{mock: true, testServers: map[string]SFTPMockServer{
 		"a:22": {Host: "a:22", User: "test", File: "ssh-rsa foo rootuser\nssh-rsa bar1 user-a.com\n\n"},
 		"b:22": {Host: "b:22", User: "test", File: "ssh-rsa foo rootuser\nssh-rsa bar2 user-b.com\n"},
 	}}
@@ -87,7 +83,7 @@ func TestRegisterUnregisterServer(t *testing.T) {
 		"b": {Alias: "b", Host: "b:22", User: "aroot"},
 	}, map[string]User{
 		"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot"},
-	}, &SFTPMock{})
+	}, &SFTPConn{mock: true})
 	cfg.RegisterServer("c", "c:22", "cuser", ".", "groupa")
 	if len(cfg.Hosts) != 3 {
 		t.Errorf("Registering server did not work")
@@ -99,7 +95,8 @@ func TestRegisterUnregisterServer(t *testing.T) {
 }
 
 func TestRegisterUnregisterUser(t *testing.T) {
-	sftp := &SFTPMock{
+	sftp := &SFTPConn{
+		mock:     true,
 		expected: "ssh-rsa foo rootuser\nssh-rsa bar1 user-a.com\nssh-rsa key user\n",
 		testServers: map[string]SFTPMockServer{
 			"a:22": {Host: "a:22", User: "test", File: "ssh-rsa foo rootuser\nssh-rsa bar1 user-a.com\n"},
@@ -120,6 +117,11 @@ func TestRegisterUnregisterUser(t *testing.T) {
 	}
 	if len(cfg.Users) != 5 {
 		t.Errorf("Registering user did not work %#v", len(cfg.Users))
+	}
+	cfg.Hosts["a"] = Hostentry{Config: cfg, Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"groupa"}, Users: []string{"foo@email", "bar@email"}}
+	err = cfg.RegisterUser([]string{}, "bar@email", "dummy.key", "groupa", "groupb")
+	if err != nil {
+		t.Errorf("error while registering user: %v %v", err, cfg.Users)
 	}
 	g := cfg.GetGroups()
 	if grp, ok := g["groupa"]; ok {
@@ -154,7 +156,7 @@ func TestRegisterUnregisterUser(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	sftp := &SFTPMock{testServers: map[string]SFTPMockServer{
+	sftp := &SFTPConn{mock: true, testServers: map[string]SFTPMockServer{
 		"a:22": {Host: "a:22", User: "test", File: "ssh-rsa foo rootuser\nssh-rsa bar1 user-a.com\n"},
 		"b:22": {Host: "b:22", User: "test", File: "ssh-rsa foo rootuser\nssh-rsa bar2 user-b.com\n"},
 	}}
@@ -179,7 +181,7 @@ func TestGetGroups(t *testing.T) {
 		"b": {Alias: "b", Host: "b:22", User: "aroot", Groups: []string{"a", "c"}},
 	}, map[string]User{
 		"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
-	}, &SFTPMock{})
+	}, &SFTPConn{mock: true})
 	g := cfg.GetGroups()
 	if len(g) != 3 {
 		t.Errorf("GetGroups did not work, groups: %v", g)
@@ -196,26 +198,50 @@ func TestGetGroups(t *testing.T) {
 
 func TestUpdateGroups(t *testing.T) {
 	cfg := testConfig("foo", map[string]Hostentry{
-		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"a", "b"}},
-		"b": {Alias: "b", Host: "b:22", User: "aroot", Groups: []string{"a", "c"}},
+		"hosta": {Alias: "hosta", Host: "a:22", User: "aroot", Groups: []string{"groupa", "groupb"}},
+		"hostb": {Alias: "hostb", Host: "b:22", User: "aroot", Groups: []string{"groupa", "groupc"}},
 	}, map[string]User{
-		"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
-	}, &SFTPMock{})
-	h := cfg.Hosts["a"]
+		"asdfasdf0": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"groupa", "groupb"}},
+		"asdfasdf1": {Email: "bar@email", KeyType: "ssh-rsa", Key: "keydata", Name: "broot", Groups: []string{"groupa", "groupc"}},
+	}, &SFTPConn{mock: true})
+	h := cfg.Hosts["hosta"]
 	old := h.Groups
-	h.Groups = []string{"a"}
+	h.Groups = []string{"groupb"}
 	h.UpdateGroups(cfg, old)
 	g := cfg.GetGroups()
-	if len(g) != 2 {
-		t.Errorf("GetGroups did not work, groups: %v", g)
+	if len(g) != 3 {
+		t.Errorf("GetGroups did not work, groups: %#v", g)
 	}
-	if grp, ok := g["a"]; ok {
-		if len(grp.Servers) != 2 {
-			t.Errorf("Group a servers incorrect: %v", grp.Servers)
-		}
-		if len(grp.Users) != 1 {
-			t.Errorf("Group a users incorrect: %v", grp.Users)
-		}
+	old = h.Groups
+	h.Groups = []string{"groupa", "groupb"}
+	h.UpdateGroups(cfg, old)
+	_, u := cfg.GetUserByEmail("foo@email")
+	if u == nil {
+		t.Errorf("error finding user by email")
+		return
+	}
+	old = u.Groups
+	u.Groups = []string{"groupa"}
+	u.UpdateGroups(cfg, old)
+	if contains(cfg.Hosts["hosta"].Users, "foo@email") {
+		t.Errorf("user is not on host")
+	}
+	if contains(cfg.Hosts["hostb"].Users, "foo@email") {
+		t.Errorf("user is still on host")
+	}
+	_, u = cfg.GetUserByEmail("bar@email")
+	if u == nil {
+		t.Errorf("error finding user by email")
+		return
+	}
+	old = u.Groups
+	u.Groups = []string{"groupa"}
+	u.UpdateGroups(cfg, old)
+	if contains(cfg.Hosts["hostb"].Users, "bar@email") {
+		t.Errorf("user is on wrong host")
+	}
+	if contains(cfg.Hosts["hosta"].Users, "bar@email") {
+		t.Errorf("user is still on host b")
 	}
 }
 
@@ -225,7 +251,7 @@ func TestGetServers(t *testing.T) {
 		"b": {Alias: "b", Host: "b:22", User: "aroot", Groups: []string{"a", "c"}},
 	}, map[string]User{
 		"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
-	}, &SFTPMock{})
+	}, &SFTPConn{mock: true})
 	servers := cfg.getServers("a")
 	if len(servers) != 2 {
 		t.Errorf("getservers error: %v", servers)
@@ -246,7 +272,7 @@ func TestGetUsers(t *testing.T) {
 		"b": {Alias: "b", Host: "b:22", User: "aroot", Groups: []string{"a", "c"}},
 	}, map[string]User{
 		"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
-	}, &SFTPMock{})
+	}, &SFTPConn{mock: true})
 	h := cfg.Hosts["a"]
 	if len(h.GetUsers()) != 1 {
 		t.Errorf("host not returning users")

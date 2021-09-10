@@ -22,7 +22,7 @@ type config struct {
 }
 
 // initConfig reads in config file and ENV variables if set.
-func ReadConfig(conn SFTP) *config {
+func ReadConfig() *config {
 	var C config
 	home, _ := os.UserHomeDir()
 	b, err := ioutil.ReadFile(home + "/.ssh/.sshman")
@@ -38,7 +38,7 @@ func ReadConfig(conn SFTP) *config {
 		host.Config = &C
 		C.Hosts[alias] = host
 	}
-	C.conn = conn
+	C.conn = &SFTPConn{}
 	C.persistent = true
 	return &C
 }
@@ -72,11 +72,12 @@ func (c *config) getServers(group string) []Hostentry {
 	return servers
 }
 
-func (c *config) getUsers(group string) []User {
-	var users []User
+// getUsers will return users that have the given group
+func (c *config) getUsers(group string) []*User {
+	var users []*User
 	for _, user := range c.Users {
 		if contains(user.Groups, group) {
-			users = append(users, user)
+			users = append(users, &user)
 		}
 	}
 	return users
@@ -85,60 +86,10 @@ func (c *config) getUsers(group string) []User {
 // AddUserToHosts adds user to all allowed hosts' authorized_keys files
 func (c *config) AddUserToHosts(newuser *User) {
 	for alias, host := range c.Hosts {
-		if len(newuser.Groups) != 0 && !match(newuser.Groups, host.Groups) {
-			continue
+		if match(host.Groups, newuser.Groups) {
+			log.Printf("Adding %s to %s\n", newuser.Email, alias)
+			host.addUser(newuser)
 		}
-		userlist := []string{}
-		have := false
-		sum, lines, err := host.read()
-		if err != nil {
-			log.Printf("Error: error reading authorized keys on %s: %v\n", alias, err)
-			continue
-		}
-		for _, line := range lines {
-			if len(line) == 0 {
-				continue
-			}
-			parts := strings.Split(line, " ")
-			if len(parts) != 3 {
-				log.Printf("Error: Not good line: '%s'\n", line)
-			}
-			if parts[0] == newuser.KeyType &&
-				parts[1] == newuser.Key &&
-				parts[2] == newuser.Name {
-				have = true
-			}
-			lsum := checksum(parts[1])
-			if _, ok := c.Users[lsum]; !ok {
-				c.Users[lsum] = User{
-					KeyType: parts[0],
-					Key:     parts[1],
-					Name:    parts[2],
-					Email:   parts[2] + "@" + alias,
-				}
-			}
-			userlist = append(userlist, c.Users[lsum].Email)
-		}
-
-		if have {
-			log.Printf("User %s is already on %s\n", newuser.Email, host.Alias)
-			host.Checksum = sum
-			host.Users = userlist
-			c.Hosts[alias] = host
-			continue
-		} else {
-			log.Printf("Adding %s to %s\n", newuser.Email, host.Alias)
-			lines = deleteEmpty(append(lines, newuser.KeyType+" "+newuser.Key+" "+newuser.Name))
-
-			err = c.conn.Write(strings.Join(lines, "\n") + "\n")
-			if err != nil {
-				log.Printf("Error: error writing %s: %v\n", alias, err)
-			}
-			userlist = append(userlist, newuser.Email)
-		}
-		host.Checksum = sum
-		host.Users = userlist
-		c.Hosts[alias] = host
 	}
 	c.Write()
 }
@@ -238,38 +189,9 @@ func (c *config) Update(aliases ...string) {
 			}
 		}
 	}
-	for alias, host := range hosts {
-		log.Printf("Reading %s\n", host.Alias)
-		sum, lines, err := host.read()
-		if err != nil {
-			log.Printf("Error: error reading authorized keys on %s: %v\n", alias, err)
-			continue
-		}
-		userlist := []string{}
-		for _, line := range lines {
-			if len(line) == 0 {
-				continue
-			}
-			parts := strings.Split(line, " ")
-			if len(parts) != 3 {
-				log.Printf("Error: Not good line: '%s'\n", line)
-			}
-			lsum := checksum(parts[1])
-			if _, ok := c.Users[lsum]; !ok {
-				c.Users[lsum] = User{
-					KeyType: parts[0],
-					Key:     parts[1],
-					Name:    parts[2],
-					Email:   parts[2] + "@" + alias,
-				}
-			}
-			userlist = append(userlist, c.Users[lsum].Email)
-		}
-		host.Checksum = sum
-		host.Users = userlist
-		c.Hosts[alias] = host
+	for _, host := range hosts {
+		host.readUsers()
 	}
-	c.Write()
 }
 
 func (c *config) GetGroups() map[string]Group {
@@ -296,4 +218,13 @@ func (c *config) GetGroups() map[string]Group {
 		}
 	}
 	return groups
+}
+
+func (c *config) AddUserByEmail(email string) {
+	_, u := c.GetUserByEmail(email)
+	if u != nil {
+		c.AddUserToHosts(u)
+	} else {
+		log.Printf("No such user, register user first\n")
+	}
 }

@@ -24,23 +24,19 @@ func (h *Hostentry) readUsers() error {
 	}
 	var userlist []string
 	for _, line := range lines {
-		if len(line) == 0 {
-			continue
-		}
 		parts := strings.Split(line, " ")
-		if len(parts) != 3 {
-			log.Printf("Error: Not good line: '%s'\n", line)
-		}
-		lsum := checksum(parts[1])
-		if _, ok := h.Config.Users[lsum]; !ok {
-			h.Config.Users[lsum] = User{
-				KeyType: parts[0],
-				Key:     parts[1],
-				Name:    parts[2],
-				Email:   parts[2] + "@" + h.Alias,
+		if len(parts) == 3 {
+			lsum := checksum(parts[1])
+			if _, ok := h.Config.Users[lsum]; !ok {
+				h.Config.Users[lsum] = User{
+					KeyType: parts[0],
+					Key:     parts[1],
+					Name:    parts[2],
+					Email:   parts[2] + "@" + h.Alias,
+				}
 			}
+			userlist = append(userlist, h.Config.Users[lsum].Email)
 		}
-		userlist = append(userlist, h.Config.Users[lsum].Email)
 	}
 	h.Checksum = sum
 	h.Users = userlist
@@ -56,14 +52,12 @@ func (h *Hostentry) read() (string, []string, error) {
 	}
 	err := h.Config.conn.Connect(key, h.Host, h.User)
 	if err != nil {
-		log.Printf("Error: error connecting %s: %v\n", h.Alias, err)
-		return "", nil, err
+		return "", nil, fmt.Errorf("error connecting %s: %v", h.Alias, err)
 	}
 	defer h.Config.conn.Close()
 	b, err := h.Config.conn.Read()
 	if err != nil {
-		log.Printf("Error: error reading authorized keys on %s: %v\n", h.Alias, err)
-		return "", nil, err
+		return "", nil, fmt.Errorf("error reading authorized keys on %s: %v", h.Alias, err)
 	}
 	sum := checksum(string(b))
 	lines := deleteEmpty(strings.Split(string(b), "\n"))
@@ -80,8 +74,7 @@ func (h *Hostentry) write(lines []string) error {
 	}
 	err := h.Config.conn.Connect(key, h.Host, h.User)
 	if err != nil {
-		log.Printf("Error: error connecting %s: %v\n", h.Alias, err)
-		return err
+		return fmt.Errorf("error connecting %s: %v", h.Alias, err)
 	}
 	defer h.Config.conn.Close()
 	return h.Config.conn.Write(strings.Join(lines, "\n") + "\n")
@@ -116,35 +109,29 @@ func (h *Hostentry) addUser(u *User) error {
 func (h *Hostentry) delUser(u *User) error {
 	sum, lines, err := h.read()
 	if err != nil {
-		log.Printf("Error reading from host %s %v", h.Alias, err)
 		return err
 	}
 	userlist := []string{}
 	found := false
 	newlines := []string{}
 	for _, line := range lines {
-		if len(line) == 0 {
-			continue
-		}
 		parts := strings.Split(line, " ")
-		if len(parts) != 3 {
-			log.Printf("Error: Not good line: '%s'\n", line)
+		if len(parts) == 3 {
+			lsum := checksum(parts[1])
+			if parts[1] == u.Key {
+				found = true
+				continue
+			}
+			newlines = append(newlines, line)
+			userlist = append(userlist, h.Config.Users[lsum].Email)
 		}
-		lsum := checksum(parts[1])
-		if parts[1] == u.Key {
-			found = true
-			continue
-		}
-		newlines = append(newlines, line)
-		userlist = append(userlist, h.Config.Users[lsum].Email)
 	}
 
 	if found {
 		newlines = deleteEmpty(newlines)
 		err = h.write(newlines)
 		if err != nil {
-			log.Printf("Error: error writing %s: %v\n", h.Alias, err)
-			return err
+			return fmt.Errorf("error writing %s: %v", h.Alias, err)
 		}
 	}
 	h.Checksum = sum
@@ -158,14 +145,16 @@ func (h *Hostentry) UpdateGroups(c *config, oldgroups []string) error {
 		users := c.getUsers(group)
 		for _, u := range users {
 			if !h.hasUser(u.Email) {
-				log.Printf("Adding %s to %s\n", u.Email, h.Alias)
-				err := h.addUser(&u)
+				err := h.addUser(u)
 				if err != nil {
-					return err
+					log.Printf("Error adding %s to %s\n", u.Email, h.Alias)
+					continue
 				}
+				log.Printf("Added %s to %s\n", u.Email, h.Alias)
 			}
 		}
 	}
+
 	for _, group := range removed {
 		users := c.getUsers(group)
 		for _, u := range users {
@@ -173,11 +162,12 @@ func (h *Hostentry) UpdateGroups(c *config, oldgroups []string) error {
 				continue
 			}
 			if h.hasUser(u.Email) {
-				log.Printf("Removing %s from %s\n", u.Email, h.Alias)
-				err := h.delUser(&u)
+				err := h.delUser(u)
 				if err != nil {
-					return err
+					log.Printf("Error removing %s from %s\n", u.Email, h.Alias)
+					continue
 				}
+				log.Printf("Removed %s from %s\n", u.Email, h.Alias)
 			}
 		}
 	}

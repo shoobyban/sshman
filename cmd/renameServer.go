@@ -13,7 +13,7 @@ var renameServerCmd = &cobra.Command{
 	Short: "Rename a server (modify host alias)",
 	Long:  `Modify a host alias in the configuration, keeping host data intact`,
 	Run: func(_ *cobra.Command, args []string) {
-		cfg := backend.ReadConfig(backend.NewSFTP())
+		cfg := backend.ReadConfig()
 		if len(args) < 2 {
 			return
 		}

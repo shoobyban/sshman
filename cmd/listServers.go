@@ -13,7 +13,7 @@ var listServersCmd = &cobra.Command{
 	Short: "List servers",
 	Long:  `Lists registered servers`,
 	Run: func(_ *cobra.Command, _ []string) {
-		conf := backend.ReadConfig(backend.NewSFTP())
+		conf := backend.ReadConfig()
 		for alias, host := range conf.Hosts {
 			fmt.Printf("%-25s\t%-50s\t%v\n", alias, host.Host, host.Groups)
 		}
