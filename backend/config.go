@@ -2,7 +2,6 @@ package backend
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -25,7 +24,7 @@ type config struct {
 func ReadConfig() *config {
 	var C config
 	home, _ := os.UserHomeDir()
-	b, err := ioutil.ReadFile(home + "/.ssh/.sshman")
+	b, err := os.ReadFile(home + "/.ssh/.sshman")
 	if err != nil {
 		log.Printf("Error: unable to read .sshman, %v\n", err)
 	}
@@ -59,7 +58,7 @@ func (c *config) Write() {
 	}
 	b, _ := json.MarshalIndent(c, "", "  ")
 	home, _ := os.UserHomeDir()
-	ioutil.WriteFile(home+"/.ssh/.sshman", b, 0644)
+	os.WriteFile(home+"/.ssh/.sshman", b, 0644)
 }
 
 func (c *config) getServers(group string) []Hostentry {
@@ -145,7 +144,7 @@ func (c *config) UnregisterUser(email string) bool {
 
 // RegisterUser adds a user to the config
 func (c *config) RegisterUser(oldgroups []string, args ...string) error {
-	b, err := ioutil.ReadFile(args[1])
+	b, err := os.ReadFile(args[1])
 	if err != nil {
 		log.Printf("Error: error reading public key file: '%s' %v\n", args[1], err)
 		return err
