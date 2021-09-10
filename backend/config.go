@@ -2,6 +2,7 @@ package backend
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -18,13 +19,14 @@ type config struct {
 	Users      map[string]User      `json:"users"`
 	conn       SFTP                 `json:"-"`
 	persistent bool                 `json:"-"`
+	home       string               `json:"-"`
 }
 
-// initConfig reads in config file and ENV variables if set.
+// ReadConfig reads in config file and ENV variables if set.
 func ReadConfig() *config {
 	var C config
-	home, _ := os.UserHomeDir()
-	b, err := os.ReadFile(home + "/.ssh/.sshman")
+	C.home, _ = os.UserHomeDir()
+	b, err := os.ReadFile(C.home + "/.ssh/.sshman")
 	if err != nil {
 		log.Printf("Error: unable to read .sshman, %v\n", err)
 	}
@@ -57,8 +59,7 @@ func (c *config) Write() {
 		return // when testing (so not from ReadConfig)
 	}
 	b, _ := json.MarshalIndent(c, "", "  ")
-	home, _ := os.UserHomeDir()
-	os.WriteFile(home+"/.ssh/.sshman", b, 0644)
+	os.WriteFile(c.home+"/.ssh/.sshman", b, 0644)
 }
 
 func (c *config) getServers(group string) []Hostentry {
@@ -146,12 +147,11 @@ func (c *config) UnregisterUser(email string) bool {
 func (c *config) RegisterUser(oldgroups []string, args ...string) error {
 	b, err := os.ReadFile(args[1])
 	if err != nil {
-		log.Printf("Error: error reading public key file: '%s' %v\n", args[1], err)
-		return err
+		return fmt.Errorf("error: error reading public key file: '%s' %v", args[1], err)
 	}
 	parts := strings.Split(strings.TrimSuffix(string(b), "\n"), " ")
 	if len(parts) != 3 {
-		log.Printf("Error: not a proper public key file\n")
+		return fmt.Errorf("error: not a proper public key file")
 	}
 	lsum := checksum(parts[1])
 	groups := args[2:]
