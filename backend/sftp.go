@@ -2,7 +2,7 @@ package backend
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -48,7 +48,7 @@ func (s *SFTPConn) Connect(keyfile, host, user string) error {
 		}
 		return nil
 	}
-	key, err := ioutil.ReadFile(keyfile)
+	key, err := os.ReadFile(keyfile)
 	if err != nil {
 		return fmt.Errorf("unable to read private key: %v", err)
 	}
@@ -112,7 +112,7 @@ func (s *SFTPConn) Read() ([]byte, error) {
 		return nil, err
 	}
 	defer f.Close()
-	return ioutil.ReadAll(f)
+	return io.ReadAll(f)
 }
 
 func (s *SFTPConn) Close() {
