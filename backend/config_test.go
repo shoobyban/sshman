@@ -48,6 +48,9 @@ func TestAddUser(t *testing.T) {
 	if !strings.Contains(testServers["b:22"].File, "ssh-rsa keydata aroot") {
 		t.Errorf("User not upoaded to server b:22")
 	}
+	if cfg.AddUserByEmail("bar@email") {
+		t.Errorf("Adding unknown user worked")
+	}
 }
 
 func TestDelUser(t *testing.T) {
@@ -84,13 +87,23 @@ func TestRegisterUnregisterServer(t *testing.T) {
 	}, map[string]User{
 		"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot"},
 	}, &SFTPConn{mock: true})
-	cfg.RegisterServer("c", "c:22", "cuser", ".", "groupa")
+	err := cfg.RegisterServer("c", "c:22", "cuser", ".", "groupa")
+	if err != nil {
+		t.Errorf("Registering server did not work: %v", err)
+	}
+	err = cfg.RegisterServer("c", "c:22", "cuser", "nonexistent", "groupa")
+	if err == nil {
+		t.Errorf("Registering server did not try to read file")
+	}
 	if len(cfg.Hosts) != 3 {
 		t.Errorf("Registering server did not work")
 	}
 	cfg.UnregisterServer("c")
 	if len(cfg.Hosts) != 2 {
-		t.Errorf("Registering server did not work")
+		t.Errorf("Unregistering server did not work")
+	}
+	if cfg.UnregisterServer("c") {
+		t.Errorf("Unregistering server did work again")
 	}
 }
 
@@ -152,6 +165,9 @@ func TestRegisterUnregisterUser(t *testing.T) {
 	cfg.UnregisterUser("bar@email")
 	if len(cfg.Users) != 4 {
 		t.Errorf("Unregistering user did not work %v", len(cfg.Users))
+	}
+	if cfg.UnregisterUser("bar@email") {
+		t.Errorf("Unregistering user did work again")
 	}
 }
 

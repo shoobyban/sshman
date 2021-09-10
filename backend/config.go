@@ -22,25 +22,28 @@ type config struct {
 	home       string               `json:"-"`
 }
 
-// ReadConfig reads in config file and ENV variables if set.
+// Config reads in config file and ENV variables if set.
 func ReadConfig() *config {
 	var C config
+	C.conn = &SFTPConn{}
 	C.home, _ = os.UserHomeDir()
+	C.Hosts = map[string]Hostentry{}
+	C.Users = map[string]User{}
 	b, err := os.ReadFile(C.home + "/.ssh/.sshman")
 	if err != nil {
-		log.Printf("Error: unable to read .sshman, %v\n", err)
+		log.Println("No configuration file ~/.ssh/.sshman, creating one")
+		return &C
 	}
 	err = json.Unmarshal(b, &C)
 	if err != nil {
-		log.Printf("Error: unable to decode into struct, %v\n", err)
+		log.Fatalf("Error: unable to decode into struct, please correct or remove broken ~/.ssh/.sshman %v\n", err)
 	}
+	C.persistent = true
 	for alias, host := range C.Hosts {
 		host.Alias = alias
 		host.Config = &C
 		C.Hosts[alias] = host
 	}
-	C.conn = &SFTPConn{}
-	C.persistent = true
 	return &C
 }
 
@@ -111,8 +114,7 @@ func (c *config) DelUserFromHosts(deluser *User) {
 func (c *config) RegisterServer(args ...string) error {
 	alias := args[0]
 	if _, err := os.Stat(args[3]); os.IsNotExist(err) {
-		log.Fatalf("no such file '%s'\n", args[3])
-		return err
+		return fmt.Errorf("no such file '%s'", args[3])
 	}
 	groups := args[4:]
 	server := Hostentry{
@@ -219,11 +221,11 @@ func (c *config) GetGroups() map[string]Group {
 	return groups
 }
 
-func (c *config) AddUserByEmail(email string) {
+func (c *config) AddUserByEmail(email string) bool {
 	_, u := c.GetUserByEmail(email)
 	if u != nil {
 		c.AddUserToHosts(u)
-	} else {
-		log.Printf("No such user, register user first\n")
+		return true
 	}
+	return false
 }
