@@ -1,4 +1,6 @@
 all:
+	cd ui && yarn && yarn build
+	cp -R ui/dist cmd/
 	go build .
 
 linux:
