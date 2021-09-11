@@ -27,6 +27,7 @@ func ReadConfig() *config {
 	C.home, _ = os.UserHomeDir()
 	b, err := os.ReadFile(C.home + "/.ssh/.sshman")
 	if err != nil {
+		C.persistent = true // testing doesn't have this where we just create the config
 		fmt.Println("No configuration file ~/.ssh/.sshman, creating one")
 		return &C
 	}
