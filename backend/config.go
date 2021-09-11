@@ -164,7 +164,10 @@ func (c *config) RegisterUser(oldgroups []string, args ...string) error {
 	c.Users[lsum] = newuser
 	fmt.Printf("Registering %s %s %s %s %v\n", parts[0], parts[2], args[0], lsum, groups)
 	c.Write()
-	return newuser.UpdateGroups(c, oldgroups)
+	if !newuser.UpdateGroups(c, oldgroups) {
+		return fmt.Errorf("error while updating servers")
+	}
+	return nil
 }
 
 // UnregisterServer removes a server from the config

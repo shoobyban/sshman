@@ -10,7 +10,8 @@ type User struct {
 	Groups  []string `json:"groups"`
 }
 
-func (u *User) UpdateGroups(C *config, oldgroups []string) error {
+func (u *User) UpdateGroups(C *config, oldgroups []string) bool {
+	success := true
 	added, removed := updates(oldgroups, u.Groups)
 	fmt.Printf("added: %v removed: %v\n", added, removed)
 	for _, group := range added {
@@ -21,6 +22,7 @@ func (u *User) UpdateGroups(C *config, oldgroups []string) error {
 				err := h.AddUser(u)
 				if err != nil {
 					fmt.Printf("Error adding %s to %s\n", u.Email, h.Alias)
+					success = false
 					continue
 				}
 				fmt.Printf("Added %s to %s %v\n", u.Email, h.Alias, h.Groups)
@@ -41,6 +43,7 @@ func (u *User) UpdateGroups(C *config, oldgroups []string) error {
 				err := h.DelUser(u)
 				if err != nil {
 					fmt.Printf("Error removing %s from %s\n", u.Email, h.Alias)
+					success = false
 					continue
 				}
 				fmt.Printf("Removed %s from %s %v\n", u.Email, h.Alias, h.Groups)
@@ -49,7 +52,7 @@ func (u *User) UpdateGroups(C *config, oldgroups []string) error {
 		}
 	}
 	C.Write()
-	return nil
+	return success
 }
 
 func (u *User) GetGroups() []string {

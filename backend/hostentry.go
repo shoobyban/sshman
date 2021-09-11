@@ -33,7 +33,6 @@ func (h *Hostentry) readUsers() error {
 					Name:    parts[2],
 					Email:   parts[2] + "@" + h.Alias,
 				}
-				fmt.Printf("%s: adding user %s", h.Alias, parts[2]+"@"+h.Alias)
 			}
 			userlist = append(userlist, h.Config.Users[lsum].Email)
 		}
@@ -150,7 +149,8 @@ func (h *Hostentry) DelUser(u *User) error {
 	return nil
 }
 
-func (h *Hostentry) UpdateGroups(c *config, oldgroups []string) error {
+func (h *Hostentry) UpdateGroups(c *config, oldgroups []string) bool {
+	success := true
 	added, removed := updates(oldgroups, h.Groups)
 	fmt.Printf("added: %v removed: %v\n", added, removed)
 	for _, group := range added {
@@ -161,6 +161,7 @@ func (h *Hostentry) UpdateGroups(c *config, oldgroups []string) error {
 				err := h.AddUser(&u)
 				if err != nil {
 					fmt.Printf("Error adding %s to %s\n", u.Email, h.Alias)
+					success = false
 					continue
 				}
 				fmt.Printf("Added %s to %s %v\n", u.Email, h.Alias, h.Groups)
@@ -179,6 +180,7 @@ func (h *Hostentry) UpdateGroups(c *config, oldgroups []string) error {
 				err := h.DelUser(&u)
 				if err != nil {
 					fmt.Printf("Error removing %s from %s\n", u.Email, h.Alias)
+					success = false
 					continue
 				}
 				fmt.Printf("Removed %s from %s\n", u.Email, h.Alias)
@@ -187,5 +189,5 @@ func (h *Hostentry) UpdateGroups(c *config, oldgroups []string) error {
 	}
 	c.Hosts[h.Alias] = *h
 	c.Write()
-	return nil
+	return success
 }

@@ -20,6 +20,7 @@ type SFTPConn struct {
 	alias       string
 	expected    string
 	testServers map[string]SFTPMockServer
+	testError   bool
 }
 
 type SFTPMockServer struct {
@@ -80,12 +81,16 @@ func (s *SFTPConn) GetServers() map[string]SFTPMockServer {
 	return s.testServers
 }
 
+func (s *SFTPConn) SetError(willError bool) {
+	s.testError = willError
+}
+
 func (s *SFTPConn) Write(data string) error {
-	if data == "" {
+	if data == "" || s.testError {
 		return fmt.Errorf("empty data, not writing it")
 	}
 	if s.mock {
-		if s.expected != "" && data != s.expected {
+		if (s.expected != "" && data != s.expected) || s.testError {
 			return fmt.Errorf("data is not as expected: '%s' instead of '%s'", data, s.expected)
 		}
 		s.server.File = data
@@ -105,6 +110,9 @@ func (s *SFTPConn) Write(data string) error {
 
 func (s *SFTPConn) Read() ([]byte, error) {
 	if s.mock {
+		if s.testError {
+			return nil, fmt.Errorf("test error reading file")
+		}
 		return []byte(s.server.File), nil
 	}
 	f, err := s.client.Open(".ssh/authorized_keys")
