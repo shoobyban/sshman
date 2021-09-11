@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/shoobyban/sshman/backend"
 	"github.com/spf13/cobra"
@@ -26,7 +26,7 @@ $ ./sshman groups user email@server.com group1 group2
 			user.SetGroups(groups)
 			cfg.Users[key] = *user
 			cfg.Write()
-			log.Printf("Groups for %s edited: %v\n", email, groups)
+			fmt.Printf("Groups for %s edited: %v\n", email, groups)
 		}
 	},
 }

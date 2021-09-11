@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/shoobyban/sshman/backend"
 	"github.com/spf13/cobra"
@@ -19,7 +19,7 @@ var delCmd = &cobra.Command{
 			if u != nil {
 				conf.DelUserFromHosts(u)
 			} else {
-				log.Printf("No such user\n")
+				fmt.Printf("No such user\n")
 			}
 		}
 	},

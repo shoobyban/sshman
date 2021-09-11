@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/shoobyban/sshman/backend"
 	"github.com/spf13/cobra"
@@ -25,7 +25,7 @@ $ ./sshman groups server serveralias group1 group2
 			host.SetGroups(groups)
 			cfg.Hosts[args[0]] = host
 			cfg.Write()
-			log.Printf("Groups for %s edited: %v\n", email, host.GetGroups())
+			fmt.Printf("Groups for %s edited: %v\n", email, host.GetGroups())
 		}
 	},
 }

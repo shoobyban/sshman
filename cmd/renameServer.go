@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/shoobyban/sshman/backend"
 	"github.com/spf13/cobra"
@@ -21,7 +21,7 @@ var renameServerCmd = &cobra.Command{
 			cfg.Hosts[args[1]] = host
 			delete(cfg.Hosts, args[0])
 			cfg.Write()
-			log.Printf("Renamed %s to %s\n", args[0], args[1])
+			fmt.Printf("Renamed %s to %s\n", args[0], args[1])
 		}
 	},
 }

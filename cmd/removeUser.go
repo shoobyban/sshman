@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/shoobyban/sshman/backend"
 	"github.com/spf13/cobra"
@@ -18,7 +18,7 @@ var removeUserCmd = &cobra.Command{
 			return
 		}
 		if cfg.UnregisterUser(args[0]) {
-			log.Printf("Deleted %s from configuration\n", args[0])
+			fmt.Printf("Deleted %s from configuration\n", args[0])
 		}
 	},
 }
