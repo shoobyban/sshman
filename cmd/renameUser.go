@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/shoobyban/sshman/backend"
 	"github.com/spf13/cobra"
@@ -22,7 +22,7 @@ var renameUserCmd = &cobra.Command{
 			user.Email = args[1]
 			cfg.Users[key] = *user
 			cfg.Write()
-			log.Printf("Renamed %s to %s\n", args[0], args[1])
+			fmt.Printf("Renamed %s to %s\n", args[0], args[1])
 		}
 	},
 }

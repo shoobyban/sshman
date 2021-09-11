@@ -2,7 +2,6 @@ package backend
 
 import (
 	"fmt"
-	"log"
 	"strings"
 )
 
@@ -34,6 +33,7 @@ func (h *Hostentry) readUsers() error {
 					Name:    parts[2],
 					Email:   parts[2] + "@" + h.Alias,
 				}
+				fmt.Printf("%s: adding user %s", h.Alias, parts[2]+"@"+h.Alias)
 			}
 			userlist = append(userlist, h.Config.Users[lsum].Email)
 		}
@@ -114,7 +114,6 @@ func (h *Hostentry) AddUser(u *User) error {
 			lines = append(lines, userentry.KeyType+" "+userentry.Key+" "+userentry.Name)
 		}
 	}
-	h.Users = append(h.Users, u.Email)
 	return h.write(lines)
 }
 
@@ -153,34 +152,36 @@ func (h *Hostentry) DelUser(u *User) error {
 
 func (h *Hostentry) UpdateGroups(c *config, oldgroups []string) error {
 	added, removed := updates(oldgroups, h.Groups)
+	fmt.Printf("added: %v removed: %v\n", added, removed)
 	for _, group := range added {
-		users := c.getUsers(group)
+		users := c.GetUsers(group)
 		for _, u := range users {
+			fmt.Printf("User %s from group %s\n", u.Email, group)
 			if !h.HasUser(u.Email) {
-				err := h.AddUser(u)
+				err := h.AddUser(&u)
 				if err != nil {
-					log.Printf("Error adding %s to %s\n", u.Email, h.Alias)
+					fmt.Printf("Error adding %s to %s\n", u.Email, h.Alias)
 					continue
 				}
-				log.Printf("Added %s to %s\n", u.Email, h.Alias)
+				fmt.Printf("Added %s to %s %v\n", u.Email, h.Alias, h.Groups)
 			}
 		}
 	}
 
 	for _, group := range removed {
-		users := c.getUsers(group)
+		users := c.GetUsers(group)
 		for _, u := range users {
 			// are there other groups that keep user on server
-			if h.HasMatchingGroups(u) {
+			if h.HasMatchingGroups(&u) {
 				continue
 			}
 			if h.HasUser(u.Email) {
-				err := h.DelUser(u)
+				err := h.DelUser(&u)
 				if err != nil {
-					log.Printf("Error removing %s from %s\n", u.Email, h.Alias)
+					fmt.Printf("Error removing %s from %s\n", u.Email, h.Alias)
 					continue
 				}
-				log.Printf("Removed %s from %s\n", u.Email, h.Alias)
+				fmt.Printf("Removed %s from %s\n", u.Email, h.Alias)
 			}
 		}
 	}

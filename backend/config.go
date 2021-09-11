@@ -22,32 +22,27 @@ type config struct {
 	home       string               `json:"-"`
 }
 
-// Config reads in config file and ENV variables if set.
 func ReadConfig() *config {
-	var C config
-	C.conn = &SFTPConn{}
+	C := config{Hosts: map[string]Hostentry{}, Users: map[string]User{}, conn: &SFTPConn{}}
 	C.home, _ = os.UserHomeDir()
-	C.Hosts = map[string]Hostentry{}
-	C.Users = map[string]User{}
 	b, err := os.ReadFile(C.home + "/.ssh/.sshman")
 	if err != nil {
-		log.Println("No configuration file ~/.ssh/.sshman, creating one")
+		fmt.Println("No configuration file ~/.ssh/.sshman, creating one")
 		return &C
 	}
 	err = json.Unmarshal(b, &C)
 	if err != nil {
 		log.Fatalf("Error: unable to decode into struct, please correct or remove broken ~/.ssh/.sshman %v\n", err)
 	}
-	C.persistent = true
+	C.persistent = true // testing doesn't have this where we just create the config
 	for alias, host := range C.Hosts {
-		host.Alias = alias
-		host.Config = &C
+		host.Alias, host.Config = alias, &C
 		C.Hosts[alias] = host
 	}
 	return &C
 }
 
-// GetUserByEmail get a user from config by email
+// GetUserByEmail get a user from config by email as we store them by key checksum
 func (c *config) GetUserByEmail(email string) (string, *User) {
 	for key, user := range c.Users {
 		if user.Email == email {
@@ -57,6 +52,7 @@ func (c *config) GetUserByEmail(email string) (string, *User) {
 	return "", nil
 }
 
+// Write configuration file into ~/.ssh/.sshman (if not testing)
 func (c *config) Write() {
 	if !c.persistent {
 		return // when testing (so not from ReadConfig)
@@ -76,11 +72,12 @@ func (c *config) getServers(group string) []Hostentry {
 }
 
 // getUsers will return users that have the given group
-func (c *config) getUsers(group string) []*User {
-	var users []*User
+func (c *config) GetUsers(group string) []User {
+	var users []User
 	for _, user := range c.Users {
 		if contains(user.Groups, group) {
-			users = append(users, &user)
+			fmt.Printf("Checking for %s, User %s has %v\n", group, user.Email, user.Groups)
+			users = append(users, user)
 		}
 	}
 	return users
@@ -90,7 +87,7 @@ func (c *config) getUsers(group string) []*User {
 func (c *config) AddUserToHosts(newuser *User) {
 	for alias, host := range c.Hosts {
 		if match(host.GetGroups(), newuser.Groups) {
-			log.Printf("Adding %s to %s\n", newuser.Email, alias)
+			fmt.Printf("Adding %s to %s\n", newuser.Email, alias)
 			host.AddUser(newuser)
 		}
 	}
@@ -102,7 +99,7 @@ func (c *config) DelUserFromHosts(deluser *User) {
 	for alias, host := range c.Hosts {
 		err := host.DelUser(deluser)
 		if err != nil {
-			log.Printf("Can't delete user %s from host %s %v\n", deluser.Email, host.Alias, err)
+			fmt.Printf("Can't delete user %s from host %s %v\n", deluser.Email, host.Alias, err)
 			continue
 		}
 		c.Hosts[alias] = host
@@ -127,7 +124,7 @@ func (c *config) RegisterServer(args ...string) error {
 		Config: c,
 	}
 	c.Hosts[alias] = server
-	log.Printf("Registering %s to server %s with %s user\n", alias, args[1], args[1])
+	fmt.Printf("Registering %s to server %s with %s user\n", alias, args[1], args[1])
 	c.Write()
 	server.readUsers()
 	return nil
@@ -165,7 +162,7 @@ func (c *config) RegisterUser(oldgroups []string, args ...string) error {
 		Groups:  groups,
 	}
 	c.Users[lsum] = newuser
-	log.Printf("Registering %s %s %s %s %v\n", parts[0], parts[2], args[0], lsum, groups)
+	fmt.Printf("Registering %s %s %s %s %v\n", parts[0], parts[2], args[0], lsum, groups)
 	c.Write()
 	return newuser.UpdateGroups(c, oldgroups)
 }

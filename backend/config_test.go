@@ -128,7 +128,7 @@ func TestRegisterUnregisterUser(t *testing.T) {
 		"djZ11qHY0KOijeymK7aKvYuvhvM=": {Email: "user-a.com@a", KeyType: "ssh-rsa", Key: "bar1", Name: "user-a.com", Groups: []string{"groupb"}},
 		"GM0J1PU4m76_UN8SIJ3jrmPePq8=": {Email: "rootuser@b", KeyType: "ssh-rsa", Key: "foo2", Name: "aroot", Groups: []string{"groupc"}},
 	}, sftp)
-	err := cfg.RegisterUser([]string{}, "bar@email", "dummy.key", "groupa", "groupb")
+	err := cfg.RegisterUser([]string{}, "bar@email", "test/dummy.key", "groupa", "groupb")
 	if err != nil {
 		t.Errorf("error while registering user: %v %v", err, cfg.Users)
 	}
@@ -136,7 +136,7 @@ func TestRegisterUnregisterUser(t *testing.T) {
 		t.Errorf("Registering user did not work %#v", len(cfg.Users))
 	}
 	cfg.Hosts["a"] = Hostentry{Config: cfg, Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"groupa"}, Users: []string{"foo@email", "bar@email"}}
-	err = cfg.RegisterUser([]string{}, "bar@email", "dummy.key", "groupa", "groupb")
+	err = cfg.RegisterUser([]string{}, "bar@email", "test/dummy.key", "groupa", "groupb")
 	if err != nil {
 		t.Errorf("error while registering user: %v %v", err, cfg.Users)
 	}
@@ -151,7 +151,7 @@ func TestRegisterUnregisterUser(t *testing.T) {
 	// set expected file content for removal
 	sftp.testServers["a:22"] = SFTPMockServer{Host: "b:22", User: "test", File: "ssh-rsa foo rootuser\nssh-rsa bar1 user-a.com\n"}
 	_, u := cfg.GetUserByEmail("bar@email")
-	err = cfg.RegisterUser(u.Groups, "bar@email", "dummy.key")
+	err = cfg.RegisterUser(u.Groups, "bar@email", "test/dummy.key")
 	if err != nil {
 		t.Errorf("error while registering user: %v %v", err, cfg.Users)
 	}
@@ -173,6 +173,24 @@ func TestRegisterUnregisterUser(t *testing.T) {
 	if cfg.UnregisterUser("bar@email") {
 		t.Errorf("Unregistering user did work again")
 	}
+}
+
+func TestBrokenKey(t *testing.T) {
+	sftp := &SFTPConn{mock: true, testServers: map[string]SFTPMockServer{
+		"a:22": {Host: "a:22", User: "test", File: "ssh-rsa foo rootuser\nssh-rsa bar1 user-a.com\n"},
+		"b:22": {Host: "b:22", User: "test", File: "ssh-rsa foo rootuser\nssh-rsa bar2 user-b.com\n"},
+	}}
+	cfg := testConfig("foo", map[string]Hostentry{
+		"a": {Alias: "a", Host: "a:22", User: "aroot"},
+		"b": {Alias: "b", Host: "b:22", User: "aroot"},
+	}, map[string]User{
+		"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot"},
+	}, sftp)
+	err := cfg.RegisterUser([]string{}, "bar@email", "test/broken.key")
+	if err == nil {
+		t.Errorf("could register with broken key info")
+	}
+
 }
 
 func TestConfigUpdate(t *testing.T) {

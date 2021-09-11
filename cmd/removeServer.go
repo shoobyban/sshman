@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"log"
+	"fmt"
 
 	"github.com/shoobyban/sshman/backend"
 	"github.com/spf13/cobra"
@@ -18,7 +18,7 @@ var removeServerCmd = &cobra.Command{
 			return
 		}
 		if cfg.UnregisterServer(args[0]) {
-			log.Printf("deleting %s from configuration\n", args[0])
+			fmt.Printf("deleting %s from configuration\n", args[0])
 		}
 
 	},

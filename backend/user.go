@@ -1,6 +1,6 @@
 package backend
 
-import "log"
+import "fmt"
 
 type User struct {
 	KeyType string   `json:"type"`
@@ -12,7 +12,7 @@ type User struct {
 
 func (u *User) UpdateGroups(C *config, oldgroups []string) error {
 	added, removed := updates(oldgroups, u.Groups)
-	log.Printf("added: %v removed: %v\n", added, removed)
+	fmt.Printf("added: %v removed: %v\n", added, removed)
 	for _, group := range added {
 		servers := C.getServers(group)
 		for _, h := range servers {
@@ -20,10 +20,11 @@ func (u *User) UpdateGroups(C *config, oldgroups []string) error {
 			if !h.HasUser(u.Email) {
 				err := h.AddUser(u)
 				if err != nil {
-					log.Printf("Error adding %s to %s\n", u.Email, h.Alias)
+					fmt.Printf("Error adding %s to %s\n", u.Email, h.Alias)
 					continue
 				}
-				log.Printf("Added %s to %s\n", u.Email, h.Alias)
+				fmt.Printf("Added %s to %s %v\n", u.Email, h.Alias, h.Groups)
+				C.Hosts[h.Alias] = h
 			}
 		}
 	}
@@ -39,13 +40,15 @@ func (u *User) UpdateGroups(C *config, oldgroups []string) error {
 			if h.HasUser(u.Email) {
 				err := h.DelUser(u)
 				if err != nil {
-					log.Printf("Error removing %s from %s\n", u.Email, h.Alias)
+					fmt.Printf("Error removing %s from %s\n", u.Email, h.Alias)
 					continue
 				}
-				log.Printf("Removed %s from %s\n", u.Email, h.Alias)
+				fmt.Printf("Removed %s from %s %v\n", u.Email, h.Alias, h.Groups)
+				C.Hosts[h.Alias] = h
 			}
 		}
 	}
+	C.Write()
 	return nil
 }
 
