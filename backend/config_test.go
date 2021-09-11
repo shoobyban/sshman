@@ -119,6 +119,7 @@ func TestRegisterUnregisterUser(t *testing.T) {
 			"a:22": {Host: "a:22", User: "test", File: "ssh-rsa foo rootuser\nssh-rsa bar1 user-a.com\n"},
 			"b:22": {Host: "b:22", User: "test", File: "ssh-rsa foo rootuser\nssh-rsa bar2 user-b.com\n"},
 		},
+		testError: false,
 	}
 	cfg := testConfig("foo", map[string]Hostentry{
 		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"groupa"}, Users: []string{"foo@email"}},
@@ -190,7 +191,24 @@ func TestBrokenKey(t *testing.T) {
 	if err == nil {
 		t.Errorf("could register with broken key info")
 	}
+}
 
+func TestReadError(t *testing.T) {
+	sftp := &SFTPConn{mock: true, testServers: map[string]SFTPMockServer{
+		"a:22": {Host: "a:22", User: "test", File: "ssh-rsa foo rootuser\nssh-rsa bar1 user-a.com\n"},
+		"b:22": {Host: "b:22", User: "test", File: "ssh-rsa foo rootuser\nssh-rsa bar2 user-b.com\n"},
+	}}
+	cfg := testConfig("foo", map[string]Hostentry{
+		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"groupa"}},
+		"b": {Alias: "b", Host: "b:22", User: "aroot"},
+	}, map[string]User{
+		"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot"},
+	}, sftp)
+	sftp.SetError(true)
+	err := cfg.RegisterUser([]string{}, "bar@email", "test/dummy.key", "groupa")
+	if err == nil {
+		t.Errorf("could register with read error")
+	}
 }
 
 func TestConfigUpdate(t *testing.T) {

@@ -6,12 +6,13 @@ import (
 )
 
 func TestGetUsers(t *testing.T) {
+	sftp := &SFTPConn{mock: true}
 	cfg := testConfig("foo", map[string]Hostentry{
 		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"a", "b"}, Users: []string{"foo@email"}},
 		"b": {Alias: "b", Host: "b:22", User: "aroot", Groups: []string{"a", "c"}},
 	}, map[string]User{
 		"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
-	}, &SFTPConn{mock: true})
+	}, sftp)
 	h := cfg.Hosts["a"]
 	if len(h.GetUsers()) != 1 {
 		t.Errorf("host not returning users")
@@ -29,13 +30,14 @@ func TestGetUsers(t *testing.T) {
 }
 
 func TestUpdateHostGroups(t *testing.T) {
+	sftp := &SFTPConn{mock: true}
 	cfg := testConfig("foo", map[string]Hostentry{
 		"hosta": {Alias: "hosta", Host: "a:22", User: "aroot", Groups: []string{"groupa", "groupb"}},
 		"hostb": {Alias: "hostb", Host: "b:22", User: "aroot", Groups: []string{"groupa", "groupc"}},
 	}, map[string]User{
 		"asdfasdf0": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"groupa", "groupb"}},
 		"asdfasdf1": {Email: "bar@email", KeyType: "ssh-rsa", Key: "keydata", Name: "broot", Groups: []string{"groupa", "groupc"}},
-	}, &SFTPConn{mock: true})
+	}, sftp)
 	h := cfg.Hosts["hosta"]
 	old := h.Groups
 	h.SetGroups([]string{"groupb"})
@@ -51,6 +53,12 @@ func TestUpdateHostGroups(t *testing.T) {
 	if u == nil {
 		t.Errorf("error finding user by email")
 		return
+	}
+	sftp.SetError(true)
+	old = h.Groups
+	h.SetGroups([]string{})
+	if h.UpdateGroups(cfg, old) {
+		t.Errorf("could update server with read error")
 	}
 }
 
