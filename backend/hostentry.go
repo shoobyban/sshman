@@ -11,10 +11,10 @@ type Hostentry struct {
 	User     string   `json:"user"`
 	Key      string   `json:"key"`
 	Checksum string   `json:"checksum"`
-	Users    []string `json:"users"`
-	Groups   []string `json:"groups"`
 	Alias    string   `json:"-"`
 	Config   *config  `json:"-"`
+	Users    []string `json:"users"`
+	Groups   []string `json:"groups"`
 }
 
 func (h *Hostentry) readUsers() error {
@@ -84,7 +84,19 @@ func (h *Hostentry) GetUsers() []string {
 	return h.Users
 }
 
-func (h *Hostentry) hasUser(email string) bool {
+func (h *Hostentry) GetGroups() []string {
+	return h.Groups
+}
+
+func (h *Hostentry) SetGroups(groups []string) {
+	h.Groups = groups
+}
+
+func (h *Hostentry) HasMatchingGroups(user *User) bool {
+	return match(h.GetGroups(), user.GetGroups())
+}
+
+func (h *Hostentry) HasUser(email string) bool {
 	for _, e := range h.Users {
 		if e == email {
 			return true
@@ -93,7 +105,7 @@ func (h *Hostentry) hasUser(email string) bool {
 	return false
 }
 
-func (h *Hostentry) addUser(u *User) error {
+func (h *Hostentry) AddUser(u *User) error {
 	h.Users = append(h.Users, u.Email)
 	var lines []string
 	for _, email := range h.Users {
@@ -106,7 +118,7 @@ func (h *Hostentry) addUser(u *User) error {
 	return h.write(lines)
 }
 
-func (h *Hostentry) delUser(u *User) error {
+func (h *Hostentry) DelUser(u *User) error {
 	sum, lines, err := h.read()
 	if err != nil {
 		return err
@@ -144,8 +156,8 @@ func (h *Hostentry) UpdateGroups(c *config, oldgroups []string) error {
 	for _, group := range added {
 		users := c.getUsers(group)
 		for _, u := range users {
-			if !h.hasUser(u.Email) {
-				err := h.addUser(u)
+			if !h.HasUser(u.Email) {
+				err := h.AddUser(u)
 				if err != nil {
 					log.Printf("Error adding %s to %s\n", u.Email, h.Alias)
 					continue
@@ -158,11 +170,12 @@ func (h *Hostentry) UpdateGroups(c *config, oldgroups []string) error {
 	for _, group := range removed {
 		users := c.getUsers(group)
 		for _, u := range users {
-			if match(u.Groups, h.Groups) {
+			// are there other groups that keep user on server
+			if h.HasMatchingGroups(u) {
 				continue
 			}
-			if h.hasUser(u.Email) {
-				err := h.delUser(u)
+			if h.HasUser(u.Email) {
+				err := h.DelUser(u)
 				if err != nil {
 					log.Printf("Error removing %s from %s\n", u.Email, h.Alias)
 					continue

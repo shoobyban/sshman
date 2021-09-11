@@ -17,8 +17,8 @@ func (u *User) UpdateGroups(C *config, oldgroups []string) error {
 		servers := C.getServers(group)
 		for _, h := range servers {
 			h.readUsers()
-			if !h.hasUser(u.Email) {
-				err := h.addUser(u)
+			if !h.HasUser(u.Email) {
+				err := h.AddUser(u)
 				if err != nil {
 					log.Printf("Error adding %s to %s\n", u.Email, h.Alias)
 					continue
@@ -32,8 +32,12 @@ func (u *User) UpdateGroups(C *config, oldgroups []string) error {
 		servers := C.getServers(group)
 		for _, h := range servers {
 			h.readUsers()
-			if h.hasUser(u.Email) {
-				err := h.delUser(u)
+			// are there other groups that keep user on server
+			if h.HasMatchingGroups(u) {
+				continue
+			}
+			if h.HasUser(u.Email) {
+				err := h.DelUser(u)
 				if err != nil {
 					log.Printf("Error removing %s from %s\n", u.Email, h.Alias)
 					continue
@@ -43,4 +47,12 @@ func (u *User) UpdateGroups(C *config, oldgroups []string) error {
 		}
 	}
 	return nil
+}
+
+func (u *User) GetGroups() []string {
+	return u.Groups
+}
+
+func (u *User) SetGroups(groups []string) {
+	u.Groups = groups
 }

@@ -23,12 +23,10 @@ $ ./sshman groups user email@server.com group1 group2
 		groups := args[1:]
 		key, user := cfg.GetUserByEmail(email)
 		if user != nil {
-			oldgroups := user.Groups
-			user.Groups = groups
+			user.SetGroups(groups)
 			cfg.Users[key] = *user
 			cfg.Write()
 			log.Printf("Groups for %s edited: %v\n", email, groups)
-			user.UpdateGroups(cfg, oldgroups)
 		}
 	},
 }
