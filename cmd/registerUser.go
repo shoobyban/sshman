@@ -26,7 +26,7 @@ var registerUserCmd = &cobra.Command{
 			fmt.Printf("User already exists with this email, overwrite [y/n]: ")
 			exitIfNo()
 		}
-		conf.RegisterUser(u.Groups, args...)
+		conf.RegisterUser(u.GetGroups(), args...)
 	},
 }
 

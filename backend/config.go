@@ -68,7 +68,7 @@ func (c *config) Write() {
 func (c *config) getServers(group string) []Hostentry {
 	var servers []Hostentry
 	for _, host := range c.Hosts {
-		if contains(host.Groups, group) {
+		if contains(host.GetGroups(), group) {
 			servers = append(servers, host)
 		}
 	}
@@ -89,9 +89,9 @@ func (c *config) getUsers(group string) []*User {
 // AddUserToHosts adds user to all allowed hosts' authorized_keys files
 func (c *config) AddUserToHosts(newuser *User) {
 	for alias, host := range c.Hosts {
-		if match(host.Groups, newuser.Groups) {
+		if match(host.GetGroups(), newuser.Groups) {
 			log.Printf("Adding %s to %s\n", newuser.Email, alias)
-			host.addUser(newuser)
+			host.AddUser(newuser)
 		}
 	}
 	c.Write()
@@ -100,7 +100,7 @@ func (c *config) AddUserToHosts(newuser *User) {
 // DelUserFromHosts removes user's key from all hosts' authorized_keys files
 func (c *config) DelUserFromHosts(deluser *User) {
 	for alias, host := range c.Hosts {
-		err := host.delUser(deluser)
+		err := host.DelUser(deluser)
 		if err != nil {
 			log.Printf("Can't delete user %s from host %s %v\n", deluser.Email, host.Alias, err)
 			continue

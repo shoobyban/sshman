@@ -22,12 +22,10 @@ $ ./sshman groups server serveralias group1 group2
 		email := args[0]
 		groups := args[1:]
 		if host, ok := cfg.Hosts[args[0]]; ok {
-			oldgroups := host.Groups
-			host.Groups = groups
+			host.SetGroups(groups)
 			cfg.Hosts[args[0]] = host
 			cfg.Write()
-			log.Printf("Groups for %s edited: %v\n", email, host.Groups)
-			host.UpdateGroups(cfg, oldgroups)
+			log.Printf("Groups for %s edited: %v\n", email, host.GetGroups())
 		}
 	},
 }
