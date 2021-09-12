@@ -91,11 +91,11 @@ func TestRegisterUnregisterServer(t *testing.T) {
 	}, map[string]User{
 		"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot"},
 	}, &SFTPConn{mock: true})
-	err := cfg.RegisterServer("c", "c:22", "cuser", ".", "groupa")
+	err := cfg.RegisterServer([]string{}, "c", "c:22", "cuser", ".", "groupa")
 	if err != nil {
 		t.Errorf("Registering server did not work: %v", err)
 	}
-	err = cfg.RegisterServer("c", "c:22", "cuser", "nonexistent", "groupa")
+	err = cfg.RegisterServer([]string{}, "c", "c:22", "cuser", "nonexistent", "groupa")
 	if err == nil {
 		t.Errorf("Registering server did not try to read file")
 	}

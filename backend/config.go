@@ -108,8 +108,8 @@ func (c *config) DelUserFromHosts(deluser *User) {
 	c.Write()
 }
 
-// RegisterServer adds a server to the configuration
-func (c *config) RegisterServer(args ...string) error {
+// RegisterServer(alias, host, user, key, groups...)
+func (c *config) RegisterServer(oldgroups []string, args ...string) error {
 	alias := args[0]
 	if _, err := os.Stat(args[3]); os.IsNotExist(err) {
 		return fmt.Errorf("no such file '%s'", args[3])
@@ -128,6 +128,9 @@ func (c *config) RegisterServer(args ...string) error {
 	fmt.Printf("Registering %s to server %s with %s user\n", alias, args[1], args[1])
 	c.Write()
 	server.readUsers()
+	if !server.UpdateGroups(c, oldgroups) {
+		return fmt.Errorf("error while updating users")
+	}
 	return nil
 }
 
@@ -143,7 +146,7 @@ func (c *config) UnregisterUser(email string) bool {
 	return false
 }
 
-// RegisterUser adds a user to the config
+// RegisterUser (oldgroups[], email, key, groups...)
 func (c *config) RegisterUser(oldgroups []string, args ...string) error {
 	b, err := os.ReadFile(args[1])
 	if err != nil {

@@ -33,7 +33,7 @@ sshman register server google my.google.com:22 myuser ~/.ssh/google.pub deploy h
 			fmt.Printf("Host already exists with this alias, overwrite [y/n]: ")
 			exitIfNo()
 		}
-		conf.RegisterServer(args...)
+		conf.RegisterServer([]string{}, args...)
 		conf.Update(args[0])
 	},
 }

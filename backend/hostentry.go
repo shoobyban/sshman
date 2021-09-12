@@ -10,7 +10,7 @@ type Hostentry struct {
 	User     string   `json:"user"`
 	Key      string   `json:"key"`
 	Checksum string   `json:"checksum"`
-	Alias    string   `json:"-"`
+	Alias    string   `json:"alias"`
 	Config   *config  `json:"-"`
 	Users    []string `json:"users"`
 	Groups   []string `json:"groups"`

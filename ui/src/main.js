@@ -1,11 +1,15 @@
-// main.ts
-import { createApp } from 'vue'
-
-import router from './router'
+import Vue from 'vue'
 import App from './App.vue'
-import './index.css'
+import vuetify from './plugins/vuetify'
+import VueRouter from 'vue-router'
 
-const app = createApp(App)
+import router from './router.js'
 
-app.use(router)
-app.mount('#app')
+Vue.config.productionTip = false
+Vue.use(VueRouter)
+
+new Vue({
+  vuetify,
+  router,
+  render: h => h(App)
+}).$mount('#app')
