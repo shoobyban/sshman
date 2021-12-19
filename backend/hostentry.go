@@ -2,6 +2,7 @@ package backend
 
 import (
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -11,7 +12,7 @@ type Hostentry struct {
 	Key      string   `json:"key"`
 	Checksum string   `json:"checksum"`
 	Alias    string   `json:"-"`
-	Config   *config  `json:"-"`
+	Config   *Storage `json:"-"`
 	Users    []string `json:"users"`
 	Groups   []string `json:"groups"`
 }
@@ -27,7 +28,7 @@ func (h *Hostentry) readUsers() error {
 		if len(parts) == 3 {
 			lsum := checksum(parts[1])
 			if _, ok := h.Config.Users[lsum]; !ok {
-				h.Config.Users[lsum] = User{
+				h.Config.Users[lsum] = &User{
 					KeyType: parts[0],
 					Key:     parts[1],
 					Name:    parts[2],
@@ -39,7 +40,7 @@ func (h *Hostentry) readUsers() error {
 	}
 	h.Checksum = sum
 	h.Users = userlist
-	h.Config.Hosts[h.Alias] = *h
+	h.Config.Hosts[h.Alias] = h
 	h.Config.Write()
 	return nil
 }
@@ -128,12 +129,15 @@ func (h *Hostentry) DelUser(u *User) error {
 		parts := strings.Split(line, " ")
 		if len(parts) == 3 {
 			lsum := checksum(parts[1])
+			log.Printf("Checksum: %s, %v\n", lsum, u)
 			if parts[1] == u.Key {
 				found = true
 				continue
 			}
-			newlines = append(newlines, line)
-			userlist = append(userlist, h.Config.Users[lsum].Email)
+			if user, ok := h.Config.Users[lsum]; ok {
+				newlines = append(newlines, line)
+				userlist = append(userlist, user.Email)
+			}
 		}
 	}
 
@@ -149,7 +153,7 @@ func (h *Hostentry) DelUser(u *User) error {
 	return nil
 }
 
-func (h *Hostentry) UpdateGroups(c *config, oldgroups []string) bool {
+func (h *Hostentry) UpdateGroups(c *Storage, oldgroups []string) bool {
 	success := true
 	added, removed := updates(oldgroups, h.Groups)
 	fmt.Printf("added: %v removed: %v\n", added, removed)
@@ -158,7 +162,7 @@ func (h *Hostentry) UpdateGroups(c *config, oldgroups []string) bool {
 		for _, u := range users {
 			fmt.Printf("User %s from group %s\n", u.Email, group)
 			if !h.HasUser(u.Email) {
-				err := h.AddUser(&u)
+				err := h.AddUser(u)
 				if err != nil {
 					fmt.Printf("Error adding %s to %s\n", u.Email, h.Alias)
 					success = false
@@ -173,11 +177,11 @@ func (h *Hostentry) UpdateGroups(c *config, oldgroups []string) bool {
 		users := c.GetUsers(group)
 		for _, u := range users {
 			// are there other groups that keep user on server
-			if h.HasMatchingGroups(&u) {
+			if h.HasMatchingGroups(u) {
 				continue
 			}
 			if h.HasUser(u.Email) {
-				err := h.DelUser(&u)
+				err := h.DelUser(u)
 				if err != nil {
 					fmt.Printf("Error removing %s from %s\n", u.Email, h.Alias)
 					success = false
@@ -187,7 +191,7 @@ func (h *Hostentry) UpdateGroups(c *config, oldgroups []string) bool {
 			}
 		}
 	}
-	c.Hosts[h.Alias] = *h
+	c.Hosts[h.Alias] = h
 	c.Write()
 	return success
 }

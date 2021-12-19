@@ -7,10 +7,10 @@ import (
 
 func TestGetUsers(t *testing.T) {
 	sftp := &SFTPConn{mock: true}
-	cfg := testConfig("foo", map[string]Hostentry{
+	cfg := testConfig("foo", map[string]*Hostentry{
 		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"a", "b"}, Users: []string{"foo@email"}},
 		"b": {Alias: "b", Host: "b:22", User: "aroot", Groups: []string{"a", "c"}},
-	}, map[string]User{
+	}, map[string]*User{
 		"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
 	}, sftp)
 	h := cfg.Hosts["a"]
@@ -31,10 +31,10 @@ func TestGetUsers(t *testing.T) {
 
 func TestUpdateHostGroups(t *testing.T) {
 	sftp := &SFTPConn{mock: true}
-	cfg := testConfig("foo", map[string]Hostentry{
+	cfg := testConfig("foo", map[string]*Hostentry{
 		"hosta": {Alias: "hosta", Host: "a:22", User: "aroot", Groups: []string{"groupa", "groupb"}},
 		"hostb": {Alias: "hostb", Host: "b:22", User: "aroot", Groups: []string{"groupa", "groupc"}},
-	}, map[string]User{
+	}, map[string]*User{
 		"asdfasdf0": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"groupa", "groupb"}},
 		"asdfasdf1": {Email: "bar@email", KeyType: "ssh-rsa", Key: "keydata", Name: "broot", Groups: []string{"groupa", "groupc"}},
 	}, sftp)
@@ -63,10 +63,10 @@ func TestUpdateHostGroups(t *testing.T) {
 }
 
 func TestServerMoveGroup(t *testing.T) {
-	cfg := testConfig("foo", map[string]Hostentry{
+	cfg := testConfig("foo", map[string]*Hostentry{
 		"hosta": {Alias: "hosta", Host: "a:22", User: "aroot", Groups: []string{"groupb"}, Users: []string{"foo@email"}},
 		"hostb": {Alias: "hostb", Host: "b:22", User: "aroot", Groups: []string{"groupc"}, Users: []string{"bar@email"}},
-	}, map[string]User{
+	}, map[string]*User{
 		"C-7Hteo_D9vJXQ3UfzxbwnXaijM=": {Email: "foo@email", KeyType: "ssh-rsa", Key: "foo", Name: "aroot", Groups: []string{"groupa", "groupb"}},
 		"djZ11qHY0KOijeymK7aKvYuvhvM=": {Email: "bar@email", KeyType: "ssh-rsa", Key: "bar1", Name: "broot", Groups: []string{"groupa", "groupc"}},
 		"AzxIRrUGpKSOMs31RRXJHTSZrbM=": {Email: "bar2@email", KeyType: "ssh-rsa", Key: "bar2", Name: "buser", Groups: []string{"groupa"}},
