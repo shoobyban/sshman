@@ -10,7 +10,7 @@ type User struct {
 	Groups  []string `json:"groups"`
 }
 
-func (u *User) UpdateGroups(C *config, oldgroups []string) bool {
+func (u *User) UpdateGroups(C *Storage, oldgroups []string) bool {
 	success := true
 	added, removed := updates(oldgroups, u.Groups)
 	fmt.Printf("added: %v removed: %v\n", added, removed)

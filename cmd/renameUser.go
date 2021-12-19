@@ -20,7 +20,7 @@ var renameUserCmd = &cobra.Command{
 		key, user := cfg.GetUserByEmail(args[0])
 		if user != nil {
 			user.Email = args[1]
-			cfg.Users[key] = *user
+			cfg.Users[key] = user
 			cfg.Write()
 			fmt.Printf("Renamed %s to %s\n", args[0], args[1])
 		}
