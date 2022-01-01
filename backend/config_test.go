@@ -95,11 +95,11 @@ func TestAddDeleteHost(t *testing.T) {
 	}, map[string]*User{
 		"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot"},
 	}, &SFTPConn{mock: true})
-	err := cfg.AddHost("c", "c:22", "cuser", ".", "groupa")
+	_, err := cfg.AddHost("c", "c:22", "cuser", ".", "groupa")
 	if err != nil {
 		t.Errorf("Adding host did not work: %v", err)
 	}
-	err = cfg.AddHost("c", "c:22", "cuser", "nonexistent", "groupa")
+	_, err = cfg.AddHost("c", "c:22", "cuser", "nonexistent", "groupa")
 	if err == nil {
 		t.Errorf("Adding host did not try to read file")
 	}

@@ -109,10 +109,10 @@ func (c *Storage) DelUserFromHosts(deluser *User) {
 }
 
 // AddHost adds a host to the configuration
-func (c *Storage) AddHost(args ...string) error {
+func (c *Storage) AddHost(args ...string) (*Host, error) {
 	alias := args[0]
 	if _, err := os.Stat(args[3]); os.IsNotExist(err) {
-		return fmt.Errorf("no such file '%s'", args[3])
+		return nil, fmt.Errorf("no such file '%s'", args[3])
 	}
 	groups := args[4:]
 	host := &Host{
@@ -128,7 +128,7 @@ func (c *Storage) AddHost(args ...string) error {
 	fmt.Printf("Adding %s to host %s with %s user\n", alias, args[1], args[1])
 	c.Write()
 	host.ReadUsers()
-	return nil
+	return host, nil
 }
 
 // DeleteUser removes a user from the configuration
