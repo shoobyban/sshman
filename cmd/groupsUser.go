@@ -12,7 +12,7 @@ var groupsUserCmd = &cobra.Command{
 	Use:   "user",
 	Short: "Modify group assignments of a user",
 	Long: `Modify user's groups, or remove groups from user to allow global access:
-$ ./sshman groups user email@server.com group1 group2
+$ ./sshman groups user email@host.com group1 group2
 `,
 	Run: func(_ *cobra.Command, args []string) {
 		cfg := backend.ReadConfig()

@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-type Hostentry struct {
+type Host struct {
 	Host     string   `json:"host"`
 	User     string   `json:"user"`
 	Key      string   `json:"key"`
@@ -17,7 +17,7 @@ type Hostentry struct {
 	Groups   []string `json:"groups"`
 }
 
-func (h *Hostentry) readUsers() error {
+func (h *Host) ReadUsers() error {
 	sum, lines, err := h.read()
 	if err != nil {
 		return err
@@ -27,7 +27,7 @@ func (h *Hostentry) readUsers() error {
 		parts := strings.Split(line, " ")
 		if len(parts) == 3 {
 			lsum := checksum(parts[1])
-			if _, ok := h.Config.Users[lsum]; !ok {
+			if _, exists := h.Config.Users[lsum]; !exists {
 				h.Config.Users[lsum] = &User{
 					KeyType: parts[0],
 					Key:     parts[1],
@@ -40,12 +40,11 @@ func (h *Hostentry) readUsers() error {
 	}
 	h.Checksum = sum
 	h.Users = userlist
-	h.Config.Hosts[h.Alias] = h
 	h.Config.Write()
 	return nil
 }
 
-func (h *Hostentry) read() (string, []string, error) {
+func (h *Host) read() (string, []string, error) {
 	key := h.Key
 	if key == "" {
 		key = h.Config.Key
@@ -64,9 +63,9 @@ func (h *Hostentry) read() (string, []string, error) {
 	return sum, lines, nil
 }
 
-func (h *Hostentry) write(lines []string) error {
+func (h *Host) write(lines []string) error {
 	if len(lines) == 0 {
-		return fmt.Errorf("no keys in new file for server '%s', server would be inaccessible", h.Alias)
+		return fmt.Errorf("no keys in new file for host '%s', host would be inaccessible", h.Alias)
 	}
 	key := h.Key
 	if key == "" {
@@ -80,23 +79,23 @@ func (h *Hostentry) write(lines []string) error {
 	return h.Config.conn.Write(strings.Join(lines, "\n") + "\n")
 }
 
-func (h *Hostentry) GetUsers() []string {
+func (h *Host) GetUsers() []string {
 	return h.Users
 }
 
-func (h *Hostentry) GetGroups() []string {
+func (h *Host) GetGroups() []string {
 	return h.Groups
 }
 
-func (h *Hostentry) SetGroups(groups []string) {
+func (h *Host) SetGroups(groups []string) {
 	h.Groups = groups
 }
 
-func (h *Hostentry) HasMatchingGroups(user *User) bool {
+func (h *Host) HasMatchingGroups(user *User) bool {
 	return match(h.GetGroups(), user.GetGroups())
 }
 
-func (h *Hostentry) HasUser(email string) bool {
+func (h *Host) HasUser(email string) bool {
 	for _, e := range h.Users {
 		if e == email {
 			return true
@@ -105,11 +104,15 @@ func (h *Hostentry) HasUser(email string) bool {
 	return false
 }
 
-func (h *Hostentry) AddUser(u *User) error {
+func (h *Host) AddUser(u *User) error {
 	h.Users = append(h.Users, u.Email)
 	var lines []string
 	for _, email := range h.Users {
 		_, userentry := h.Config.GetUserByEmail(email)
+		if userentry == nil {
+			// Shall we add a warning here?
+			continue
+		}
 		if userentry.Email == email {
 			lines = append(lines, userentry.KeyType+" "+userentry.Key+" "+userentry.Name)
 		}
@@ -117,7 +120,7 @@ func (h *Hostentry) AddUser(u *User) error {
 	return h.write(lines)
 }
 
-func (h *Hostentry) DelUser(u *User) error {
+func (h *Host) DelUser(u *User) error {
 	sum, lines, err := h.read()
 	if err != nil {
 		return err
@@ -129,7 +132,7 @@ func (h *Hostentry) DelUser(u *User) error {
 		parts := strings.Split(line, " ")
 		if len(parts) == 3 {
 			lsum := checksum(parts[1])
-			log.Printf("Checksum: %s, %v\n", lsum, u)
+			log.Printf("Del Checksum: %s, key: %s, userkey: %s", lsum, parts[1], u.Key)
 			if parts[1] == u.Key {
 				found = true
 				continue
@@ -142,6 +145,7 @@ func (h *Hostentry) DelUser(u *User) error {
 	}
 
 	if found {
+		log.Printf("found, deleting %v", u)
 		newlines = deleteEmpty(newlines)
 		err = h.write(newlines)
 		if err != nil {
@@ -153,7 +157,7 @@ func (h *Hostentry) DelUser(u *User) error {
 	return nil
 }
 
-func (h *Hostentry) UpdateGroups(c *Storage, oldgroups []string) bool {
+func (h *Host) UpdateGroups(c *Storage, oldgroups []string) bool {
 	success := true
 	added, removed := updates(oldgroups, h.Groups)
 	fmt.Printf("added: %v removed: %v\n", added, removed)
@@ -176,7 +180,7 @@ func (h *Hostentry) UpdateGroups(c *Storage, oldgroups []string) bool {
 	for _, group := range removed {
 		users := c.GetUsers(group)
 		for _, u := range users {
-			// are there other groups that keep user on server
+			// are there other groups that keep user on host
 			if h.HasMatchingGroups(u) {
 				continue
 			}

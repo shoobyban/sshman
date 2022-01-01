@@ -11,7 +11,7 @@ import (
 var rootCmd = &cobra.Command{
 	Use:   "sshman",
 	Short: "SSH Key manager",
-	Long:  `Deploy keys to remote servers`,
+	Long:  `Deploy keys to remote hosts`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(_ *cobra.Command, _ []string) {

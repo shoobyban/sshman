@@ -7,12 +7,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// groupsServerCmd represents the user group editing command
-var groupsServerCmd = &cobra.Command{
-	Use:   "server",
-	Short: "Modify group assignments for a server",
-	Long: `Modify server groups or remove from all groups:
-$ ./sshman groups server serveralias group1 group2
+// groupsHostCmd represents the user group editing command
+var groupsHostCmd = &cobra.Command{
+	Use:   "host",
+	Short: "Modify group assignments for a host",
+	Long: `Modify host groups or remove from all groups:
+$ ./sshman groups host hostalias group1 group2
 `,
 	Run: func(_ *cobra.Command, args []string) {
 		cfg := backend.ReadConfig()
@@ -33,5 +33,5 @@ $ ./sshman groups server serveralias group1 group2
 }
 
 func init() {
-	groupsCmd.AddCommand(groupsServerCmd)
+	groupsCmd.AddCommand(groupsHostCmd)
 }

@@ -7,11 +7,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// listServersCmd represents the list servers command
-var listServersCmd = &cobra.Command{
-	Use:   "servers",
-	Short: "List servers",
-	Long:  `Lists registered servers`,
+// listHostsCmd represents the list hosts command
+var listHostsCmd = &cobra.Command{
+	Use:   "hosts",
+	Short: "List hosts",
+	Long:  `Lists registered hosts`,
 	Run: func(_ *cobra.Command, _ []string) {
 		conf := backend.ReadConfig()
 		for alias, host := range conf.Hosts {
@@ -21,5 +21,5 @@ var listServersCmd = &cobra.Command{
 }
 
 func init() {
-	listCmd.AddCommand(listServersCmd)
+	listCmd.AddCommand(listHostsCmd)
 }

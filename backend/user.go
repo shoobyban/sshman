@@ -10,40 +10,44 @@ type User struct {
 	Groups  []string `json:"groups"`
 }
 
-func (u *User) UpdateGroups(C *Storage, oldgroups []string) bool {
-	success := true
+func (u *User) UpdateGroups(C *Storage, oldgroups []string) error {
+	var errors *Errors
 	added, removed := updates(oldgroups, u.Groups)
 	fmt.Printf("added: %v removed: %v\n", added, removed)
 	for _, group := range added {
-		servers := C.getServers(group)
-		for _, h := range servers {
-			h.readUsers()
+		hosts := C.getHosts(group)
+		for _, h := range hosts {
+			h.ReadUsers()
 			if !h.HasUser(u.Email) {
 				err := h.AddUser(u)
 				if err != nil {
-					fmt.Printf("Error adding %s to %s\n", u.Email, h.Alias)
-					success = false
+					if errors == nil {
+						errors = &Errors{}
+					}
+					errors.Add("Error adding %s to %s: %v", u.Email, h.Alias, err)
 					continue
 				}
-				fmt.Printf("Added %s to %s %v\n", u.Email, h.Alias, h.Groups)
+				//fmt.Printf("Added %s to %s %v\n", u.Email, h.Alias, h.Groups)
 				C.Hosts[h.Alias] = h
 			}
 		}
 	}
 
 	for _, group := range removed {
-		servers := C.getServers(group)
-		for _, h := range servers {
-			h.readUsers()
-			// are there other groups that keep user on server
+		hosts := C.getHosts(group)
+		for _, h := range hosts {
+			h.ReadUsers()
+			// are there other groups that keep user on host
 			if h.HasMatchingGroups(u) {
 				continue
 			}
 			if h.HasUser(u.Email) {
 				err := h.DelUser(u)
 				if err != nil {
-					fmt.Printf("Error removing %s from %s\n", u.Email, h.Alias)
-					success = false
+					if errors == nil {
+						errors = &Errors{}
+					}
+					errors.Add("Error removing %s from %s", u.Email, h.Alias)
 					continue
 				}
 				fmt.Printf("Removed %s from %s %v\n", u.Email, h.Alias, h.Groups)
@@ -52,7 +56,7 @@ func (u *User) UpdateGroups(C *Storage, oldgroups []string) bool {
 		}
 	}
 	C.Write()
-	return success
+	return errors
 }
 
 func (u *User) GetGroups() []string {
@@ -61,4 +65,17 @@ func (u *User) GetGroups() []string {
 
 func (u *User) SetGroups(groups []string) {
 	u.Groups = groups
+}
+
+func (u *User) HasGroup(group string) bool {
+	for _, g := range u.Groups {
+		if g == group {
+			return true
+		}
+	}
+	return false
+}
+
+func (u *User) GetArray() []string {
+	return []string{u.KeyType, u.Key, u.Name, u.Email, u.Key}
 }

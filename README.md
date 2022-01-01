@@ -1,10 +1,10 @@
-# SSH Manager - manage authorized_key file on remote servers
+# SSH Manager - manage authorized_key file on remote hosts
 
 This is a simple tool that I came up after having to on-boarding and off-boarding developers on a very colourful palette of environments from AWS to 3rd party hosting providers.
 
 As every one of my creations this tool is solving _my_ problem. It does not warranty your problem will be solved, but in that highly unlikely event please let me know, fixes and pull requests, issues are all very welcome without again the promise that I'll do anything, I'm normally really busy, apologies.
 
-**Caution**: Plan your group memberships carefully, keep your management key out of any groups so you don't accidentally remove management key from any server, locking yourself out.
+**Caution**: Plan your group memberships carefully, keep your management key out of any groups so you don't accidentally remove management key from any host, locking yourself out.
 
 ## Installation
 
@@ -14,112 +14,92 @@ $ go get github.com/shoobyban/sshman
 
 ## How does it work?
 
-First of all, from where you will run this tool, you need to be able to access to the server, on a port, 
-with a working ssh key (that you don't want to share with anybody else).
-First, think about your groups (if you need this feature), limiting users into group of servers, like `live-servers`, `staging-servers`, `production` etc.
-This is optional, and any time you can re-register the user with new groups (as long as you have their public key file, note to myself I have that info in the system, small todo).
-You register the server into the registry with an alias (and the groups where the server belongs), if you have user ssh `.pub` keys (this is optional) register users with their key file and email address (optionally with the user's groups).
-After having a few servers defined (and optionally users) you can run auto discovery.
+This tool needs to be run from a host that will be able to access all hosts with a working ssh key, one you don't share with anybody else. Configuration is saved into `~/.ssh/.ssmman`, if you need to move tool to any other host, copy this and the binary and you are set up. Configuration will not have any sensitive information.
 
-Configuration will be saved into `~/.ssh/.ssmman`, if you need to move tool to any other server, copy this and the binary and you are set up. Configuration will not have any secure information.
+There are two main resource entities in sshman: users and hosts. Users are identified by the public ssh key and labeled by their email address for simplicity, although email address is not used as an email so can be anything like sam-key-1 sam-key-2, useful when a user has multiple keys for different purposes (this is absolutely not necessary in most cases, but sshman supports it).
+
+The main concept of sshman is group, organising users onto "group of hosts" or hosts by "group of users", like `live-hosts`, `staging-hosts`, `production`, or `{client1}`, `{client2}`, but you can also create "groups" for every email address or every host. Groups are like tagging, by tagging a user and a host with the same group name the user will be able to access the host.
+
+To add a host into the sshman configuration, provide an alias, an ssh `.pub` keys and groups that the host belongs to if already defined. Adding the host will initiate an auto-discovery functionality that will download all ssh keys from the host as newly defined users and create pseudo groups for recognised users that have access to that host.
 
 ## Usage
 
-### Registering Servers
-First, you need servers, that you can already access, with `~/.ssh/authorized_keys` files on the server. Password auth doesn't count.
+### Adding Hosts
+First, you need hosts, that you can already access, with `~/.ssh/authorized_keys` files on the host. Password auth doesn't work yet, there are plans to support initial configuration through user+password.
 
-To register a server, the syntax is 
+To add a host, the syntax is
 
-```sshman register server {alias} {server_address:port} {user} {~/.ssh/working_keyfile.pub} [group1 group2 ...]```
+```sshman add host {alias} {host_address:port} {user} {~/.ssh/working_keyfile.pub} [group1 group2 ...]```
 
-Where groups are optional, it helps when you have several user roles or you want to limit users to certain servers.
+Where groups are optional, can be provided later.
 
-Registering a server for example:
+Adding a host for example:
 
 ```sh
-$ sshman register server google my.google.com:22 myuser ~/.ssh/google.pub deploy hosting google
+$ sshman add host google my.google.com:22 myuser ~/.ssh/google deploy hosting google
 ```
 
-`google` will be my alias, it will access `my.google.com` on port 22, with `myuser` user using `~/.ssh/google.pub` from the current user.
+In this example `google` will be my alias, sshman will access `my.google.com` on port 22, with `myuser` user using `~/.ssh/google` private ssh key from the current user's folder, the host will belong to three groups: `deploy`, `hosting` and `google`. Sshman will save the given values into its configuration, access the host with the provided credentials, check for `~/.ssh/authorized_keys` file, download the users, cross-referencing them with the current user list, adding a new group when necessary.
 
-### Registering Users
+### Adding Users
 
-This is optional if you already have all the users on the servers and you just want to be able to move them around or delete them, auto discovery will auto-register the users for you, but adding new users will require this step.
+This is optional if you already have all the users on the hosts and you just want to be able to move them around, auto discovery will auto-add the users for you, but defining new users will require this step.
 
 Syntax is 
 
-```sshman register user {email} {sshkey.pub} [group1 group2 ...]```
+```sshman add user {email} {sshkey.pub} [group1 group2 ...]```
+
+Where groups are optional, can be provided later.
 
 For example:
 
 ```sh
-$ sshman register user email@test.com ~/.ssh/user1.pub production-team staging-servers
+$ sshman add user email@test.com ~/.ssh/user1.pub production-team staging-hosts
 ```
+`email@test.com` will be the label, it doesn't have to be an email address, but easier to identify and have secondary administrative value. `~/.ssh/user1.pub` will be read into the configuration and can be discarded right after this step if not used anywhere else. The user in this example will belong to the groups `production-team` and `staging-hosts`, if there are hosts in these groups the user's public ssh key information will be added to the `~/.ssh/authorized_keys` files for all hosts where the user's key was still not on.
 
-### Auto Discovery users on registered servers
+### Auto Discovery users on added hosts
 
-To run auto discovery users on registered servers, or to refresh the configuration if any 3rd party has changed `~/.ssh/authorized_keys` files, run:
+To run auto discovery users on added hosts, or to refresh the configuration if any 3rd party has changed `~/.ssh/authorized_keys` files, run:
 
 ```sh
 $ sshman update
 ```
 
-### Adding user to server
-
-After registering user with email, key file and groups, uploading the user to the servers that the user can access:
-
-```sh
-$ sshman add email@test.com
-```
-
-This command will add user's key to all `~/.ssh/authorized_keys` files on the servers that groups allow. 
-
-**If there is no group information for the user, you will give access to all servers.**
-
-### Deleting user from servers
-
-Any existing user can be deleted from all `~/.ssh/authorized_keys` files from all servers by running 
-
-```sh
-$ sshman add email@test.com
-```
-
-This will remove the entries from the servers but keep user information in configuration for further modification.
-
-### Listing who's on what server
+### Listing who's on what host
 
 ```sh
 $ sshman list auth
 ```
 
-This will display server alias -> email list mapping, easy to grep or add to reports.
+This will display host alias -> email list mapping, easy to grep or add to reports.
 
-### Listing what user and server is in what group
+### Listing what user and host is in what group
 
 Easier to explain this with an example scenario:
 
 ```sh
 $ sshman list groups
-production-team servers: [client1.live live2 server3 client1.uat]
+production-team hosts: [client1.live live2 host3 client1.uat]
 production-team users: [email1@test.com email2@company.com]
-dev-team servers: [staging.test.com client1.staging]
+dev-team hosts: [staging.test.com client1.staging]
 dev-team users: [junior1@test.com email1@test.com email2@company.com]
 ```
 
-Notice that group alias is in every line with "servers" and "users" for using `grep` on the list.
+Notice that group alias is in every line with "hosts" and "users" for using `grep` on the list.
 
-### Listing registered servers
+### Listing added hosts
 
-Lists server aliases, what server/port, server is in what groups.
+Lists host aliases, what host/port, host is in what groups.
 
 ```sh 
-$ sshman list servers
+$ sshman list hosts
 client1.staging        	staging.client1.com:22              [production-team dev-team]
 client1.uat        	    uat.client1.com:22               	[production-team dev-team]
 client1.live        	www.client1.com:22               	[production-team]
 ```
 
-### Listing registered users with groups
+### Listing added users with groups
 
 ```sh
 $ sshman list users
@@ -127,37 +107,37 @@ $ sshman list users
 
 Will return a mapping of email to groups.
 
-### Renaming users and servers
+### Renaming users and hosts
 
-Rename a user (modify email) or server (modify alias).
+Rename a user (modify email) or host (modify alias).
 ```sh
-$ ./sshman rename user oldemail@server.com newemail@server.com
+$ ./sshman rename user oldemail@host.com newemail@host.com
 
-$ ./sshman rename server oldalias newalias
+$ ./sshman rename host oldalias newalias
 ```
 
-### Modifying user and server groupping
+### Modifying user and host groupping
 
 Modify user's groups, or remove groups from user to allow global access:
 ```sh
-$ ./sshman groups user email@server.com group1 group2
+$ ./sshman groups user email@host.com group1 group2
 ```
 
-Modify server groups or remove from all groups:
+Modify host groups or remove from all groups:
 ```sh
-$ ./sshman groups server serveralias group1 group2
+$ ./sshman groups host hostalias group1 group2
 ```
-Note: Removing server from a group will remove all users that are on the server only because of that group. If the server is in another group, the users that are in both groups will not be removed.
+Note: Removing host from a group will remove all users that are on the host only because of that group. If the host is in another group, the users that are in both groups will not be removed.
 
 ### (Possible) Future Plans
 
 - [x] Reuse stored ssh key for modifying user
-- [x] Registering server to download information without the need of running update
+- [x] Adding host to download information without the need of running update
 - [x] Tests, refactor for testability
-- [ ] Group management commands like addgroup (will reupload all group users to group servers)
+- [ ] Group management commands like addgroup (will reupload all group users to group hosts)
 - [ ] Testing connection after creating authorized_keys entry
 - [ ] Complete CRUD for missing use cases
 - [ ] More backend (currently .ssh/.sshman configuration file)
-- [ ] Registering using password auth
+- [ ] Adding using password auth
 - [ ] Text UI
 - [ ] Web interface

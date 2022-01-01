@@ -9,7 +9,7 @@ import (
 var readCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Read users into configuration",
-	Long:  `Loop through all servers, download all users from autorized_keys into configuration`,
+	Long:  `Loop through all hosts, download all users from autorized_keys into configuration`,
 	Run: func(_ *cobra.Command, _ []string) {
 		cfg := backend.ReadConfig()
 		cfg.Update()

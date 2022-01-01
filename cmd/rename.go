@@ -7,10 +7,10 @@ import (
 // registerCmd represents the rename command
 var renameCmd = &cobra.Command{
 	Use:   "rename",
-	Short: "Rename a user (modify email) or server (modify alias)",
-	Long: `Rename a user (modify email) or server (modify alias)
-$ ./sshman rename user oldemail@server.com newemail@server.com
-$ ./sshman rename server oldalias newalias
+	Short: "Rename a user (modify email) or host (modify alias)",
+	Long: `Rename a user (modify email) or host (modify alias)
+$ ./sshman rename user oldemail@host.com newemail@host.com
+$ ./sshman rename host oldalias newalias
 `,
 }
 

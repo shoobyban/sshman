@@ -7,22 +7,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// removeUserCmd represents the removeUser command
-var removeUserCmd = &cobra.Command{
-	Use:   "user",
-	Short: "Remove user from config",
-	Long:  `Remove a user by email from the configuration`,
+// delCmd represents the del command
+var delCmd = &cobra.Command{
+	Use:   "del",
+	Short: "Delete user by email",
+	Long:  `Check all hosts and delete user with given email`,
 	Run: func(_ *cobra.Command, args []string) {
-		cfg := backend.ReadConfig()
-		if len(args) < 1 {
-			return
-		}
-		if cfg.UnregisterUser(args[0]) {
-			fmt.Printf("Deleted %s from configuration\n", args[0])
+		conf := backend.ReadConfig()
+		for _, email := range args {
+			_, u := conf.GetUserByEmail(email)
+			if u != nil {
+				conf.DelUserFromHosts(u)
+			} else {
+				fmt.Printf("No such user\n")
+			}
 		}
 	},
 }
 
 func init() {
-	removeCmd.AddCommand(removeUserCmd)
+	rootCmd.AddCommand(delCmd)
 }
