@@ -2,10 +2,15 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
 
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
+	"github.com/shoobyban/sshman/api"
+	"github.com/shoobyban/sshman/backend"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +27,14 @@ var webCmd = &cobra.Command{
 			port = 80
 		}
 		http.Handle("/", http.FileServer(http.FS(os.DirFS("../frontend/dist"))))
-		fmt.Println(http.ListenAndServe(":"+strconv.Itoa(port), nil))
+		users := api.Users{
+			Config: backend.ReadConfig(),
+		}
+		r := chi.NewMux()
+		r.Use(middleware.Logger)
+		r = users.Routers("/api/users", r)
+		log.Printf("Listening on http://localhost:%v", port)
+		fmt.Println(http.ListenAndServe(":"+strconv.Itoa(port), r))
 	},
 }
 
