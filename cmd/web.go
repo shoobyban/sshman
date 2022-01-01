@@ -28,11 +28,17 @@ var webCmd = &cobra.Command{
 		}
 		http.Handle("/", http.FileServer(http.FS(os.DirFS("../frontend/dist"))))
 		users := api.Users{
+			Prefix: "/api/users",
+			Config: backend.ReadConfig(),
+		}
+		hosts := api.Hosts{
+			Prefix: "/api/hosts",
 			Config: backend.ReadConfig(),
 		}
 		r := chi.NewMux()
 		r.Use(middleware.Logger)
 		r = users.Routers("/api/users", r)
+		r = hosts.Routers("/api/hosts", r)
 		log.Printf("Listening on http://localhost:%v", port)
 		fmt.Println(http.ListenAndServe(":"+strconv.Itoa(port), r))
 	},
