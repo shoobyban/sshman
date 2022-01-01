@@ -9,21 +9,21 @@ import (
 )
 
 type Group struct {
-	Users   []string
-	Servers []string
+	Users []string
+	Hosts []string
 }
 
 type Storage struct {
-	Key        string                `json:"key"`
-	Hosts      map[string]*Hostentry `json:"hosts"`
-	Users      map[string]*User      `json:"users"`
-	conn       SFTP                  `json:"-"`
-	persistent bool                  `json:"-"`
-	home       string                `json:"-"`
+	Key        string           `json:"key"`
+	Hosts      map[string]*Host `json:"hosts"`
+	Users      map[string]*User `json:"users"`
+	conn       SFTP             `json:"-"`
+	persistent bool             `json:"-"`
+	home       string           `json:"-"`
 }
 
 func ReadConfig() *Storage {
-	C := Storage{Hosts: map[string]*Hostentry{}, Users: map[string]*User{}, conn: &SFTPConn{}}
+	C := Storage{Hosts: map[string]*Host{}, Users: map[string]*User{}, conn: &SFTPConn{}}
 	C.home, _ = os.UserHomeDir()
 	b, err := os.ReadFile(C.home + "/.ssh/.sshman")
 	if err != nil {
@@ -62,14 +62,14 @@ func (c *Storage) Write() {
 	os.WriteFile(c.home+"/.ssh/.sshman", b, 0644)
 }
 
-func (c *Storage) getServers(group string) []*Hostentry {
-	var servers []*Hostentry
+func (c *Storage) getHosts(group string) []*Host {
+	var hosts []*Host
 	for _, host := range c.Hosts {
 		if contains(host.GetGroups(), group) {
-			servers = append(servers, host)
+			hosts = append(hosts, host)
 		}
 	}
-	return servers
+	return hosts
 }
 
 // getUsers will return users that have the given group
@@ -98,6 +98,7 @@ func (c *Storage) AddUserToHosts(newuser *User) {
 // DelUserFromHosts removes user's key from all hosts' authorized_keys files
 func (c *Storage) DelUserFromHosts(deluser *User) {
 	for alias, host := range c.Hosts {
+		host.ReadUsers()
 		err := host.DelUser(deluser)
 		if err != nil {
 			fmt.Printf("Can't delete user %s from host %s %v\n", deluser.Email, host.Alias, err)
@@ -108,14 +109,14 @@ func (c *Storage) DelUserFromHosts(deluser *User) {
 	c.Write()
 }
 
-// RegisterServer adds a server to the configuration
-func (c *Storage) RegisterServer(args ...string) error {
+// AddHost adds a host to the configuration
+func (c *Storage) AddHost(args ...string) error {
 	alias := args[0]
 	if _, err := os.Stat(args[3]); os.IsNotExist(err) {
 		return fmt.Errorf("no such file '%s'", args[3])
 	}
 	groups := args[4:]
-	server := &Hostentry{
+	host := &Host{
 		Host:   args[1],
 		User:   args[2],
 		Key:    args[3],
@@ -124,15 +125,15 @@ func (c *Storage) RegisterServer(args ...string) error {
 		Alias:  alias,
 		Config: c,
 	}
-	c.Hosts[alias] = server
-	fmt.Printf("Registering %s to server %s with %s user\n", alias, args[1], args[1])
+	c.Hosts[alias] = host
+	fmt.Printf("Adding %s to host %s with %s user\n", alias, args[1], args[1])
 	c.Write()
-	server.readUsers()
+	host.ReadUsers()
 	return nil
 }
 
-// UnregisterUser removes a user from the configuration
-func (c *Storage) UnregisterUser(email string) bool {
+// DeleteUser removes a user from the configuration
+func (c *Storage) DeleteUser(email string) bool {
 	for id, user := range c.Users {
 		if email == user.Email {
 			delete(c.Users, id)
@@ -143,17 +144,16 @@ func (c *Storage) UnregisterUser(email string) bool {
 	return false
 }
 
-// RegisterUser adds a user to the config
-func (c *Storage) RegisterUser(oldgroups []string, args ...string) error {
+// New user: old groups, email, key file, new groups
+func (c *Storage) PrepareUser(args ...string) (*User, error) {
 	b, err := os.ReadFile(args[1])
 	if err != nil {
-		return fmt.Errorf("error: error reading public key file: '%s' %v", args[1], err)
+		return nil, fmt.Errorf("error: error reading public key file: '%s' %v", args[1], err)
 	}
 	parts := strings.Split(strings.TrimSuffix(string(b), "\n"), " ")
 	if len(parts) != 3 {
-		return fmt.Errorf("error: not a proper public key file")
+		return nil, fmt.Errorf("error: not a proper public key file")
 	}
-	lsum := checksum(parts[1])
 	groups := args[2:]
 	newuser := &User{
 		KeyType: parts[0],
@@ -162,17 +162,19 @@ func (c *Storage) RegisterUser(oldgroups []string, args ...string) error {
 		Email:   args[0],
 		Groups:  groups,
 	}
+	return newuser, nil
+}
+
+// AddUser adds a user to the config
+func (c *Storage) AddUser(newuser *User) error {
+	lsum := checksum(newuser.Key)
 	c.Users[lsum] = newuser
-	fmt.Printf("Registering %s %s %s %s %v\n", parts[0], parts[2], args[0], lsum, groups)
 	c.Write()
-	if !newuser.UpdateGroups(c, oldgroups) {
-		return fmt.Errorf("error while updating servers")
-	}
 	return nil
 }
 
-// UnregisterServer removes a server from the config
-func (c *Storage) UnregisterServer(alias string) bool {
+// DeleteHost removes a host from the config
+func (c *Storage) DeleteHost(alias string) bool {
 	if _, ok := c.Hosts[alias]; ok {
 		delete(c.Hosts, alias)
 		c.Write()
@@ -184,7 +186,7 @@ func (c *Storage) UnregisterServer(alias string) bool {
 func (c *Storage) Update(aliases ...string) {
 	hosts := c.Hosts
 	if len(aliases) > 0 {
-		hosts = map[string]*Hostentry{}
+		hosts = map[string]*Host{}
 		for _, a := range aliases {
 			if host, ok := c.Hosts[a]; ok {
 				hosts[a] = host
@@ -192,7 +194,7 @@ func (c *Storage) Update(aliases ...string) {
 		}
 	}
 	for _, host := range hosts {
-		host.readUsers()
+		host.ReadUsers()
 	}
 }
 
@@ -211,10 +213,10 @@ func (c *Storage) GetGroups() map[string]Group {
 	for alias, host := range c.Hosts {
 		for _, group := range host.Groups {
 			if v, ok := groups[group]; ok {
-				v.Servers = append(v.Servers, alias)
+				v.Hosts = append(v.Hosts, alias)
 				groups[group] = v
 			} else {
-				groups[group] = Group{Servers: []string{alias}}
+				groups[group] = Group{Hosts: []string{alias}}
 			}
 		}
 	}

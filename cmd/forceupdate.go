@@ -8,8 +8,8 @@ import (
 // forceupdateCmd represents the forceupdate command
 var forceupdateCmd = &cobra.Command{
 	Use:   "forceupdate",
-	Short: "Write users on servers",
-	Long:  `Loop through all servers, upload all users to autorized_keys files`,
+	Short: "Write users on hosts",
+	Long:  `Loop through all hosts, upload all users to autorized_keys files`,
 	Run: func(_ *cobra.Command, _ []string) {
 		cfg := backend.ReadConfig()
 		var aliases []string

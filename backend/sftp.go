@@ -14,16 +14,16 @@ import (
 )
 
 type SFTPConn struct {
-	server      SFTPMockServer
-	client      *sftp.Client
-	mock        bool
-	alias       string
-	expected    string
-	testServers map[string]SFTPMockServer
-	testError   bool
+	host      SFTPMockHost
+	client    *sftp.Client
+	mock      bool
+	alias     string
+	expected  string
+	testHosts map[string]SFTPMockHost
+	testError bool
 }
 
-type SFTPMockServer struct {
+type SFTPMockHost struct {
 	Host string
 	User string
 	File string
@@ -41,11 +41,11 @@ func (s *SFTPConn) Connect(keyfile, host, user string) error {
 		home, _ := os.UserHomeDir()
 		keyfile = filepath.Join(home, "/", keyfile[2:])
 	}
-	if serv, ok := s.testServers[host]; ok || s.mock {
-		s.server = serv
+	if serv, ok := s.testHosts[host]; ok || s.mock {
+		s.host = serv
 		s.alias = host
-		if s.testServers == nil {
-			s.testServers = map[string]SFTPMockServer{}
+		if s.testHosts == nil {
+			s.testHosts = map[string]SFTPMockHost{}
 		}
 		return nil
 	}
@@ -77,8 +77,8 @@ func (s *SFTPConn) Connect(keyfile, host, user string) error {
 	return nil
 }
 
-func (s *SFTPConn) GetServers() map[string]SFTPMockServer {
-	return s.testServers
+func (s *SFTPConn) GetHosts() map[string]SFTPMockHost {
+	return s.testHosts
 }
 
 func (s *SFTPConn) SetError(willError bool) {
@@ -93,8 +93,8 @@ func (s *SFTPConn) Write(data string) error {
 		if (s.expected != "" && data != s.expected) || s.testError {
 			return fmt.Errorf("data is not as expected: '%s' instead of '%s'", data, s.expected)
 		}
-		s.server.File = data
-		s.testServers[s.alias] = s.server
+		s.host.File = data
+		s.testHosts[s.alias] = s.host
 		return nil
 	}
 	f, err := s.client.OpenFile(".ssh/authorized_keys", os.O_RDWR|os.O_TRUNC)
@@ -113,7 +113,7 @@ func (s *SFTPConn) Read() ([]byte, error) {
 		if s.testError {
 			return nil, fmt.Errorf("test error reading file")
 		}
-		return []byte(s.server.File), nil
+		return []byte(s.host.File), nil
 	}
 	f, err := s.client.Open(".ssh/authorized_keys")
 	if err != nil {

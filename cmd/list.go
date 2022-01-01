@@ -10,11 +10,11 @@ var listCmd = &cobra.Command{
 	Short: "List resources",
 	Long: `To list available users:
 sshman list users
-To list servers:
-sshman list servers
+To list hosts:
+sshman list hosts
 To list groups:
 sshman list groups
-To list who's on what server:
+To list who's on what host:
 sshman list auth
 `,
 }

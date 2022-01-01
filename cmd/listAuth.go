@@ -10,8 +10,8 @@ import (
 // listAuthCmd represents the listAuth command
 var listAuthCmd = &cobra.Command{
 	Use:   "auth",
-	Short: "List who's on what server",
-	Long:  `List who's in authorized_key on what server`,
+	Short: "List who's on what host",
+	Long:  `List who's in authorized_key on what host`,
 	Run: func(_ *cobra.Command, _ []string) {
 		conf := backend.ReadConfig()
 		for alias, host := range conf.Hosts {

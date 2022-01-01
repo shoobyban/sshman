@@ -7,10 +7,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// renameServerCmd represents the removeUser command
-var renameServerCmd = &cobra.Command{
-	Use:   "server",
-	Short: "Rename a server (modify host alias)",
+// renameHostCmd represents the removeUser command
+var renameHostCmd = &cobra.Command{
+	Use:   "host",
+	Short: "Rename a host (modify host alias)",
 	Long:  `Modify a host alias in the configuration, keeping host data intact`,
 	Run: func(_ *cobra.Command, args []string) {
 		cfg := backend.ReadConfig()
@@ -27,5 +27,5 @@ var renameServerCmd = &cobra.Command{
 }
 
 func init() {
-	renameCmd.AddCommand(renameServerCmd)
+	renameCmd.AddCommand(renameHostCmd)
 }
