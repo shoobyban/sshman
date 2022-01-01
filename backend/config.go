@@ -76,8 +76,7 @@ func (c *Storage) getHosts(group string) []*Host {
 func (c *Storage) GetUsers(group string) []*User {
 	var users []*User
 	for _, user := range c.Users {
-		if contains(user.Groups, group) {
-			fmt.Printf("Checking for %s, User %s has %v\n", group, user.Email, user.Groups)
+		if group == "" || contains(user.Groups, group) {
 			users = append(users, user)
 		}
 	}

@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -10,7 +11,7 @@ import (
 
 type Users struct {
 	Prefix string
-	Config backend.Storage
+	Config *backend.Storage
 }
 
 func (h *Users) Routers(prefix string, router *chi.Mux) *chi.Mux {
@@ -24,6 +25,7 @@ func (h *Users) Routers(prefix string, router *chi.Mux) *chi.Mux {
 }
 
 func (h *Users) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Cofnig: %v", h.Config)
 	users := h.Config.GetUsers("")
 	json.NewEncoder(w).Encode(users)
 }
@@ -48,7 +50,7 @@ func (h *Users) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(err)
 		return
 	}
-	u.UpdateGroups(&h.Config, oldUser.Groups)
+	u.UpdateGroups(h.Config, oldUser.Groups)
 	json.NewEncoder(w).Encode(user)
 }
 
