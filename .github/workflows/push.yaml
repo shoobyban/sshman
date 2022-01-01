@@ -9,11 +9,9 @@ jobs:
   Test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
-    - name: Checkout submodules
-      uses: textbook/git-checkout-submodule-action@master
+    - uses: actions/checkout@v2
       with:
-        remote: true
+        submodules: recursive
     - name: Install Go
       uses: actions/setup-go@v1
       with:
