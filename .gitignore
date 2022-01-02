@@ -1,4 +1,5 @@
 /sshman
 /logs/misc.log
 .vscode/settings.json
+cmd/dist
 _*
