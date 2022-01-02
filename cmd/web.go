@@ -3,6 +3,7 @@ package cmd
 import (
 	"embed"
 	"fmt"
+	"io/fs"
 	"log"
 	"net/http"
 	"strconv"
@@ -14,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-//go:embed "dist"
+//go:embed dist/*
 var dist embed.FS
 
 // webCmd represents the web command
@@ -40,14 +41,11 @@ var webCmd = &cobra.Command{
 		r = users.Routers("/api/users", r)
 		r = hosts.Routers("/api/hosts", r)
 		log.Printf("Listening on http://localhost:%v", port)
-		rs, err := dist.ReadDir(".")
+		distfs, err := fs.Sub(dist, "dist")
 		if err != nil {
 			log.Fatal(err)
 		}
-		for _, r := range rs {
-			log.Printf("File %v", r.Name())
-		}
-		http.Handle("/*", http.FileServer(http.FS(dist)))
+		r.Handle("/*", http.FileServer(http.FS(distfs)))
 		fmt.Println(http.ListenAndServe(":"+strconv.Itoa(port), r))
 	},
 }

@@ -141,3 +141,9 @@ Note: Removing host from a group will remove all users that are on the host only
 - [ ] Adding using password auth
 - [ ] Text UI
 - [ ] Web interface
+
+## Mentions
+
+Web UI embedding wouldn't be working without [Gregor Best](https://github.com/farhaven),  nerd-sniped him into helping me with a tricky bug on Gophers Slack. 
+
+I love the Go community.
