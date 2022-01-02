@@ -133,7 +133,7 @@ func TestAddDeleteUser(t *testing.T) {
 		"djZ11qHY0KOijeymK7aKvYuvhvM=": {Email: "user-a.com@a", KeyType: "ssh-rsa", Key: "bar1", Name: "user-a.com", Groups: []string{"groupb"}},
 		"GM0J1PU4m76_UN8SIJ3jrmPePq8=": {Email: "rootuser@b", KeyType: "ssh-rsa", Key: "foo2", Name: "aroot", Groups: []string{"groupc"}},
 	}, sftp)
-	u, err := cfg.PrepareUser("bar@email", "test/dummy.key", "groupa", "groupb")
+	u, err := cfg.PrepareUser("bar@email", "fixtures/dummy.key", "groupa", "groupb")
 	if err != nil {
 		t.Errorf("error while preparing user: %v %v", err, cfg.Users)
 	}
@@ -146,7 +146,7 @@ func TestAddDeleteUser(t *testing.T) {
 		t.Errorf("Adding user did not work %#v", len(cfg.Users))
 	}
 	cfg.Hosts["a"] = &Host{Config: cfg, Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"groupa"}, Users: []string{"foo@email", "bar@email"}}
-	u, err = cfg.PrepareUser("bar@email", "test/dummy.key", "groupa", "groupb")
+	u, err = cfg.PrepareUser("bar@email", "fixtures/dummy.key", "groupa", "groupb")
 	if err != nil {
 		t.Errorf("error while preparing user: %v %v", err, cfg.Users)
 	}
@@ -169,7 +169,7 @@ func TestAddDeleteUser(t *testing.T) {
 	if key == "" {
 		t.Errorf("User not found")
 	}
-	u, err = cfg.PrepareUser("bar@email", "test/dummy.key")
+	u, err = cfg.PrepareUser("bar@email", "fixtures/dummy.key")
 	if err != nil {
 		t.Errorf("error while registering user: %v %v", err, cfg.Users)
 	}
@@ -209,7 +209,7 @@ func TestBrokenKey(t *testing.T) {
 	}, map[string]*User{
 		"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot"},
 	}, sftp)
-	_, err := cfg.PrepareUser("bar@email", "test/broken.key")
+	_, err := cfg.PrepareUser("bar@email", "fixtures/broken.key")
 	if err == nil {
 		t.Errorf("could prepare with broken key info")
 	}
@@ -227,7 +227,7 @@ func TestReadError(t *testing.T) {
 		"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot"},
 	}, sftp)
 	sftp.SetError(true)
-	_, err := cfg.PrepareUser("bar@email", "test/nonexistent.key", "groupa")
+	_, err := cfg.PrepareUser("bar@email", "fixtures/nonexistent.key", "groupa")
 	if err == nil {
 		t.Errorf("could prepare with read error %v", err)
 	}
