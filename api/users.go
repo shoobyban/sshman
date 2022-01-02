@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -25,7 +24,6 @@ func (h *Users) Routers(prefix string, router *chi.Mux) *chi.Mux {
 }
 
 func (h *Users) GetAllUsers(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Cofnig: %v", h.Config)
 	users := h.Config.GetUsers("")
 	json.NewEncoder(w).Encode(users)
 }
