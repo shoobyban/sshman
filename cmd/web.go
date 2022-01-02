@@ -1,10 +1,10 @@
 package cmd
 
 import (
+	"embed"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/go-chi/chi"
@@ -14,7 +14,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// go:embed ../frontend/dist
+//go:embed "dist"
+var dist embed.FS
 
 // webCmd represents the web command
 var webCmd = &cobra.Command{
@@ -26,7 +27,6 @@ var webCmd = &cobra.Command{
 		if err != nil {
 			port = 80
 		}
-		http.Handle("/", http.FileServer(http.FS(os.DirFS("../frontend/dist"))))
 		users := api.Users{
 			Prefix: "/api/users",
 			Config: backend.ReadConfig(),
@@ -40,6 +40,14 @@ var webCmd = &cobra.Command{
 		r = users.Routers("/api/users", r)
 		r = hosts.Routers("/api/hosts", r)
 		log.Printf("Listening on http://localhost:%v", port)
+		rs, err := dist.ReadDir(".")
+		if err != nil {
+			log.Fatal(err)
+		}
+		for _, r := range rs {
+			log.Printf("File %v", r.Name())
+		}
+		http.Handle("/*", http.FileServer(http.FS(dist)))
 		fmt.Println(http.ListenAndServe(":"+strconv.Itoa(port), r))
 	},
 }
