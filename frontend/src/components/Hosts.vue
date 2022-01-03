@@ -1,5 +1,5 @@
 <script>
-import axios from 'axios';
+import axios from 'axios'
 
 export default {
     data() {
@@ -11,29 +11,56 @@ export default {
             editModal: false,
             addModal: false,
             hostIndex: null,
+            selected: [],
         }
     },
     mounted: function() {
         axios.get('/api/hosts')
             .then(response => {
-                this.hosts = response.data;
+                this.hosts = response.data
             })
             .catch(error => {
-                console.log(error);
-            });
+                console.log(error)
+            })
     },
     computed: {
         searchByHostname: function() {
             if (this.searchHostname != '') {
                 return this.hosts.filter(host => {
-                    var hostGroups = JSON.stringify(host.groups);
-                    return (host.email.toLowerCase().indexOf(this.searchHostname.toLowerCase()) !== -1) || (host.name.toLowerCase().indexOf(this.searchHostname.toLowerCase()) !== -1) || (hostGroups.toLowerCase().indexOf(this.searchHostname.toLowerCase()) !== -1);
-                });
+                    var hostGroups = JSON.stringify(host.groups)
+                    return (host.email.toLowerCase().indexOf(this.searchHostname.toLowerCase()) !== -1) || (host.name.toLowerCase().indexOf(this.searchHostname.toLowerCase()) !== -1) || (hostGroups.toLowerCase().indexOf(this.searchHostname.toLowerCase()) !== -1)
+                })
             } else {
-                return this.hosts;
+                return this.hosts
             }
-        }
-    }
+        },
+        selectedHost: function() {
+            return this.hosts[this.hostIndex]
+        },
+    },
+    methods: {
+        toggleSelected(str, e) {
+            e.stopPropagation()
+            if (this.selected.includes(str)) {
+                this.selected.splice(this.selected.indexOf(str), 1)
+            } else {
+                this.selected.push(str)
+            }
+        },
+        isSelected(str) {
+            return this.selected.includes(str)
+        },
+        toggleAll(e) {
+            e.stopPropagation()
+            for (const key in this.hosts) {
+                if (this.selected.includes(key)) {
+                    this.selected.splice(this.selected.indexOf(key), 1)
+                } else {
+                    this.selected.push(key)
+                }
+            }
+        },
+    },
 }
 </script>
 
@@ -47,7 +74,7 @@ export default {
                     <div class="hidden sm:flex items-center sm:divide-x sm:divide-gray-100 mb-3 sm:mb-0">
                         <form class="lg:pr-3" action="#" method="GET">
                         <label for="hosts-search" class="sr-only">Search</label>
-                        <div class="mt-1 relative lg:w-64 xl:w-96">
+                        <div class="mt-1 relative lg:w-52 xl:w-96">
                             <input type="text" v-model="searchHostname" id="hosts-search" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" placeholder="Search for hosts">
                         </div>
                         </form>
@@ -71,7 +98,7 @@ export default {
                                 <tr>
                                     <th scope="col" class="p-4">
                                         <div class="flex items-center">
-                                            <input id="checkbox-all" aria-describedby="checkbox-1" type="checkbox"
+                                            <input id="checkbox-all" aria-describedby="checkbox-1" type="checkbox" @click="toggleAll($event)"
                                                 class="bg-gray-50 border-gray-300 focus:ring-3 focus:ring-blue-200 h-4 w-4 rounded">
                                             <label for="checkbox-all" class="sr-only">checkbox</label>
                                         </div>
@@ -80,19 +107,19 @@ export default {
                                         Hostname
                                     </th>
                                     <th scope="col" class="p-4 text-left text-xs font-medium text-gray-500 uppercase">
-                                        
+                                        Groups
                                     </th>
                                     <th scope="col" class="p-4">
                                     </th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-for="(host,idx) in searchByHostname" :key="idx" class="hover:bg-gray-100">
+                                <tr v-for="(host,idx) in searchByHostname" :key="idx" class="hover:bg-gray-100" @click="toggleSelected(idx, $event)">
                                     <td class="p-4 w-4">
                                         <div class="flex items-center">
-                                            <input id="checkbox-{{ idx }}" aria-describedby="checkbox-1" type="checkbox"
+                                            <input :id="'checkbox-'+idx" aria-describedby="checkbox-1" type="checkbox" :checked="isSelected(idx)" @click="$event.stopPropagation()"
                                                 class="bg-gray-50 border-gray-300 focus:ring-3 focus:ring-blue-200 h-4 w-4 rounded">
-                                            <label for="checkbox-{{ idx }}" class="sr-only">checkbox</label>
+                                            <label :for="'checkbox-'+idx" class="sr-only">checkbox</label>
                                         </div>
                                     </td>
                                     <td class="p-4 flex items-center whitespace-nowrap space-x-6 mr-12 lg:mr-0">
@@ -101,8 +128,10 @@ export default {
                                             <div class="text-sm font-normal text-gray-500">{{ host.host }}</div>
                                         </div>
                                     </td>
-                                    <td class="p-4 whitespace-nowrap text-base font-normal text-gray-900">
-                                    {{ host.groups }}
+                                    <td class="p-4 whitespace-nowrap text-base font-normal text-gray-900 space-x-1">
+                                        <button v-for="(grp, index) in host.groups" class="px-2 py-1 bg-green-600 hover:bg-red-700 text-white text-sm font-small rounded-full">
+                                        {{ grp }}
+                                        </button>
                                     </td>
                                     <td class="p-4 whitespace-nowrap space-x-2">
                                         <div @click="this.hostIndex = idx; this.editModal = true;" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center">
@@ -138,14 +167,14 @@ export default {
                     <!-- Modal body -->
                     <div class="p-6 space-y-6">
                         <form action="#">
-                            <div class="grid grid-cols-6 gap-6">
+                            <div class="grid grid-cols-6 gap-6" v-if="selectedHost">
                                 <div class="col-span-6 sm:col-span-3">
-                                    <label for="first-name" class="text-sm font-medium text-gray-900 block mb-2">First Name</label>
-                                    <input type="text" name="first-name" id="first-name" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" placeholder="Bonnie" required>
+                                    <label for="first-name" class="text-sm font-medium text-gray-900 block mb-2">Label</label>
+                                    <input type="text" name="first-name" id="first-name" v-model="hostIndex" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" placeholder="localserver" required>
                                 </div>
                                 <div class="col-span-6 sm:col-span-3">
-                                    <label for="last-name" class="text-sm font-medium text-gray-900 block mb-2">Last Name</label>
-                                    <input type="text" name="last-name" id="last-name" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" placeholder="Green" required>
+                                    <label for="last-name" class="text-sm font-medium text-gray-900 block mb-2">Host</label>
+                                    <input type="text" name="last-name" id="last-name" v-model="selectedHost.host" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" placeholder="127.0.0.1:22" required>
                                 </div>
                                 <div class="col-span-6 sm:col-span-3">
                                     <label for="email" class="text-sm font-medium text-gray-900 block mb-2">Hostname</label>
