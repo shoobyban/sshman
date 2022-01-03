@@ -47,7 +47,7 @@ export default {
                     <div class="hidden sm:flex items-center sm:divide-x sm:divide-gray-100 mb-3 sm:mb-0">
                         <form class="lg:pr-3" action="#" method="GET">
                         <label for="users-search" class="sr-only">Search</label>
-                        <div class="mt-1 relative lg:w-64 xl:w-96">
+                        <div class="mt-1 relative lg:w-52 xl:w-96">
                             <input type="text" v-model="searchEmail" id="users-search" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" placeholder="Search for users">
                         </div>
                         </form>
@@ -80,10 +80,7 @@ export default {
                                         Email
                                     </th>
                                     <th scope="col" class="p-4 text-left text-xs font-medium text-gray-500 uppercase">
-                                        
-                                    </th>
-                                    <th scope="col" class="p-4 text-left text-xs font-medium text-gray-500 uppercase">
-                                        Status
+                                        Groups
                                     </th>
                                     <th scope="col" class="p-4">
                                     </th>
@@ -104,8 +101,10 @@ export default {
                                             <div class="text-sm font-normal text-gray-500">{{ user.email }}</div>
                                         </div>
                                     </td>
-                                    <td class="p-4 whitespace-nowrap text-base font-normal text-gray-900">
-                                    {{ user.groups }}
+                                    <td class="p-4 whitespace-nowrap text-base font-normal text-gray-900 space-x-1">
+                                        <button v-for="(grp, index) in user.groups" class="px-2 py-1 bg-green-600 hover:bg-red-700 text-white text-sm font-small rounded-full">
+                                        {{ grp }}
+                                        </button>
                                     </td>
                                     <td class="p-4 whitespace-nowrap space-x-2">
                                         <div @click="this.userIndex = idx; this.editModal = true;" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center">
