@@ -49,7 +49,7 @@ func (h *Hosts) UpdateHost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	newHost.UpdateGroups(h.Config, oldHost.Groups)
-	json.NewEncoder(w).Encode(host)
+	json.NewEncoder(w).Encode(newHost)
 }
 
 func (h *Hosts) DeleteHost(w http.ResponseWriter, r *http.Request) {
