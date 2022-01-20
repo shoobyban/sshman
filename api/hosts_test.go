@@ -151,4 +151,7 @@ func TestDeleteHost(t *testing.T) {
 	if w.Code != http.StatusNoContent {
 		t.Errorf("Expected status code %d, got %d", http.StatusNoContent, w.Code)
 	}
+	if len(cfg.Hosts) != 0 {
+		t.Errorf("Number of hosts is %d after deleting", len(cfg.Hosts))
+	}
 }
