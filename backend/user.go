@@ -66,16 +66,3 @@ func (u *User) GetGroups() []string {
 func (u *User) SetGroups(groups []string) {
 	u.Groups = groups
 }
-
-func (u *User) HasGroup(group string) bool {
-	for _, g := range u.Groups {
-		if g == group {
-			return true
-		}
-	}
-	return false
-}
-
-func (u *User) GetArray() []string {
-	return []string{u.KeyType, u.Key, u.Name, u.Email, u.Key}
-}
