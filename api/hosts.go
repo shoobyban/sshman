@@ -41,7 +41,11 @@ func (h *Hosts) CreateHost(w http.ResponseWriter, r *http.Request) {
 func (h *Hosts) UpdateHost(w http.ResponseWriter, r *http.Request) {
 	var host []string
 	json.NewDecoder(r.Body).Decode(&host)
-	oldHost := h.Config.Hosts[host[0]]
+	var oldHost *backend.Host
+	var exists bool
+	if oldHost, exists = h.Config.Hosts[host[0]]; !exists {
+		oldHost = &backend.Host{}
+	}
 	newHost, err := h.Config.AddHost(host...)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
