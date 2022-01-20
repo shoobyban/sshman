@@ -49,12 +49,12 @@ func (h *Host) read() (string, []string, error) {
 	if key == "" {
 		key = h.Config.Key
 	}
-	err := h.Config.conn.Connect(key, h.Host, h.User)
+	err := h.Config.Conn.Connect(key, h.Host, h.User)
 	if err != nil {
 		return "", nil, fmt.Errorf("error connecting %s: %v", h.Alias, err)
 	}
-	defer h.Config.conn.Close()
-	b, err := h.Config.conn.Read()
+	defer h.Config.Conn.Close()
+	b, err := h.Config.Conn.Read()
 	if err != nil {
 		return "", nil, fmt.Errorf("error reading authorized keys on %s: %v", h.Alias, err)
 	}
@@ -71,12 +71,12 @@ func (h *Host) write(lines []string) error {
 	if key == "" {
 		key = h.Config.Key
 	}
-	err := h.Config.conn.Connect(key, h.Host, h.User)
+	err := h.Config.Conn.Connect(key, h.Host, h.User)
 	if err != nil {
 		return fmt.Errorf("error connecting %s: %v", h.Alias, err)
 	}
-	defer h.Config.conn.Close()
-	return h.Config.conn.Write(strings.Join(lines, "\n") + "\n")
+	defer h.Config.Conn.Close()
+	return h.Config.Conn.Write(strings.Join(lines, "\n") + "\n")
 }
 
 func (h *Host) GetUsers() []string {

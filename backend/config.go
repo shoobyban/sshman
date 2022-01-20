@@ -17,13 +17,13 @@ type Storage struct {
 	Key        string           `json:"key"`
 	Hosts      map[string]*Host `json:"hosts"`
 	Users      map[string]*User `json:"users"`
-	conn       SFTP             `json:"-"`
+	Conn       SFTP             `json:"-"`
 	persistent bool             `json:"-"`
 	home       string           `json:"-"`
 }
 
 func ReadConfig() *Storage {
-	C := Storage{Hosts: map[string]*Host{}, Users: map[string]*User{}, conn: &SFTPConn{}}
+	C := Storage{Hosts: map[string]*Host{}, Users: map[string]*User{}, Conn: &SFTPConn{}}
 	C.home, _ = os.UserHomeDir()
 	b, err := os.ReadFile(C.home + "/.ssh/.sshman")
 	if err != nil {
@@ -109,9 +109,12 @@ func (c *Storage) DelUserFromHosts(deluser *User) {
 }
 
 // AddHost adds a host to the configuration
+// Args: alias, hostname, user, keyfile, groups
 func (c *Storage) AddHost(args ...string) (*Host, error) {
 	alias := args[0]
 	if _, err := os.Stat(args[3]); os.IsNotExist(err) {
+		wd, _ := os.Getwd()
+		log.Printf("error: key file %s doesn't exist, creating it in %s", args[3], wd)
 		return nil, fmt.Errorf("no such file '%s'", args[3])
 	}
 	groups := args[4:]

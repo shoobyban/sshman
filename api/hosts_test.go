@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/go-chi/chi"
@@ -67,5 +68,37 @@ func TestGetHostDetails(t *testing.T) {
 	json.NewDecoder(w.Body).Decode(&host)
 	if host.User != testHosts["host1"].User {
 		t.Errorf("Expected %s, got %s", testHosts["host1"].User, host.User)
+	}
+}
+
+func TestUpdateHost(t *testing.T) {
+	// test Hosts.UpdateHost method
+	testHosts := map[string]*backend.Host{
+		"host1": {Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}},
+	}
+	cfg := &backend.Storage{
+		Hosts: testHosts,
+		Conn:  &backend.SFTPConn{},
+	}
+	h := Hosts{Prefix: "", Config: cfg}
+	// mock http request
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("PUT", "/host1",
+		strings.NewReader(`["host1", "host1.com", "user2", "../backend/fixtures/dummy.key", "group1", "group2"]`),
+	)
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", "host1")
+	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
+	h.UpdateHost(w, r)
+	// check response
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
+	}
+	bs := w.Body.String()
+	log.Printf("body %s", bs)
+	var host backend.Host
+	json.NewDecoder(w.Body).Decode(&host)
+	if host.User != "user2" {
+		t.Errorf("Expected user2, got %s %#v", host.User, host)
 	}
 }

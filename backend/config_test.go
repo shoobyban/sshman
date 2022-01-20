@@ -10,7 +10,7 @@ func testConfig(key string, hosts map[string]*Host, users map[string]*User, conn
 		Key:   key,
 		Hosts: hosts,
 		Users: users,
-		conn:  conn,
+		Conn:  conn,
 	}
 	for a, h := range c.Hosts {
 		h.Config = c
