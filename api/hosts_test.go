@@ -102,3 +102,30 @@ func TestUpdateHost(t *testing.T) {
 		t.Errorf("Expected user2, got %s %#v", host.User, host)
 	}
 }
+
+func TestCreateHost(t *testing.T) {
+	// test Hosts.UpdateHost method
+	testHosts := map[string]*backend.Host{}
+	cfg := &backend.Storage{
+		Hosts: testHosts,
+		Conn:  &backend.SFTPConn{},
+	}
+	h := Hosts{Prefix: "", Config: cfg}
+	// mock http request
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("POST", "/",
+		strings.NewReader(`["host1", "host1.com", "user2", "../backend/fixtures/dummy.key", "group1", "group2"]`),
+	)
+	h.UpdateHost(w, r)
+	// check response
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
+	}
+	bs := w.Body.String()
+	log.Printf("body %s", bs)
+	var host backend.Host
+	json.NewDecoder(w.Body).Decode(&host)
+	if host.User != "user2" {
+		t.Errorf("Expected user2, got %s %#v", host.User, host)
+	}
+}
