@@ -16,9 +16,9 @@ type Hosts struct {
 func (h *Hosts) Routers(prefix string, router *chi.Mux) *chi.Mux {
 	router.Get(prefix, h.GetAllHosts)
 	router.Get(prefix+"/{id}", h.GetHostDetails)
-	router.Post(prefix, h.CreateHost)
-	router.Put(prefix+"/{id}", h.UpdateHost)
 	router.Delete(prefix+"/{id}", h.DeleteHost)
+	router.Put(prefix+"/{id}", h.UpdateHost)
+	router.Post(prefix, h.CreateHost)
 
 	return router
 }
@@ -58,6 +58,9 @@ func (h *Hosts) UpdateHost(w http.ResponseWriter, r *http.Request) {
 
 func (h *Hosts) DeleteHost(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	h.Config.DeleteHost(id)
-	json.NewEncoder(w).Encode(id)
+	if h.Config.DeleteHost(id) {
+		w.WriteHeader(http.StatusNoContent)
+	} else {
+		w.WriteHeader(http.StatusNotFound)
+	}
 }

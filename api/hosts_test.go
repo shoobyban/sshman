@@ -25,7 +25,7 @@ func TestGetAllHosts(t *testing.T) {
 	h := Hosts{Prefix: "", Config: cfg}
 	// mock http request
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/", nil)
+	r := httptest.NewRequest(http.MethodGet, "/", nil)
 	h.GetAllHosts(w, r)
 	// check response
 	if w.Code != http.StatusOK {
@@ -53,7 +53,7 @@ func TestGetHostDetails(t *testing.T) {
 	h := Hosts{Prefix: "", Config: cfg}
 	// mock http request
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("GET", "/host1", nil)
+	r := httptest.NewRequest(http.MethodGet, "/host1", nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "host1")
 	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
@@ -83,7 +83,7 @@ func TestUpdateHost(t *testing.T) {
 	h := Hosts{Prefix: "", Config: cfg}
 	// mock http request
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("PUT", "/host1",
+	r := httptest.NewRequest(http.MethodPut, "/host1",
 		strings.NewReader(`["host1", "host1.com", "user2", "../backend/fixtures/dummy.key", "group1", "group2"]`),
 	)
 	rctx := chi.NewRouteContext()
@@ -103,8 +103,8 @@ func TestUpdateHost(t *testing.T) {
 	}
 }
 
+// test Hosts.CreateHost method
 func TestCreateHost(t *testing.T) {
-	// test Hosts.UpdateHost method
 	testHosts := map[string]*backend.Host{}
 	cfg := &backend.Storage{
 		Hosts: testHosts,
@@ -113,10 +113,10 @@ func TestCreateHost(t *testing.T) {
 	h := Hosts{Prefix: "", Config: cfg}
 	// mock http request
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest("POST", "/",
+	r := httptest.NewRequest(http.MethodPost, "/",
 		strings.NewReader(`["host1", "host1.com", "user2", "../backend/fixtures/dummy.key", "group1", "group2"]`),
 	)
-	h.UpdateHost(w, r)
+	h.CreateHost(w, r)
 	// check response
 	if w.Code != http.StatusOK {
 		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
@@ -127,5 +127,28 @@ func TestCreateHost(t *testing.T) {
 	json.NewDecoder(w.Body).Decode(&host)
 	if host.User != "user2" {
 		t.Errorf("Expected user2, got %s %#v", host.User, host)
+	}
+}
+
+// test Hosts.DeleteHost method
+func TestDeleteHost(t *testing.T) {
+	testHosts := map[string]*backend.Host{
+		"host1": {Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}},
+	}
+	cfg := &backend.Storage{
+		Hosts: testHosts,
+		Conn:  &backend.SFTPConn{},
+	}
+	h := Hosts{Prefix: "", Config: cfg}
+	// mock http request
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodDelete, "/host1", nil)
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("id", "host1")
+	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
+	h.DeleteHost(w, r)
+	// check response
+	if w.Code != http.StatusNoContent {
+		t.Errorf("Expected status code %d, got %d", http.StatusNoContent, w.Code)
 	}
 }
