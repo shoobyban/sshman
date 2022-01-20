@@ -15,10 +15,10 @@ type Users struct {
 
 func (h *Users) Routers(prefix string, router *chi.Mux) *chi.Mux {
 	router.Get(prefix, h.GetAllUsers)
-	router.Get(prefix+"/{id}", h.GetUserDetails)
+	router.Get(prefix+"/{email}", h.GetUserDetails)
+	router.Delete(prefix+"/{email}", h.DeleteUser)
+	router.Put(prefix+"/{email}", h.UpdateUser)
 	router.Post(prefix, h.CreateUser)
-	router.Put(prefix+"/{id}", h.UpdateUser)
-	router.Delete(prefix+"/{id}", h.DeleteUser)
 
 	return router
 }
@@ -29,8 +29,8 @@ func (h *Users) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Users) GetUserDetails(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	user := h.Config.GetUser(id)
+	email := chi.URLParam(r, "email")
+	_, user := h.Config.GetUserByEmail(email)
 	json.NewEncoder(w).Encode(user)
 }
 
@@ -41,7 +41,11 @@ func (h *Users) CreateUser(w http.ResponseWriter, r *http.Request) {
 func (h *Users) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	var user []string
 	json.NewDecoder(r.Body).Decode(&user)
-	oldUser := h.Config.GetUser(user[0])
+	var oldUser *backend.User
+	var exists bool
+	if oldUser, exists = h.Config.Users[user[0]]; !exists {
+		oldUser = &backend.User{}
+	}
 	u, err := h.Config.PrepareUser(user...)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -49,11 +53,14 @@ func (h *Users) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	u.UpdateGroups(h.Config, oldUser.Groups)
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(u)
 }
 
 func (h *Users) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	h.Config.DeleteUser(id)
-	json.NewEncoder(w).Encode(id)
+	email := chi.URLParam(r, "email")
+	if h.Config.DeleteUser(email) {
+		w.WriteHeader(http.StatusNoContent)
+	} else {
+		w.WriteHeader(http.StatusNotFound)
+	}
 }
