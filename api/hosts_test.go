@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -20,8 +19,7 @@ func TestGetAllHosts(t *testing.T) {
 	testHosts := map[string]*backend.Host{
 		"host1": {Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}},
 	}
-	cfg := &backend.Storage{
-		Hosts: testHosts}
+	cfg := &backend.Storage{Hosts: testHosts}
 	h := Hosts{Prefix: "", Config: cfg}
 	// mock http request
 	w := httptest.NewRecorder()
@@ -31,8 +29,7 @@ func TestGetAllHosts(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
 	}
-	bs := w.Body.String()
-	log.Printf("body %s", bs)
+
 	var hosts map[string]backend.Host
 	json.NewDecoder(w.Body).Decode(&hosts)
 	if len(hosts) == 0 {
@@ -48,8 +45,7 @@ func TestGetHostDetails(t *testing.T) {
 	testHosts := map[string]*backend.Host{
 		"host1": {Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}},
 	}
-	cfg := &backend.Storage{
-		Hosts: testHosts}
+	cfg := &backend.Storage{Hosts: testHosts}
 	h := Hosts{Prefix: "", Config: cfg}
 	// mock http request
 	w := httptest.NewRecorder()
@@ -62,8 +58,7 @@ func TestGetHostDetails(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
 	}
-	bs := w.Body.String()
-	log.Printf("body %s", bs)
+
 	var host backend.Host
 	json.NewDecoder(w.Body).Decode(&host)
 	if host.User != testHosts["host1"].User {
@@ -94,8 +89,7 @@ func TestUpdateHost(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
 	}
-	bs := w.Body.String()
-	log.Printf("body %s", bs)
+
 	var host backend.Host
 	json.NewDecoder(w.Body).Decode(&host)
 	if host.User != "user2" {
@@ -121,8 +115,7 @@ func TestCreateHost(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
 	}
-	bs := w.Body.String()
-	log.Printf("body %s", bs)
+
 	var host backend.Host
 	json.NewDecoder(w.Body).Decode(&host)
 	if host.User != "user2" {
