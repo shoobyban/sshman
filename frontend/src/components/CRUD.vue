@@ -53,7 +53,7 @@ export default {
             })
         },
         selectedItem: function() {
-            return this.allData[this.dataIndex]
+            return this.searchResult[this.dataIndex]
         },
     },
     methods: {
@@ -201,15 +201,15 @@ export default {
                             <div class="grid grid-cols-6 gap-6" v-if="selectedItem">
                                 <div v-for="field in fields" class="col-span-6 sm:col-span-3">
                                     <label for="first-name" class="text-sm font-medium text-gray-900 block mb-2">{{field.label}}</label>
-                                    <input type="text" name="first-name" id="first-name" v-model="allData[dataIndex][field.index]" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required>
+                                    <input type="text" name="first-name" id="first-name" v-model="selectedItem[field.index]" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required>
                                 </div>
-                            </div> 
+                            </div>
                         </form>
-                        </div>
-                        <!-- Modal footer -->
-                        <div class="items-center p-6 border-t border-gray-200 rounded-b">
-                            <button class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center" type="submit">Save all</button>
-                        </div>
+                    </div>
+                    <!-- Modal footer -->
+                    <div class="items-center p-6 border-t border-gray-200 rounded-b">
+                        <button class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center" type="submit">Save all</button>
+                    </div>
                 </div>
             </div>
         </div>
