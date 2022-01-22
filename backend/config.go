@@ -8,18 +8,26 @@ import (
 	"strings"
 )
 
-type Group struct {
-	Users []string
-	Hosts []string
-}
-
 type Storage struct {
 	Key        string           `json:"key"`
 	Hosts      map[string]*Host `json:"hosts"`
 	Users      map[string]*User `json:"users"`
+	Groups     map[string]Group `json:"-"`
 	Conn       SFTP             `json:"-"`
 	persistent bool             `json:"-"`
 	home       string           `json:"-"`
+}
+
+type LabelGroup struct {
+	Hosts []string
+	Users []string
+}
+
+type Group struct {
+	Name  string
+	Size  int
+	Hosts []*Host
+	Users []*User
 }
 
 func ReadConfig() *Storage {
@@ -40,7 +48,34 @@ func ReadConfig() *Storage {
 		host.Alias, host.Config = alias, &C
 		C.Hosts[alias] = host
 	}
+	C.updateGroups()
 	return &C
+}
+
+func (c *Storage) updateGroups() {
+	groups := map[string]Group{}
+	for _, host := range c.Hosts {
+		for _, group := range host.Groups {
+			if v, ok := groups[group]; ok {
+				v.Hosts = append(v.Hosts, host)
+				groups[group] = v
+			} else {
+				groups[group] = Group{Hosts: []*Host{host}}
+			}
+		}
+	}
+	for _, user := range c.Users {
+		for _, group := range user.Groups {
+			if _, ok := groups[group]; ok {
+				g := groups[group]
+				g.Users = append(g.Users, user)
+				groups[group] = g
+			} else {
+				groups[group] = Group{Users: []*User{user}}
+			}
+		}
+	}
+	c.Groups = groups
 }
 
 // GetUserByEmail get a user from config by email as we store them by key checksum
@@ -210,15 +245,15 @@ func (c *Storage) Regenerate(aliases ...string) {
 	}
 }
 
-func (c *Storage) GetGroups() map[string]Group {
-	groups := map[string]Group{}
+func (c *Storage) GetGroups() map[string]LabelGroup {
+	groups := map[string]LabelGroup{}
 	for alias, host := range c.Hosts {
 		for _, group := range host.Groups {
 			if v, ok := groups[group]; ok {
 				v.Hosts = append(v.Hosts, alias)
 				groups[group] = v
 			} else {
-				groups[group] = Group{Hosts: []string{alias}}
+				groups[group] = LabelGroup{Hosts: []string{alias}}
 			}
 		}
 	}
@@ -229,7 +264,7 @@ func (c *Storage) GetGroups() map[string]Group {
 				g.Users = append(g.Users, user.Email)
 				groups[group] = g
 			} else {
-				groups[group] = Group{Users: []string{user.Email}}
+				groups[group] = LabelGroup{Users: []string{user.Email}}
 			}
 		}
 	}
@@ -247,4 +282,52 @@ func (c *Storage) AddUserByEmail(email string) bool {
 
 func (c *Storage) GetUser(key string) *User {
 	return c.Users[key]
+}
+
+func (c *Storage) DeleteGroup(label string) bool {
+	if _, ok := c.Groups[label]; ok {
+		// loop through hosts and remove group from host
+		for _, host := range c.Hosts {
+			host.Groups = remove(host.Groups, label)
+		}
+		// loop through users and remove group from user
+		for _, user := range c.Users {
+			user.Groups = remove(user.Groups, label)
+		}
+
+		delete(c.Groups, label)
+		c.Write()
+		return true
+	}
+	return false
+}
+
+func (c *Storage) UpdateGroup(groupLabel string, users, servers []string) {
+	// loop through hosts and add groupLabel to host.Groups
+	for _, host := range c.Hosts {
+		if !contains(host.Groups, groupLabel) {
+			host.Groups = append(host.Groups, groupLabel)
+		}
+	}
+	// loop through users and add groupLabel to user.Groups
+	for _, user := range c.Users {
+		if !contains(user.Groups, groupLabel) {
+			user.Groups = append(user.Groups, groupLabel)
+		}
+	}
+	// loop through c.Users and remove item if not in users
+	for _, user := range c.Users {
+		if !contains(users, user.Email) {
+			user.Groups = remove(user.Groups, groupLabel)
+		}
+	}
+	// loop through c.Hosts and remove item if not in servers
+	for _, host := range c.Hosts {
+		if !contains(servers, host.Alias) {
+			host.Groups = remove(host.Groups, groupLabel)
+		}
+	}
+	// update c.Groups.Users and c.Groups.Hosts
+	c.updateGroups()
+	c.Write()
 }

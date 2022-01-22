@@ -16,6 +16,7 @@ func testConfig(key string, hosts map[string]*Host, users map[string]*User, conn
 		h.Config = c
 		c.Hosts[a] = h
 	}
+	c.updateGroups()
 	return c
 }
 
@@ -292,5 +293,39 @@ func TestGetHosts(t *testing.T) {
 	hosts = cfg.getHosts("c")
 	if len(hosts) != 1 {
 		t.Errorf("gethosts error: %v", hosts)
+	}
+}
+
+func TestUpdateGroup(t *testing.T) {
+	cfg := testConfig("foo", map[string]*Host{
+		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"a", "b"}},
+		"b": {Alias: "b", Host: "a:22", User: "aroot", Groups: []string{"a", "c"}},
+	},
+		map[string]*User{
+			"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
+		}, &SFTPConn{mock: true})
+	cfg.UpdateGroup("a", []string{"b"}, []string{"c"})
+	if len(cfg.Hosts["a"].Groups) != 1 {
+		t.Errorf("UpdateGroup did not work, host a groups: %v", cfg.Hosts["a"].Groups)
+	}
+	if len(cfg.Hosts["b"].Groups) != 1 {
+		t.Errorf("UpdateGroup did not work, host b groups: %v", cfg.Hosts["b"].Groups)
+	}
+}
+
+func TestDeleteGroup(t *testing.T) {
+	cfg := testConfig("foo", map[string]*Host{
+		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"a", "b"}},
+		"b": {Alias: "b", Host: "a:22", User: "aroot", Groups: []string{"a", "c"}},
+	},
+		map[string]*User{
+			"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
+		}, &SFTPConn{mock: true})
+	cfg.DeleteGroup("a")
+	if len(cfg.Hosts["a"].Groups) != 1 {
+		t.Errorf("DeleteGroup did not work, host a groups: %v", cfg.Hosts["a"].Groups)
+	}
+	if len(cfg.Hosts["b"].Groups) != 1 {
+		t.Errorf("DeleteGroup did not work, host b groups: %v", cfg.Hosts["b"].Groups)
 	}
 }

@@ -41,6 +41,15 @@ func contains(slice []string, s string) bool {
 	return false
 }
 
+func remove(s []string, r string) []string {
+	for i, v := range s {
+		if v == r {
+			return append(s[:i], s[i+1:]...)
+		}
+	}
+	return s
+}
+
 func updates(oldItems, newItems []string) (added []string, removed []string) {
 	ma := make(map[string]struct{}, len(oldItems))
 	mb := make(map[string]struct{}, len(newItems))
