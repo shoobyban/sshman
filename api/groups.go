@@ -24,7 +24,7 @@ func (h *Groups) Routers(prefix string, router *chi.Mux) *chi.Mux {
 }
 
 func (h *Groups) GetAllGroups(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(h.Config.Groups)
+	json.NewEncoder(w).Encode(h.Config.GetGroups())
 }
 
 func (h *Groups) GetGroupDetails(w http.ResponseWriter, r *http.Request) {
