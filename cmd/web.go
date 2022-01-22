@@ -36,10 +36,15 @@ var webCmd = &cobra.Command{
 			Prefix: "/api/hosts",
 			Config: backend.ReadConfig(),
 		}
+		groups := api.Groups{
+			Prefix: "/api/groups",
+			Config: backend.ReadConfig(),
+		}
 		r := chi.NewMux()
 		r.Use(middleware.Logger)
 		r = users.Routers("/api/users", r)
 		r = hosts.Routers("/api/hosts", r)
+		r = groups.Routers("/api/groups", r)
 		log.Printf("Listening on http://localhost:%v", port)
 		distfs, err := fs.Sub(dist, "dist")
 		if err != nil {

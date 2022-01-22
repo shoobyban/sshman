@@ -19,8 +19,9 @@ type Storage struct {
 }
 
 type LabelGroup struct {
-	Hosts []string
-	Users []string
+	Label string   `json:"label"`
+	Hosts []string `json:"hosts"`
+	Users []string `json:"users"`
 }
 
 type Group struct {
@@ -253,7 +254,7 @@ func (c *Storage) GetGroups() map[string]LabelGroup {
 				v.Hosts = append(v.Hosts, alias)
 				groups[group] = v
 			} else {
-				groups[group] = LabelGroup{Hosts: []string{alias}}
+				groups[group] = LabelGroup{Label: group, Hosts: []string{alias}}
 			}
 		}
 	}
@@ -264,7 +265,7 @@ func (c *Storage) GetGroups() map[string]LabelGroup {
 				g.Users = append(g.Users, user.Email)
 				groups[group] = g
 			} else {
-				groups[group] = LabelGroup{Users: []string{user.Email}}
+				groups[group] = LabelGroup{Label: group, Users: []string{user.Email}}
 			}
 		}
 	}
