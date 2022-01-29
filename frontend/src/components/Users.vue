@@ -1,25 +1,54 @@
 <script>
-import CRUD from './CRUD.vue'
+import VuexCRUD from './VuexCRUD.vue'
+import { mapState, mapActions, mapGetters } from 'vuex'
 
 export default {
     name: 'Users',
     components: {
-        CRUD
+        VuexCRUD
+    },
+    computed: {
+        ...mapState({
+            users: state => state.users,
+            groups: state => state.groups,
+        }),
+    },
+    methods: {
+        ...mapActions([
+            'fetchUsers',
+            'createUser',
+            'updateUser',
+            'deleteUser',
+            'fetchGroups',
+        ]),
+        fetchAll() {
+            this.fetchUsers()
+            this.fetchGroups()
+        }
+    },
+    mounted() {
+        this.fetchAll()
     },
 }
 </script>
 
 <template>
     <div>
-        <CRUD 
+        <VuexCRUD
+            v-if="users"
             resourceName="Users" 
-            endpoint="/api/users"
-            orderBy="email" 
+            v-model="users.users"
+            orderBy="email"
+            @create="createUser"
+            @update="updateUser"
+            @delete="deleteUser"
+            @fetch="fetchAll"
+            idField="email"
             :fields="[
                 {label: 'Email', index: 'email', placeholder: 'sam@host.com', type:'email'},
-                {label: 'Key', hidefromlist:true, index: 'name', placeholder: 'sam', type:'text'},
+                {label: 'Key', hidefromlist:true, index: 'keyfile', placeholder: '~/.ssh/key.pub', type:'file'},
                 {label: 'Name in key', index: 'name', placeholder: 'sam', type:'text'},
-                {label: 'Groups', index: 'groups', placeholder: 'group1,group2', type:'multiselect'},
-            ]" />
+                {label: 'Groups', index: 'groups', placeholder: 'group1,group2', type:'multiselect', options: groups.allLabels},
+                ]" />
     </div>
 </template>

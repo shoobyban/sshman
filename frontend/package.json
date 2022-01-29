@@ -7,10 +7,12 @@
     "serve": "vite preview"
   },
   "dependencies": {
+    "@vueform/multiselect": "^2.3.1",
     "axios": "^0.24.0",
     "lodash": "^4.17.21",
     "vue": "^3.2.6",
-    "vue-router": "4"
+    "vue-router": "4",
+    "vuex": "^4.0.2"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^1.6.0",

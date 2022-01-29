@@ -24,21 +24,22 @@ var webCmd = &cobra.Command{
 	Short: "Web UI",
 	Long:  `Stays running and created a web UI.`,
 	Run: func(cmd *cobra.Command, _ []string) {
+		cfg := backend.ReadConfig()
 		port, err := cmd.Flags().GetInt("port")
 		if err != nil {
 			port = 80
 		}
 		users := api.Users{
 			Prefix: "/api/users",
-			Config: backend.ReadConfig(),
+			Config: cfg,
 		}
 		hosts := api.Hosts{
 			Prefix: "/api/hosts",
-			Config: backend.ReadConfig(),
+			Config: cfg,
 		}
 		groups := api.Groups{
 			Prefix: "/api/groups",
-			Config: backend.ReadConfig(),
+			Config: cfg,
 		}
 		r := chi.NewMux()
 		r.Use(middleware.Logger)

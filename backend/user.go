@@ -8,6 +8,16 @@ type User struct {
 	Email   string   `json:"email"`
 	Key     string   `json:"key"`
 	Groups  []string `json:"groups"`
+	File    string   `json:"keyfile,omitempty"`
+}
+
+func NewUser(email, keytype, key, name string) *User {
+	return &User{
+		Email:   email,
+		KeyType: keytype,
+		Key:     key,
+		Name:    name,
+	}
 }
 
 func (u *User) UpdateGroups(C *Storage, oldgroups []string) error {
@@ -17,7 +27,6 @@ func (u *User) UpdateGroups(C *Storage, oldgroups []string) error {
 	for _, group := range added {
 		hosts := C.getHosts(group)
 		for _, h := range hosts {
-			h.ReadUsers()
 			if !h.HasUser(u.Email) {
 				err := h.AddUser(u)
 				if err != nil {
@@ -36,7 +45,6 @@ func (u *User) UpdateGroups(C *Storage, oldgroups []string) error {
 	for _, group := range removed {
 		hosts := C.getHosts(group)
 		for _, h := range hosts {
-			h.ReadUsers()
 			// are there other groups that keep user on host
 			if h.HasMatchingGroups(u) {
 				continue

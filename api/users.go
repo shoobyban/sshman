@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -35,25 +36,70 @@ func (h *Users) GetUserDetails(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Users) CreateUser(w http.ResponseWriter, r *http.Request) {
-	h.UpdateUser(w, r)
+	var user backend.User
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if user.File != "" {
+		parts, err := backend.SplitParts(user.File)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if user.Email == "" {
+			user.Email = parts[2]
+		}
+		user.KeyType = parts[0]
+		user.Key = parts[1]
+		user.Name = parts[2]
+		user.File = ""
+	}
+	_, oldUser := h.Config.GetUserByEmail(user.Email)
+	if oldUser != nil {
+		http.Error(w, "user already exists", http.StatusBadRequest)
+		return
+	}
+	user.UpdateGroups(h.Config, []string{})
+	h.Config.AddUser(&user)
+	json.NewEncoder(w).Encode(user)
 }
 
 func (h *Users) UpdateUser(w http.ResponseWriter, r *http.Request) {
-	var user []string
-	json.NewDecoder(r.Body).Decode(&user)
-	var oldUser *backend.User
-	var exists bool
-	if oldUser, exists = h.Config.Users[user[0]]; !exists {
-		oldUser = &backend.User{}
-	}
-	u, err := h.Config.PrepareUser(user...)
+	var user backend.User
+	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err)
+		log.Printf("Error decoding user: %v", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	u.UpdateGroups(h.Config, oldUser.Groups)
-	json.NewEncoder(w).Encode(u)
+	if user.File != "" {
+		log.Printf("New keyfile: %s", user.File)
+		parts, err := backend.SplitParts(user.File)
+		if err != nil {
+			log.Printf("Error splitting key: %v", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if user.Email == "" {
+			user.Email = parts[2]
+		}
+		user.KeyType = parts[0]
+		user.Key = parts[1]
+		user.Name = parts[2]
+		user.File = ""
+	}
+	_, oldUser := h.Config.GetUserByEmail(user.Email)
+	if oldUser == nil {
+		log.Printf("User %s does not exist: %v", user.Email, h.Config.Users)
+		http.Error(w, "user does not exist", http.StatusBadRequest)
+		return
+	}
+	user.UpdateGroups(h.Config, oldUser.Groups)
+	h.Config.UpdateUser(user)
+	h.Config.Write()
+	json.NewEncoder(w).Encode(user)
 }
 
 func (h *Users) DeleteUser(w http.ResponseWriter, r *http.Request) {

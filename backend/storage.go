@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 )
 
 type Storage struct {
@@ -184,22 +183,12 @@ func (c *Storage) DeleteUser(email string) bool {
 
 // New user: old groups, email, key file, new groups
 func (c *Storage) PrepareUser(args ...string) (*User, error) {
-	b, err := os.ReadFile(args[1])
+	parts, err := readKeyFile(args[1])
 	if err != nil {
-		return nil, fmt.Errorf("error: error reading public key file: '%s' %v", args[1], err)
+		return nil, err
 	}
-	parts := strings.Split(strings.TrimSuffix(string(b), "\n"), " ")
-	if len(parts) != 3 {
-		return nil, fmt.Errorf("error: not a proper public key file")
-	}
-	groups := args[2:]
-	newuser := &User{
-		KeyType: parts[0],
-		Key:     parts[1],
-		Name:    parts[2],
-		Email:   args[0],
-		Groups:  groups,
-	}
+	newuser := NewUser(args[0], parts[0], parts[1], parts[2])
+	newuser.Groups = args[2:]
 	return newuser, nil
 }
 
@@ -207,6 +196,24 @@ func (c *Storage) PrepareUser(args ...string) (*User, error) {
 func (c *Storage) AddUser(newuser *User) error {
 	lsum := checksum(newuser.Key)
 	c.Users[lsum] = newuser
+	c.Write()
+	return nil
+}
+
+// UpdateUser finds and replaces user
+func (c *Storage) UpdateUser(newuser User) error {
+	if newuser.Email == "" {
+		return fmt.Errorf("no email provided")
+	}
+	oldKey, oldUser := c.GetUserByEmail(newuser.Email)
+	if oldUser == nil {
+		return fmt.Errorf("user %s not found", newuser.Email)
+	}
+	delete(c.Users, oldKey)
+	log.Printf("deleting user %s with key %s", oldUser.Email, oldKey)
+	lsum := checksum(newuser.Key)
+	c.Users[lsum] = &newuser
+	log.Printf("key %s with content %v", lsum, newuser)
 	c.Write()
 	return nil
 }
