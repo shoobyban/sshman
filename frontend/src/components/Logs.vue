@@ -1,4 +1,13 @@
+<template>
+    <div class="h-1/2 overflow-y-auto">
+        <div v-for="item in items" :class="item.type">
+            {{item.message}}
+        </div>
+    </div>
+</template>
 <script>
+var evtSource = false;
+
 export default {
     name: 'Logs',
     props: {
@@ -13,6 +22,13 @@ export default {
             loading: false
         }
     },
+    mounted() {
+        this.run();
+    },
+    updated() {
+        var elem = this.$el
+        elem.scrollTop = elem.clientHeight;
+    },
     computed: {
         buttonLabel: function () {
             return (this.loading ? 'Loading…' : 'Go');
@@ -22,25 +38,18 @@ export default {
         run: function () {
             this.reset();
             evtSource = new EventSource(this.url);
-            this.loading = true;
-
-            var that = this;
-
-            evtSource.addEventListener('header', function (e) {
-                var header = JSON.parse(e.data);
-                that.total_items = header.total_items;
-                that.actual_msg = header.msg;
-            }, false);
-
-            evtSource.addEventListener('item', function (e) {
-                var item = JSON.parse(e.data);
-                that.items.push(item);
-            }, false);
-
-            evtSource.addEventListener('close', function (e) {
-                evtSource.close();
-                that.loading = false;
-            }, false);
+            evtSource.onmessage = (event) => {
+                console.log('message', event);
+                this.items.push(JSON.parse(event.data));
+            }
+            evtSource.onerror = (event) => {
+                console.log('error', event);
+                this.reset();
+            }
+            evtSource.onclose = (event) => {
+                console.log('close', event);
+                this.reset();
+            }
         },
         reset: function () {
             if (evtSource !== false) {
@@ -54,3 +63,12 @@ export default {
     }
 }
 </script>
+
+<style scoped>
+.error {
+    background-color: #f8d7da !important;
+}
+.info {
+    background-color: #d4edda !important;
+}
+</style>

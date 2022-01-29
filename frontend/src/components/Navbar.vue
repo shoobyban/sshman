@@ -1,8 +1,12 @@
 <script>
 import routes from '../routes.js'
+import Logs from './Logs.vue'
 
 export default {
     name: 'Navbar',
+    components: {
+        Logs
+    },
     data() {
         return {
             routes: routes,
@@ -33,5 +37,6 @@ export default {
                 </ul>
             </div>
         </div>
+        <Logs url="http://localhost/api/logs" />
     </div>
 </template>

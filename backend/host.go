@@ -165,15 +165,15 @@ func (h *Host) UpdateGroups(c *Storage, oldgroups []string) bool {
 	for _, group := range added {
 		users := c.GetUsers(group)
 		for _, u := range users {
-			h.Config.Log.Infof("User %s from group %s", u.Email, group)
 			if !h.HasUser(u.Email) {
+				h.Config.Log.Infof("Adding %s (group %s) to %s", u.Email, group, h.Alias)
 				err := h.AddUser(u)
 				if err != nil {
 					h.Config.Log.Errorf("error adding %s to %s", u.Email, h.Alias)
 					success = false
 					continue
 				}
-				h.Config.Log.Infof("Added %s to %s %v", u.Email, h.Alias, h.Groups)
+				h.Config.Log.Infof("Added %s to %s (host groups %v)", u.Email, h.Alias, h.Groups)
 			}
 		}
 	}
