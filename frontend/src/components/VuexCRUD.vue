@@ -1,22 +1,27 @@
 <script>
-import axios from 'axios'
 import _ from 'lodash'
 import Multiselect from '@vueform/multiselect'
 
 export default {
-    name: 'CRUD',
+    name: 'VuexCRUD',
     components: {
         Multiselect,
     },
-    props: {resourceName: String, endpoint: String, fields: Array, orderBy: String, orderDir: String},
+    props: {
+        modelValue: Array, // v-model
+        resourceName: String, // e.g. 'Users'
+        fields: Array,   // format: [{label: 'Email', index: 'email', placeholder: 'sam@test1.com', type:'email'}] 
+        idField: String, // identifier field index for update, delete
+        orderBy: String, // default order by
+        orderDir: String, // default order direction
+    },
     data() {
         return {
-            allData: [],
             searchInput: '',
             deleteModal: false,
             editModal: false,
             addModal: false,
-            dataIndex: null,
+            dataIndex: 0,
             selected: [],
             sortBy: '',
             sortDir: '',
@@ -28,19 +33,17 @@ export default {
         if (this.orderDir == undefined || this.orderDir == '') {
             this.sortDir = 'asc'
         }
-        this.refresh()
     },
     computed: {
         searchResult: function() {
-            var data;
+            var data
             if (this.searchInput != '') {
-                console.log("searching for: " + this.searchInput)
-                data = this.allData.filter(item => {
+                data = this.modelValue.filter(item => {
                     var itemGroups = JSON.stringify(item.groups)
                     return (item.email.toLowerCase().indexOf(this.searchInput.toLowerCase()) !== -1) || (item.name.toLowerCase().indexOf(this.searchInput.toLowerCase()) !== -1) || (itemGroups.toLowerCase().indexOf(this.searchInput.toLowerCase()) !== -1)
                 })
             } else {
-                data = this.allData
+                data = this.modelValue
             }
             if (this.sortBy != '') {
                 return _.orderBy(data, this.sortBy, this.sortDir)
@@ -53,17 +56,33 @@ export default {
             })
         },
         selectedItem: function() {
+            if (this.searchResult == undefined) {
+                return {}
+            }
             return this.searchResult[this.dataIndex]
         },
     },
     methods: {
-        refresh: function() {
-            axios.get(this.endpoint).then(response => {
-                    this.allData = response.data
-                })
-                .catch(error => {
-                    console.log(error)
-                })
+        fileUpload(evt) {
+            let self = this
+            let eTarget = evt.target
+            if (!window.FileReader) return // Browser is not compatible
+            let reader = new FileReader()
+            reader.onload = function (evt) {
+                if (evt.target.readyState !== 2) return
+                if (evt.target.error) {
+                    alert("Error while reading file")
+                    return
+                }
+                if (eTarget.id.startsWith('edit:')) {
+                    console.log('edit:', eTarget.name, self.selectedItem)
+                    self.selectedItem[eTarget.name] = evt.target.result
+                } else {
+                    console.log('add:', eTarget.id, self.selectedItem)
+                    self.selectedItem[eTarget.name] = evt.target.result
+                }
+            }
+            reader.readAsText(evt.target.files[0])
         },
         toggleSelected(str, e) {
             e.stopPropagation()
@@ -78,7 +97,7 @@ export default {
         },
         toggleAll(e) {
             e.stopPropagation()
-            for (const key in this.allData) {
+            for (const key in this.value) {
                 if (this.selected.includes(key)) {
                     this.selected.splice(this.selected.indexOf(key), 1)
                 } else {
@@ -99,25 +118,31 @@ export default {
             }
         },
         createItem(e) {
+            this.addModal = false
+            this.dataIndex = 0
             e.stopPropagation()
             var data = new FormData(e.target)
             var item = Object.fromEntries(data.entries())
-            axios.post(this.endpoint, item).then(response => {
-                this.addModal = false
-                this.refresh()
-            })
+            this.emit('create', item)
+            setTimeout(() => {
+                this.$emit('fetch')
+            }, 500)
         },
-        updateItem(item, id) {
-            axios.put(this.endpoint + '/' + id, item).then(response => {
-                this.editModal = false
-                this.refresh()
-            })
+        updateItem() {
+            this.editModal = false
+            this.$emit('update', this.selectedItem)
+            this.dataIndex = 0
+            setTimeout(() => {
+                this.$emit('fetch')
+            }, 500)
         },
         deleteItem(id) {
-            axios.delete(this.endpoint + '/' + id).then(response => {
-                this.deleteModal = false
-                this.refresh()
-            })
+            this.deleteModal = false
+            this.dataIndex = 0
+            this.$emit('delete', id)
+            setTimeout(() => {
+                this.$emit('fetch')
+            }, 500)
         },
     },
 }
@@ -132,9 +157,9 @@ export default {
                 <div class="sm:flex">
                     <div class="hidden sm:flex items-center sm:divide-x sm:divide-gray-100 mb-3 sm:mb-0">
                         <form class="lg:pr-3" action="#" method="GET">
-                        <label for="allData-search" class="sr-only">Search</label>
+                        <label for="value-search" class="sr-only">Search</label>
                         <div class="mt-1 relative lg:w-52 xl:w-96">
-                            <input type="text" v-model="searchInput" id="allData-search" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="'Search for '+resourceName.toLowerCase()">
+                            <input type="text" v-model="searchInput" id="value-search" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="'Search for '+resourceName.toLowerCase()">
                         </div>
                         </form>
                     </div>
@@ -194,10 +219,10 @@ export default {
                                         </div>
                                     </td>
                                     <td class="p-4 whitespace-nowrap space-x-2">
-                                        <div @click="this.dataIndex = idx; this.editModal = true;" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center">
+                                        <div @click="this.dataIndex = idx; this.editModal = true" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center">
                                             <i class="fas fa-pen"></i>
                                         </div>
-                                        <div @click="this.dataIndex = idx; this.deleteModal = true;" class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center">
+                                        <div @click="this.dataIndex = idx; this.deleteModal = true" class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center">
                                             <i class="fas fa-trash"></i>
                                         </div>
                                     </td>
@@ -229,16 +254,19 @@ export default {
                         <form action="#">
                             <div class="grid grid-cols-6 gap-6" v-if="selectedItem">
                                 <div v-for="field in fields" class="col-span-6 sm:col-span-3">
-                                    <label for="first-name" class="text-sm font-medium text-gray-900 block mb-2">{{field.label}}</label>
-                                    <input type="text" v-if="field.type != 'multiselect'" name="first-name" id="first-name" v-model="selectedItem[field.index]" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required />
-                                    <Multiselect v-else v-model="selectedItem[field.index]" mode="tags" :createTag="true" :appendNewTag="true" :searchable="true" :options="field.options" />{{selectedItem[field.index]}}
+                                    <label :for="field.index" class="text-sm font-medium text-gray-900 block mb-2">{{field.label}}</label>
+                                    <input type="text" v-if="field.type == 'text'" :name="field.index" :id="'edit:'+field.index" v-model="selectedItem[field.index]" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required />
+                                    <input type="email" v-else-if="field.type == 'email'" :name="field.index" :id="field.index" v-model="selectedItem[field.index]" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required />
+                                    <input type="file" v-else-if="field.type == 'file'" :id="'edit:'+field.index" :name="field.index" @change="fileUpload" :ref="field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required />
+                                    <Multiselect v-else-if="field.type == 'multiselect'" v-model="selectedItem[field.index]" mode="tags" :createTag="true" :appendNewTag="true" :searchable="true" :options="field.options" />
+                                    <div v-else>Unhandled {{field.type}}</div>
                                 </div>
                             </div>
                         </form>
                     </div>
                     <!-- Modal footer -->
-                    <div class="items-center p-6 border-t border-gray-200 rounded-b">
-                        <button class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center" type="submit">Save</button>
+                    <div class="items-center p-6 border-gray-200 rounded-b">
+                        <button class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center" @click="updateItem">Save</button>
                     </div>
                 </div>
             </div>
@@ -265,12 +293,13 @@ export default {
                             <div class="grid grid-cols-6 gap-6">
                                 <div v-for="field in fields" class="col-span-6 sm:col-span-3">
                                     <label for="first-name" class="text-sm font-medium text-gray-900 block mb-2">{{field.label}}</label>
-                                    <input type="text" :name="field.index" :id="field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required>
+                                    <input v-if="field.type != 'multiselect'" type="text" :name="field.index" :id="field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required>
+                                    <Multiselect v-else :name="field.index" :id="field.index" mode="tags" :createTag="true" :appendNewTag="true" :searchable="true" :options="field.options" />
                                 </div>
                             </div> 
                             <!-- Modal footer -->
-                            <div class="items-center p-6 border-t border-gray-200 rounded-b">
-                                <button class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center" type="submit">Add {{resourceName}}</button>
+                            <div class="items-center mt-6 border-gray-200 rounded-b">
+                                <button class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center" type="submit">Save</button>
                             </div>
                         </form>
                     </div>

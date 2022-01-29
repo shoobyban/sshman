@@ -25,7 +25,8 @@ func TestGetAllUsers(t *testing.T) {
 	u.GetAllUsers(w, r)
 	// check response
 	if w.Code != http.StatusOK {
-		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
+		t.Errorf("Expected status code %d, got %d %s", http.StatusOK, w.Code, w.Body.String())
+		return
 	}
 	var users []backend.User
 	json.NewDecoder(w.Body).Decode(&users)
@@ -71,7 +72,7 @@ func TestCreateUser(t *testing.T) {
 	// mock http request
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/users",
-		strings.NewReader(`["sam@test1.com", "../backend/fixtures/dummy.key", "group1", "group2"]`),
+		strings.NewReader(`{"email": "sam@test1.com","keyfile": "dummy key info", "groups": ["group1", "group2"]}`),
 	)
 	u.CreateUser(w, r)
 	// check response
@@ -82,6 +83,10 @@ func TestCreateUser(t *testing.T) {
 	json.NewDecoder(w.Body).Decode(&user)
 	if user.Email != "sam@test1.com" {
 		t.Errorf("Expected sam@test1.com, got %s", user.Email)
+		return
+	}
+	if user.Key != "key" {
+		t.Errorf("Expected dummy key, got %s", user.Key)
 	}
 }
 
@@ -95,7 +100,7 @@ func TestUpdateUser(t *testing.T) {
 	// mock http request
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPut, "/users/sam@test1.com",
-		strings.NewReader(`["sam@test1.com", "../backend/fixtures/dummy.key", "group1", "group2"]`),
+		strings.NewReader(`{"email": "sam@test1.com","keyfile": "dummy key info", "groups": ["group1", "group2"]}`),
 	)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("email", "user1")
@@ -103,12 +108,17 @@ func TestUpdateUser(t *testing.T) {
 	u.UpdateUser(w, r)
 	// check response
 	if w.Code != http.StatusOK {
-		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
+		t.Errorf("Expected status code %d, got %d %s", http.StatusOK, w.Code, w.Body.String())
+		return
 	}
 	var user backend.User
 	json.NewDecoder(w.Body).Decode(&user)
 	if user.Email != "sam@test1.com" {
 		t.Errorf("Expected sam@test1.com got %s", user.Email)
+		return
+	}
+	if user.Key != "key" {
+		t.Errorf("Expected dummy key, got %s", user.Key)
 	}
 }
 
@@ -129,6 +139,7 @@ func TestDeleteUser(t *testing.T) {
 	// check response
 	if w.Code != http.StatusNoContent {
 		t.Errorf("Expected status code %d, got %d", http.StatusNoContent, w.Code)
+		return
 	}
 	if len(cfg.Users) != 0 {
 		t.Errorf("Expected %d users, got %d", 0, len(cfg.Users))

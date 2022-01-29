@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -39,21 +40,22 @@ func (h *Hosts) CreateHost(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Hosts) UpdateHost(w http.ResponseWriter, r *http.Request) {
-	var host []string
-	json.NewDecoder(r.Body).Decode(&host)
-	var oldHost *backend.Host
-	var exists bool
-	if oldHost, exists = h.Config.Hosts[host[0]]; !exists {
-		oldHost = &backend.Host{}
-	}
-	newHost, err := h.Config.AddHost(host...)
+	var host backend.Host
+	err := json.NewDecoder(r.Body).Decode(&host)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(err)
+		log.Printf("[ERROR] %s", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	newHost.UpdateGroups(h.Config, oldHost.Groups)
-	json.NewEncoder(w).Encode(newHost)
+	var oldHost *backend.Host
+	var exists bool
+	if oldHost, exists = h.Config.Hosts[host.Alias]; !exists {
+		oldHost = &backend.Host{}
+	}
+	h.Config.Hosts[host.Alias] = &host
+	host.UpdateGroups(h.Config, oldHost.Groups)
+	h.Config.Write()
+	json.NewEncoder(w).Encode(host)
 }
 
 func (h *Hosts) DeleteHost(w http.ResponseWriter, r *http.Request) {

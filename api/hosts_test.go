@@ -79,7 +79,7 @@ func TestUpdateHost(t *testing.T) {
 	// mock http request
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPut, "/host1",
-		strings.NewReader(`["host1", "host1.com", "user2", "../backend/fixtures/dummy.key", "group1", "group2"]`),
+		strings.NewReader(`{"alias": "host1", "host": "host1.com", "user": "user2", "groups": ["group1", "group2"]}`),
 	)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "host1")
@@ -108,7 +108,7 @@ func TestCreateHost(t *testing.T) {
 	// mock http request
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/",
-		strings.NewReader(`["host1", "host1.com", "user2", "../backend/fixtures/dummy.key", "group1", "group2"]`),
+		strings.NewReader(`{"alias": "host1", "host": "host1.com", "keyfile": "ssh dummy key", "user": "user2", "groups": ["group1", "group2"]}`),
 	)
 	h.CreateHost(w, r)
 	// check response

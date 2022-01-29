@@ -3,6 +3,10 @@ package backend
 import (
 	"crypto/sha1"
 	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"os"
+	"strings"
 )
 
 func checksum(s string) string {
@@ -68,4 +72,32 @@ func updates(oldItems, newItems []string) (added []string, removed []string) {
 		}
 	}
 	return
+}
+
+// Read and split SSH Public Key file into []string parts
+// order will be key type, key, comment
+// we assume comment is a user name or email
+func readKeyFile(filename string) ([]string, error) {
+	b, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("error: error reading public key file: '%s' %v", filename, err)
+	}
+	return SplitParts(string(b))
+}
+
+// SplitParts splits a public key into []string parts
+// order will be key type, key, comment
+// we assume comment is a user name or email
+func SplitParts(content string) ([]string, error) {
+	parts := strings.Split(strings.TrimSuffix(content, "\n"), " ")
+	if len(parts) != 3 {
+		return nil, fmt.Errorf("error: not a proper public key file")
+	}
+	return parts, nil
+}
+
+func JSON(data interface{}) string {
+	// marshal data into json
+	bs, _ := json.MarshalIndent(data, "", "  ")
+	return string(bs)
 }

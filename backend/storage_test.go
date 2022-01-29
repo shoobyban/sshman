@@ -143,8 +143,8 @@ func TestAddDeleteUser(t *testing.T) {
 	if err != nil {
 		t.Errorf("error while registering user: %v %v", err, cfg.Users)
 	}
-	if len(cfg.Users) != 5 {
-		t.Errorf("Adding user did not work %#v", len(cfg.Users))
+	if len(cfg.Users) != 4 {
+		t.Errorf("Adding user did not work #1 %v", JSON(cfg.Users))
 	}
 	cfg.Hosts["a"] = &Host{Config: cfg, Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"groupa"}, Users: []string{"foo@email", "bar@email"}}
 	u, err = cfg.PrepareUser("bar@email", "fixtures/dummy.key", "groupa", "groupb")
@@ -154,28 +154,28 @@ func TestAddDeleteUser(t *testing.T) {
 	u.UpdateGroups(cfg, []string{})
 	err = cfg.AddUser(u)
 	if err != nil {
-		t.Errorf("error while registering user: %v %v", err, cfg.Users)
+		t.Errorf("error while registering user: %v %v", err, JSON(cfg.Users))
 	}
 	g := cfg.GetGroups()
 	if grp, ok := g["groupa"]; ok {
 		if !contains(grp.Users, "bar@email") {
-			t.Errorf("Group users doesn't have bar@email: %v", grp.Users)
+			t.Errorf("Group users doesn't have bar@email: %v", JSON(grp.Users))
 		}
 	} else {
 		t.Errorf("Group groupa doesn't exits: %v", g)
 	}
 	// set expected file content for removal
 	sftp.testHosts["a:22"] = SFTPMockHost{Host: "b:22", User: "test", File: "ssh-rsa foo rootuser\nssh-rsa bar1 user-a.com\n"}
-	key, u := cfg.GetUserByEmail("bar@email")
+	key, _ := cfg.GetUserByEmail("bar@email")
 	if key == "" {
 		t.Errorf("User not found")
 	}
 	u, err = cfg.PrepareUser("bar@email", "fixtures/dummy.key")
 	if err != nil {
-		t.Errorf("error while registering user: %v %v", err, cfg.Users)
+		t.Errorf("error while registering user: %v %v", err, JSON(cfg.Users))
 	}
-	if len(cfg.Users) != 5 {
-		t.Errorf("Adding user did not work %#v", len(cfg.Users))
+	if len(cfg.Users) != 4 {
+		t.Errorf("Adding user did not work #2 %s", JSON(cfg.Users))
 	}
 	u.UpdateGroups(cfg, []string{})
 	err = cfg.AddUser(u)
@@ -191,8 +191,8 @@ func TestAddDeleteUser(t *testing.T) {
 		t.Errorf("Group groupa doesn't exits: %v", g)
 	}
 	cfg.DeleteUser("bar@email")
-	if len(cfg.Users) != 4 {
-		t.Errorf("Deleting user did not work %v", len(cfg.Users))
+	if len(cfg.Users) != 3 {
+		t.Errorf("Deleting user did not work #2 %v", len(cfg.Users))
 	}
 	if cfg.DeleteUser("bar@email") {
 		t.Errorf("Deleting user did work again")
