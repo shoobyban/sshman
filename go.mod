@@ -3,7 +3,7 @@ module github.com/shoobyban/sshman
 go 1.16
 
 require (
-	github.com/go-chi/chi v1.5.4 // indirect
+	github.com/go-chi/chi v1.5.4
 	github.com/pkg/sftp v1.13.2
 	github.com/spf13/cobra v1.2.1
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
