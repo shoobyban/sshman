@@ -10,17 +10,17 @@ func TestGetUsers(t *testing.T) {
 	cfg := testConfig("foo", map[string]*Host{
 		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"a", "b"}, Users: []string{"foo@email"}},
 		"b": {Alias: "b", Host: "b:22", User: "aroot", Groups: []string{"a", "c"}},
-	}, map[string]*User{
-		"asdfasdf": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
+	}, []*User{
+		{Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
 	}, sftp)
-	h := cfg.Hosts["a"]
+	h := cfg.GetHost("a")
 	if len(h.GetUsers()) != 1 {
 		t.Errorf("host not returning users")
 	}
 	if !h.HasUser("foo@email") {
 		t.Errorf("HasUser doesn't work")
 	}
-	h = cfg.Hosts["b"]
+	h = cfg.GetHost("b")
 	if len(h.GetUsers()) != 0 {
 		t.Errorf("host returning users when")
 	}
@@ -34,11 +34,11 @@ func TestUpdateHostGroups(t *testing.T) {
 	cfg := testConfig("foo", map[string]*Host{
 		"hosta": {Alias: "hosta", Host: "a:22", User: "aroot", Groups: []string{"groupa", "groupb"}},
 		"hostb": {Alias: "hostb", Host: "b:22", User: "aroot", Groups: []string{"groupa", "groupc"}},
-	}, map[string]*User{
-		"asdfasdf0": {Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"groupa", "groupb"}},
-		"asdfasdf1": {Email: "bar@email", KeyType: "ssh-rsa", Key: "keydata", Name: "broot", Groups: []string{"groupa", "groupc"}},
+	}, []*User{
+		{Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"groupa", "groupb"}},
+		{Email: "bar@email", KeyType: "ssh-rsa", Key: "keydata", Name: "broot", Groups: []string{"groupa", "groupc"}},
 	}, sftp)
-	h := cfg.Hosts["hosta"]
+	h := cfg.GetHost("hosta")
 	old := h.Groups
 	h.SetGroups([]string{"groupb"})
 	h.UpdateGroups(cfg, old)
@@ -66,16 +66,16 @@ func TestHostMoveGroup(t *testing.T) {
 	cfg := testConfig("foo", map[string]*Host{
 		"hosta": {Alias: "hosta", Host: "a:22", User: "aroot", Groups: []string{"groupb"}, Users: []string{"foo@email"}},
 		"hostb": {Alias: "hostb", Host: "b:22", User: "aroot", Groups: []string{"groupc"}, Users: []string{"bar@email"}},
-	}, map[string]*User{
-		"C-7Hteo_D9vJXQ3UfzxbwnXaijM=": {Email: "foo@email", KeyType: "ssh-rsa", Key: "foo", Name: "aroot", Groups: []string{"groupa", "groupb"}},
-		"djZ11qHY0KOijeymK7aKvYuvhvM=": {Email: "bar@email", KeyType: "ssh-rsa", Key: "bar1", Name: "broot", Groups: []string{"groupa", "groupc"}},
-		"AzxIRrUGpKSOMs31RRXJHTSZrbM=": {Email: "bar2@email", KeyType: "ssh-rsa", Key: "bar2", Name: "buser", Groups: []string{"groupa"}},
+	}, []*User{
+		{Email: "foo@email", KeyType: "ssh-rsa", Key: "foo", Name: "aroot", Groups: []string{"groupa", "groupb"}},
+		{Email: "bar@email", KeyType: "ssh-rsa", Key: "bar1", Name: "broot", Groups: []string{"groupa", "groupc"}},
+		{Email: "bar2@email", KeyType: "ssh-rsa", Key: "bar2", Name: "buser", Groups: []string{"groupa"}},
 	}, &SFTPConn{mock: true, testHosts: map[string]SFTPMockHost{
 		"a:22": {Host: "a:22", User: "test", File: "ssh-rsa foo foo\nssh-rsa bar2 bar2\n"},
 		"b:22": {Host: "b:22", User: "test", File: "ssh-rsa bar1 bar\nssh-rsa bar2 bar2\n"},
 	}})
 	fmt.Println("A")
-	h := cfg.Hosts["hosta"]
+	h := cfg.GetHost("hosta")
 	old := h.Groups
 	h.SetGroups([]string{"groupc"})
 	h.UpdateGroups(cfg, old)

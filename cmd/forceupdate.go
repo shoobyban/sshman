@@ -13,7 +13,7 @@ var forceupdateCmd = &cobra.Command{
 	Run: func(_ *cobra.Command, _ []string) {
 		cfg := backend.ReadConfig()
 		var aliases []string
-		for a := range cfg.Hosts {
+		for a := range cfg.Hosts() {
 			aliases = append(aliases, a)
 		}
 		cfg.Regenerate(aliases...)

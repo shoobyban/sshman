@@ -13,32 +13,30 @@ type Groups struct {
 	Config *backend.Storage
 }
 
-func (h *Groups) Routers(prefix string, router *chi.Mux) *chi.Mux {
-	router.Get(prefix, h.GetAllGroups)
-	router.Get(prefix+"/{id}", h.GetGroupDetails)
-	router.Delete(prefix+"/{id}", h.DeleteGroup)
-	router.Put(prefix+"/{id}", h.UpdateGroup)
-	router.Post(prefix, h.CreateGroup)
-
-	return router
+func (h Groups) AddRoutes(router *chi.Mux) {
+	router.Get(h.Prefix, h.GetAllGroups)
+	router.Get(h.Prefix+"/{id}", h.GetGroupDetails)
+	router.Delete(h.Prefix+"/{id}", h.DeleteGroup)
+	router.Put(h.Prefix+"/{id}", h.UpdateGroup)
+	router.Post(h.Prefix, h.CreateGroup)
 }
 
-func (h *Groups) GetAllGroups(w http.ResponseWriter, r *http.Request) {
+func (h Groups) GetAllGroups(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(h.Config.GetGroups())
 }
 
-func (h *Groups) GetGroupDetails(w http.ResponseWriter, r *http.Request) {
+func (h Groups) GetGroupDetails(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	json.NewEncoder(w).Encode(h.Config.Groups[id])
 }
 
 // format: label => [servers: [server1, server2], users: [user1, user2]]
-func (h *Groups) CreateGroup(w http.ResponseWriter, r *http.Request) {
+func (h Groups) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	h.UpdateGroup(w, r)
 }
 
 // format: label => [servers: [server1, server2], users: [user1, user2]]
-func (h *Groups) UpdateGroup(w http.ResponseWriter, r *http.Request) {
+func (h Groups) UpdateGroup(w http.ResponseWriter, r *http.Request) {
 	var group struct {
 		Label   string
 		Users   []string
@@ -49,7 +47,7 @@ func (h *Groups) UpdateGroup(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(group)
 }
 
-func (h *Groups) DeleteGroup(w http.ResponseWriter, r *http.Request) {
+func (h Groups) DeleteGroup(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if h.Config.DeleteGroup(id) {
 		w.WriteHeader(http.StatusNoContent)

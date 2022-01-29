@@ -17,9 +17,10 @@ var renameHostCmd = &cobra.Command{
 		if len(args) < 2 {
 			return
 		}
-		if host, ok := cfg.Hosts[args[0]]; ok {
-			cfg.Hosts[args[1]] = host
-			delete(cfg.Hosts, args[0])
+		host := cfg.GetHost(args[0])
+		if host != nil {
+			cfg.SetHost(args[1], host)
+			cfg.DeleteHost(args[0])
 			cfg.Write()
 			fmt.Printf("Renamed %s to %s\n", args[0], args[1])
 		}

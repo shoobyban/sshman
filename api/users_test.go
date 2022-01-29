@@ -14,10 +14,11 @@ import (
 
 func TestGetAllUsers(t *testing.T) {
 	// test Users.GetAllUsers method
+	cfg := backend.NewConfig(false)
 	testUsers := map[string]*backend.User{
-		"user1": {Email: "sam@test.com", KeyType: "dummy", Key: "key1", Groups: []string{"group1", "group2"}},
+		"user1": {Email: "sam@test.com", KeyType: "dummy", Key: "key1", Groups: []string{"group1", "group2"}, Config: cfg},
 	}
-	cfg := &backend.Storage{Users: testUsers}
+	cfg.AddUser(testUsers["user1"])
 	u := Users{Prefix: "users", Config: cfg}
 	// mock http request
 	w := httptest.NewRecorder()
@@ -41,10 +42,11 @@ func TestGetAllUsers(t *testing.T) {
 
 func TestGetUserDetails(t *testing.T) {
 	// test Users.GetUserDetails method
+	cfg := backend.NewConfig(false)
 	testUsers := map[string]*backend.User{
-		"user1": {Email: "sam@test1.com", KeyType: "dummy", Key: "key1", Groups: []string{"group1", "group2"}},
+		"user1": {Email: "sam@test1.com", KeyType: "dummy", Key: "key1", Groups: []string{"group1", "group2"}, Config: cfg},
 	}
-	cfg := &backend.Storage{Users: testUsers}
+	cfg.AddUser(testUsers["user1"])
 	u := Users{Prefix: "users", Config: cfg}
 	// mock http request
 	w := httptest.NewRecorder()
@@ -67,7 +69,8 @@ func TestGetUserDetails(t *testing.T) {
 func TestCreateUser(t *testing.T) {
 	// test Users.CreateUser method
 	testUsers := map[string]*backend.User{}
-	cfg := &backend.Storage{Users: testUsers, Conn: &backend.SFTPConn{}}
+	cfg := backend.NewConfig(false)
+	cfg.AddUser(testUsers["user1"])
 	u := Users{Prefix: "users", Config: cfg}
 	// mock http request
 	w := httptest.NewRecorder()
@@ -92,10 +95,11 @@ func TestCreateUser(t *testing.T) {
 
 func TestUpdateUser(t *testing.T) {
 	// test Users.UpdateUser method
+	cfg := backend.NewConfig(false)
 	testUsers := map[string]*backend.User{
-		"user1": {Email: "sam@test1.com", KeyType: "dummy", Key: "key1", Groups: []string{"group1", "group2"}},
+		"user1": {Email: "sam@test1.com", KeyType: "dummy", Key: "key1", Groups: []string{"group1", "group2"}, Config: cfg},
 	}
-	cfg := &backend.Storage{Users: testUsers, Conn: &backend.SFTPConn{}}
+	cfg.AddUser(testUsers["user1"])
 	u := Users{Prefix: "users", Config: cfg}
 	// mock http request
 	w := httptest.NewRecorder()
@@ -124,10 +128,13 @@ func TestUpdateUser(t *testing.T) {
 
 func TestDeleteUser(t *testing.T) {
 	// test Users.DeleteUser method
-	testUsers := map[string]*backend.User{
-		"user1": {Email: "sam@test1.com", KeyType: "dummy", Key: "key1", Groups: []string{"group1", "group2"}},
+	cfg := backend.NewConfig(false)
+	testUsers := []backend.User{
+		{Email: "sam@test1.com", KeyType: "dummy", Key: "key1", Groups: []string{"group1", "group2"}, Config: cfg},
 	}
-	cfg := &backend.Storage{Users: testUsers, Conn: &backend.SFTPConn{}}
+	for _, user := range testUsers {
+		cfg.AddUser(&user)
+	}
 	u := Users{Prefix: "users", Config: cfg}
 	// mock http request
 	w := httptest.NewRecorder()
@@ -141,7 +148,7 @@ func TestDeleteUser(t *testing.T) {
 		t.Errorf("Expected status code %d, got %d", http.StatusNoContent, w.Code)
 		return
 	}
-	if len(cfg.Users) != 0 {
-		t.Errorf("Expected %d users, got %d", 0, len(cfg.Users))
+	if len(cfg.Users()) != 0 {
+		t.Errorf("Expected %d users, got %d", 0, len(cfg.Users()))
 	}
 }

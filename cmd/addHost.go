@@ -28,14 +28,19 @@ sshman register host google my.google.com:22 myuser ~/.ssh/google.pub deploy hos
 			os.Exit(0)
 		}
 		conf := backend.ReadConfig()
-		host, exists := conf.Hosts[args[0]]
+		host := conf.GetHost(args[0])
 		oldgroups := []string{}
-		if exists {
+		if host != nil {
 			fmt.Printf("Host already exists with this alias, overwrite [y/n]: ")
 			exitIfNo()
 			oldgroups = host.GetGroups()
 		}
-		conf.AddHost(args...)
+		h, err := conf.PrepareHost(args...)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			os.Exit(1)
+		}
+		conf.AddHost(h)
 		host.UpdateGroups(conf, oldgroups)
 		conf.Update(args[0])
 	},

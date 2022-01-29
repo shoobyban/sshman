@@ -16,10 +16,8 @@ import (
 
 func TestGetAllHosts(t *testing.T) {
 	// test Hosts.GetAllHosts method
-	testHosts := map[string]*backend.Host{
-		"host1": {Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}},
-	}
-	cfg := &backend.Storage{Hosts: testHosts}
+	cfg := backend.NewConfig(false)
+	cfg.AddHost(&backend.Host{Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}})
 	h := Hosts{Prefix: "", Config: cfg}
 	// mock http request
 	w := httptest.NewRecorder()
@@ -32,20 +30,21 @@ func TestGetAllHosts(t *testing.T) {
 
 	var hosts map[string]backend.Host
 	json.NewDecoder(w.Body).Decode(&hosts)
-	if len(hosts) == 0 {
-		t.Errorf("Expected %d hosts, got %d", len(testHosts), len(hosts))
+	if len(hosts) != 1 {
+		t.Errorf("Expected 1 hosts, got %d: %s", len(hosts), w.Body.String())
 	}
-	if hosts["host1"].User != testHosts["host1"].User {
-		t.Errorf("Expected %s, got %s", testHosts["host1"].User, hosts["host1"].User)
+	if hosts["host1"].User != "user1" {
+		t.Errorf("Expected user1, got %s", hosts["host1"].User)
 	}
 }
 
 func TestGetHostDetails(t *testing.T) {
 	// test Hosts.GetHostDetails method
-	testHosts := map[string]*backend.Host{
-		"host1": {Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}},
+	cfg := backend.NewConfig(false)
+	testHosts := []backend.Host{
+		backend.Host{Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}, Config: cfg},
 	}
-	cfg := &backend.Storage{Hosts: testHosts}
+	cfg.AddHost(&testHosts[0])
 	h := Hosts{Prefix: "", Config: cfg}
 	// mock http request
 	w := httptest.NewRecorder()
@@ -61,21 +60,15 @@ func TestGetHostDetails(t *testing.T) {
 
 	var host backend.Host
 	json.NewDecoder(w.Body).Decode(&host)
-	if host.User != testHosts["host1"].User {
-		t.Errorf("Expected %s, got %s", testHosts["host1"].User, host.User)
+	if host.User != testHosts[0].User {
+		t.Errorf("Expected %s, got %s", testHosts[0].User, host.User)
 	}
 }
 
 func TestUpdateHost(t *testing.T) {
 	// test Hosts.UpdateHost method
-	testHosts := map[string]*backend.Host{
-		"host1": {Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}},
-	}
-	cfg := &backend.Storage{
-		Hosts: testHosts,
-		Conn:  &backend.SFTPConn{},
-	}
-	h := Hosts{Prefix: "", Config: cfg}
+	cfg := backend.NewConfig(false)
+	cfg.AddHost(&backend.Host{Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}})
 	// mock http request
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPut, "/host1",
@@ -84,6 +77,7 @@ func TestUpdateHost(t *testing.T) {
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "host1")
 	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
+	h := Hosts{Prefix: "", Config: cfg}
 	h.UpdateHost(w, r)
 	// check response
 	if w.Code != http.StatusOK {
@@ -99,11 +93,7 @@ func TestUpdateHost(t *testing.T) {
 
 // test Hosts.CreateHost method
 func TestCreateHost(t *testing.T) {
-	testHosts := map[string]*backend.Host{}
-	cfg := &backend.Storage{
-		Hosts: testHosts,
-		Conn:  &backend.SFTPConn{},
-	}
+	cfg := backend.NewConfig(false)
 	h := Hosts{Prefix: "", Config: cfg}
 	// mock http request
 	w := httptest.NewRecorder()
@@ -128,10 +118,8 @@ func TestDeleteHost(t *testing.T) {
 	testHosts := map[string]*backend.Host{
 		"host1": {Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}},
 	}
-	cfg := &backend.Storage{
-		Hosts: testHosts,
-		Conn:  &backend.SFTPConn{},
-	}
+	cfg := backend.NewConfig(false)
+	cfg.AddHost(testHosts["host1"])
 	h := Hosts{Prefix: "", Config: cfg}
 	// mock http request
 	w := httptest.NewRecorder()
@@ -144,7 +132,7 @@ func TestDeleteHost(t *testing.T) {
 	if w.Code != http.StatusNoContent {
 		t.Errorf("Expected status code %d, got %d", http.StatusNoContent, w.Code)
 	}
-	if len(cfg.Hosts) != 0 {
-		t.Errorf("Number of hosts is %d after deleting", len(cfg.Hosts))
+	if len(cfg.Hosts()) != 0 {
+		t.Errorf("Number of hosts is %d after deleting", len(cfg.Hosts()))
 	}
 }

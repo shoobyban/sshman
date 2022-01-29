@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -14,51 +13,47 @@ type Hosts struct {
 	Config *backend.Storage
 }
 
-func (h *Hosts) Routers(prefix string, router *chi.Mux) *chi.Mux {
-	router.Get(prefix, h.GetAllHosts)
-	router.Get(prefix+"/{id}", h.GetHostDetails)
-	router.Delete(prefix+"/{id}", h.DeleteHost)
-	router.Put(prefix+"/{id}", h.UpdateHost)
-	router.Post(prefix, h.CreateHost)
-
-	return router
+func (h Hosts) AddRoutes(router *chi.Mux) {
+	router.Get(h.Prefix, h.GetAllHosts)
+	router.Get(h.Prefix+"/{id}", h.GetHostDetails)
+	router.Delete(h.Prefix+"/{id}", h.DeleteHost)
+	router.Put(h.Prefix+"/{id}", h.UpdateHost)
+	router.Post(h.Prefix, h.CreateHost)
 }
 
-func (h *Hosts) GetAllHosts(w http.ResponseWriter, r *http.Request) {
-	hosts := h.Config.Hosts
-	json.NewEncoder(w).Encode(hosts)
+func (h Hosts) GetAllHosts(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(h.Config.Hosts())
 }
 
-func (h *Hosts) GetHostDetails(w http.ResponseWriter, r *http.Request) {
+func (h Hosts) GetHostDetails(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	host := h.Config.Hosts[id]
-	json.NewEncoder(w).Encode(host)
+	json.NewEncoder(w).Encode(h.Config.GetHost(id))
 }
 
-func (h *Hosts) CreateHost(w http.ResponseWriter, r *http.Request) {
+func (h Hosts) CreateHost(w http.ResponseWriter, r *http.Request) {
 	h.UpdateHost(w, r)
 }
 
-func (h *Hosts) UpdateHost(w http.ResponseWriter, r *http.Request) {
+func (h Hosts) UpdateHost(w http.ResponseWriter, r *http.Request) {
 	var host backend.Host
 	err := json.NewDecoder(r.Body).Decode(&host)
 	if err != nil {
-		log.Printf("[ERROR] %s", err)
+		h.Config.Log.Errorf("Can't decode host %s", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	var oldHost *backend.Host
-	var exists bool
-	if oldHost, exists = h.Config.Hosts[host.Alias]; !exists {
+	oldHost = h.Config.GetHost(host.Alias)
+	if oldHost == nil { // for CreateHost handler
 		oldHost = &backend.Host{}
 	}
-	h.Config.Hosts[host.Alias] = &host
+	h.Config.SetHost(host.Alias, &host)
 	host.UpdateGroups(h.Config, oldHost.Groups)
 	h.Config.Write()
 	json.NewEncoder(w).Encode(host)
 }
 
-func (h *Hosts) DeleteHost(w http.ResponseWriter, r *http.Request) {
+func (h Hosts) DeleteHost(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if h.Config.DeleteHost(id) {
 		w.WriteHeader(http.StatusNoContent)

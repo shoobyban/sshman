@@ -14,7 +14,7 @@ var listHostsCmd = &cobra.Command{
 	Long:  `Lists registered hosts`,
 	Run: func(_ *cobra.Command, _ []string) {
 		conf := backend.ReadConfig()
-		for alias, host := range conf.Hosts {
+		for alias, host := range conf.Hosts() {
 			fmt.Printf("%-25s\t%-50s\t%v\n", alias, host.Host, host.GetGroups())
 		}
 	},
