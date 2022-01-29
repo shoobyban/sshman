@@ -9,6 +9,7 @@ type User struct {
 	Key     string   `json:"key"`
 	Groups  []string `json:"groups"`
 	File    string   `json:"keyfile,omitempty"`
+	Config  *Storage `json:"-"`
 }
 
 func NewUser(email, keytype, key, name string) *User {
@@ -23,7 +24,10 @@ func NewUser(email, keytype, key, name string) *User {
 func (u *User) UpdateGroups(C *Storage, oldgroups []string) error {
 	var errors *Errors
 	added, removed := updates(oldgroups, u.Groups)
-	fmt.Printf("added: %v removed: %v\n", added, removed)
+	if u.Config == nil {
+		return fmt.Errorf("user has no config")
+	}
+	u.Config.Log.Infof("added: %v removed: %v", added, removed)
 	for _, group := range added {
 		hosts := C.getHosts(group)
 		for _, h := range hosts {
@@ -37,7 +41,7 @@ func (u *User) UpdateGroups(C *Storage, oldgroups []string) error {
 					continue
 				}
 				//fmt.Printf("Added %s to %s %v\n", u.Email, h.Alias, h.Groups)
-				C.Hosts[h.Alias] = h
+				C.SetHost(h.Alias, h)
 			}
 		}
 	}
@@ -58,8 +62,8 @@ func (u *User) UpdateGroups(C *Storage, oldgroups []string) error {
 					errors.Add("Error removing %s from %s", u.Email, h.Alias)
 					continue
 				}
-				fmt.Printf("Removed %s from %s %v\n", u.Email, h.Alias, h.Groups)
-				C.Hosts[h.Alias] = h
+				h.Config.Log.Infof("removed %s from %s %v\n", u.Email, h.Alias, h.Groups)
+				C.SetHost(h.Alias, h)
 			}
 		}
 	}

@@ -14,7 +14,7 @@ var listAuthCmd = &cobra.Command{
 	Long:  `List who's in authorized_key on what host`,
 	Run: func(_ *cobra.Command, _ []string) {
 		conf := backend.ReadConfig()
-		for alias, host := range conf.Hosts {
+		for alias, host := range conf.Hosts() {
 			fmt.Printf("%-25s: %v\n", alias, host.GetUsers())
 		}
 	},

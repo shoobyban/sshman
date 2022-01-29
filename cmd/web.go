@@ -24,28 +24,19 @@ var webCmd = &cobra.Command{
 	Short: "Web UI",
 	Long:  `Stays running and created a web UI.`,
 	Run: func(cmd *cobra.Command, _ []string) {
-		cfg := backend.ReadConfig()
+		cfg := backend.ReadConfig(true)
 		port, err := cmd.Flags().GetInt("port")
 		if err != nil {
 			port = 80
 		}
-		users := api.Users{
-			Prefix: "/api/users",
-			Config: cfg,
-		}
-		hosts := api.Hosts{
-			Prefix: "/api/hosts",
-			Config: cfg,
-		}
-		groups := api.Groups{
-			Prefix: "/api/groups",
-			Config: cfg,
-		}
+
 		r := chi.NewMux()
 		r.Use(middleware.Logger)
-		r = users.Routers("/api/users", r)
-		r = hosts.Routers("/api/hosts", r)
-		r = groups.Routers("/api/groups", r)
+		api.Groups{Prefix: "/api/groups", Config: cfg}.AddRoutes(r)
+		api.Hosts{Prefix: "/api/hosts", Config: cfg}.AddRoutes(r)
+		api.Users{Prefix: "/api/users", Config: cfg}.AddRoutes(r)
+		api.Logs{Prefix: "/api/logs", Config: cfg}.AddRoutes(r)
+
 		log.Printf("Listening on http://localhost:%v", port)
 		distfs, err := fs.Sub(dist, "dist")
 		if err != nil {

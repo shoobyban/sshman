@@ -2,7 +2,6 @@ package backend
 
 import (
 	"fmt"
-	"log"
 	"strings"
 )
 
@@ -27,15 +26,18 @@ func (h *Host) ReadUsers() error {
 		parts := strings.Split(line, " ")
 		if len(parts) == 3 {
 			lsum := checksum(parts[1])
-			if _, exists := h.Config.Users[lsum]; !exists {
-				h.Config.Users[lsum] = &User{
+			email := parts[2] + "@" + h.Alias
+			if !h.Config.UserExists(lsum) {
+				user := &User{
 					KeyType: parts[0],
 					Key:     parts[1],
 					Name:    parts[2],
-					Email:   parts[2] + "@" + h.Alias,
+					Email:   email,
+					Config:  h.Config,
 				}
+				h.Config.AddUser(user)
 			}
-			userlist = append(userlist, h.Config.Users[lsum].Email)
+			userlist = append(userlist, email)
 		}
 	}
 	h.Checksum = sum
@@ -45,11 +47,10 @@ func (h *Host) ReadUsers() error {
 }
 
 func (h *Host) read() (string, []string, error) {
-	key := h.Key
-	if key == "" {
-		key = h.Config.Key
+	if h.Config == nil {
+		return "", nil, fmt.Errorf("host is nil")
 	}
-	err := h.Config.Conn.Connect(key, h.Host, h.User)
+	err := h.Config.Conn.Connect(h.Key, h.Host, h.User)
 	if err != nil {
 		return "", nil, fmt.Errorf("error connecting %s: %v", h.Alias, err)
 	}
@@ -67,11 +68,7 @@ func (h *Host) write(lines []string) error {
 	if len(lines) == 0 {
 		return fmt.Errorf("no keys in new file for host '%s', host would be inaccessible", h.Alias)
 	}
-	key := h.Key
-	if key == "" {
-		key = h.Config.Key
-	}
-	err := h.Config.Conn.Connect(key, h.Host, h.User)
+	err := h.Config.Conn.Connect(h.Key, h.Host, h.User)
 	if err != nil {
 		return fmt.Errorf("error connecting %s: %v", h.Alias, err)
 	}
@@ -121,6 +118,9 @@ func (h *Host) AddUser(u *User) error {
 }
 
 func (h *Host) DelUser(u *User) error {
+	if u == nil {
+		return fmt.Errorf("user is nil")
+	}
 	sum, lines, err := h.read()
 	if err != nil {
 		return err
@@ -132,12 +132,13 @@ func (h *Host) DelUser(u *User) error {
 		parts := strings.Split(line, " ")
 		if len(parts) == 3 {
 			lsum := checksum(parts[1])
-			log.Printf("Del Checksum: %s, key: %s, userkey: %s", lsum, parts[1], u.Key)
+			h.Config.Log.Infof("deleting user with checksum: %s, key: %s, userkey: %s", lsum, parts[1], u.Key)
 			if parts[1] == u.Key {
 				found = true
 				continue
 			}
-			if user, ok := h.Config.Users[lsum]; ok {
+			user := h.Config.GetUser(lsum)
+			if user != nil {
 				newlines = append(newlines, line)
 				userlist = append(userlist, user.Email)
 			}
@@ -145,7 +146,7 @@ func (h *Host) DelUser(u *User) error {
 	}
 
 	if found {
-		log.Printf("found, deleting %v", u)
+		h.Config.Log.Infof("found user, deleting %v", u)
 		newlines = deleteEmpty(newlines)
 		err = h.write(newlines)
 		if err != nil {
@@ -160,19 +161,19 @@ func (h *Host) DelUser(u *User) error {
 func (h *Host) UpdateGroups(c *Storage, oldgroups []string) bool {
 	success := true
 	added, removed := updates(oldgroups, h.Groups)
-	fmt.Printf("added: %v removed: %v\n", added, removed)
+	h.Config.Log.Infof("added: %v removed: %v", added, removed)
 	for _, group := range added {
 		users := c.GetUsers(group)
 		for _, u := range users {
-			fmt.Printf("User %s from group %s\n", u.Email, group)
+			h.Config.Log.Infof("User %s from group %s", u.Email, group)
 			if !h.HasUser(u.Email) {
 				err := h.AddUser(u)
 				if err != nil {
-					fmt.Printf("Error adding %s to %s\n", u.Email, h.Alias)
+					h.Config.Log.Errorf("error adding %s to %s", u.Email, h.Alias)
 					success = false
 					continue
 				}
-				fmt.Printf("Added %s to %s %v\n", u.Email, h.Alias, h.Groups)
+				h.Config.Log.Infof("Added %s to %s %v", u.Email, h.Alias, h.Groups)
 			}
 		}
 	}
@@ -187,15 +188,15 @@ func (h *Host) UpdateGroups(c *Storage, oldgroups []string) bool {
 			if h.HasUser(u.Email) {
 				err := h.DelUser(u)
 				if err != nil {
-					fmt.Printf("Error removing %s from %s\n", u.Email, h.Alias)
+					c.Log.Errorf("error removing %s from %s", u.Email, h.Alias)
 					success = false
 					continue
 				}
-				fmt.Printf("Removed %s from %s\n", u.Email, h.Alias)
+				c.Log.Infof("removed %s from %s", u.Email, h.Alias)
 			}
 		}
 	}
-	c.Hosts[h.Alias] = h
+	c.SetHost(h.Alias, h)
 	c.Write()
 	return success
 }
