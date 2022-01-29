@@ -134,13 +134,12 @@ Note: Removing host from a group will remove all users that are on the host only
 - [x] Reuse stored ssh key for modifying user
 - [x] Adding host to download information without the need of running update
 - [x] Tests, refactor for testability
-- [ ] Group management commands like addgroup (will reupload all group users to group hosts)
+- [x] Complete CRUD for missing use cases
+- [ ] Web interface
 - [ ] Testing connection after creating authorized_keys entry
-- [ ] Complete CRUD for missing use cases
 - [ ] More backend (currently .ssh/.sshman configuration file)
 - [ ] Adding using password auth
 - [ ] Text UI
-- [ ] Web interface
 
 ## Mentions
 
