@@ -32,20 +32,11 @@ var webCmd = &cobra.Command{
 
 		r := chi.NewMux()
 		r.Use(middleware.Logger)
-		// r.Use(cors.Handler(cors.Options{
-		// 	// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
-		// 	AllowedOrigins: []string{"https://*", "http://*"},
-		// 	// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
-		// 	AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		// 	AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		// 	ExposedHeaders:   []string{"Link"},
-		// 	AllowCredentials: false,
-		// 	MaxAge:           300, // Maximum value not ignored by any of major browsers
-		// }))
 		api.Groups{Prefix: "/api/groups", Config: cfg}.AddRoutes(r)
 		api.Hosts{Prefix: "/api/hosts", Config: cfg}.AddRoutes(r)
 		api.Users{Prefix: "/api/users", Config: cfg}.AddRoutes(r)
 		api.Logs{Prefix: "/api/logs", Config: cfg}.AddRoutes(r)
+		api.Keys{Prefix: "/api/keys", Config: cfg}.AddRoutes(r)
 
 		cfg.Log.Infof("Listening on http://localhost:%v", port)
 		distfs, err := fs.Sub(dist, "dist")

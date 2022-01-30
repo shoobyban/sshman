@@ -3,6 +3,7 @@ import { createStore } from "vuex"
 import users from "./users.js"
 import groups from "./groups.js"
 import hosts from "./hosts.js"
+import keys from "./keys.js"
 
 const store = createStore({
     namespaced: true,
@@ -11,6 +12,7 @@ const store = createStore({
         users, 
         groups,
         hosts,
+        keys,
     },
   })
   

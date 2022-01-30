@@ -1,0 +1,15 @@
+version: '2.3'
+
+services:
+  host1:
+    build: docker
+    ports:
+      - '2201:22'
+  host2:
+    build: docker
+    ports:
+      - '2202:22'
+  host3:
+    build: docker
+    ports:
+      - '2203:22'

@@ -7,13 +7,14 @@ export default {
     },
     mutations: {
         setUsers(state, users) {
+            console.log('setUsers', users)
             state.users = users
             state.allEmails = []
             for (let i = 0; i < users.length; i++) {
                 state.allEmails.push(users[i].email)
             }
         },
-        addUser(state, user) {
+        createUser(state, user) {
             state.users.push(user)
         },
         updateUser(state, user) {
@@ -36,10 +37,10 @@ export default {
                     context.commit("setUsers", response.data)
                 })
         },
-        async addUser(context, user) {
+        async createUser(context, user) {
             return axios.post("api/users", JSON.stringify(user))
                 .then((response) => {
-                    context.commit("addUser", {
+                    context.commit("createUser", {
                         id: response.data.insert_id,
                         ...user
                     })

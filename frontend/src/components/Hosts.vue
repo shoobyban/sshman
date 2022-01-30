@@ -11,6 +11,7 @@ export default {
         ...mapState({
             hosts: state => state.hosts,
             groups: state => state.groups,
+            keys: state => state.keys,
         }),
     },
     methods: {
@@ -20,10 +21,12 @@ export default {
             'updateHost',
             'deleteHost',
             'fetchGroups',
+            'fetchKeys',
         ]),
         fetchAll() {
             this.fetchHosts()
             this.fetchGroups()
+            this.fetchKeys('private')
         }
     },
     mounted() {
@@ -48,7 +51,7 @@ export default {
                 {label: 'Alias', index: 'alias', placeholder: 'home.host', type:'text'},
                 {label: 'Hostname', index: 'host', placeholder: '127.0.0.1:22', type:'text'},
                 {label: 'Username', index: 'user', placeholder: 'root', type:'text'},
-                {label: 'Keyfile', index: 'key', placeholder: '~/.ssh/keys.key', type:'text'},
+                {label: 'Keyfile', index: 'key', placeholder: '~/.ssh/keys.key', type:'select', options: keys.keys},
                 {label: 'Groups', index: 'groups', placeholder: 'group1,group2', type:'multiselect', options: groups.allLabels},
                 ]" /> 
     </div>
