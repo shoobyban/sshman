@@ -12,7 +12,7 @@ export default {
             state.allLabels = []
             _.forEach(hosts, (host, label) => { state.allLabels.push(label) })
         },
-        addHost(state, host) {
+        createHost(state, host) {
             state.hosts.push(host)
         },
         updateHost(state, host) {
@@ -35,10 +35,10 @@ export default {
                     context.commit("setHosts", response.data)
                 })
         },
-        async addHost(context, host) {
+        async createHost(context, host) {
             return axios.post("api/hosts", JSON.stringify(host))
                 .then((response) => {
-                    context.commit("addHost", {
+                    context.commit("createHost", {
                         id: response.data.insert_id,
                         ...host
                     })

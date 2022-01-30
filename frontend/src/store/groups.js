@@ -13,7 +13,7 @@ export default {
             state.allLabels = []
             _.forEach(groups, (group, label) => { state.allLabels.push(label) })
         },
-        addGroup(state, group) {
+        createGroup(state, group) {
             state.groups.push(group)
         },
         updateGroup(state, group) {
@@ -36,10 +36,10 @@ export default {
                     context.commit("setGroups", response.data)
                 })
         },
-        async addGroup(context, group) {
+        async createGroup(context, group) {
             return axios.post("api/groups", JSON.stringify(group))
                 .then((response) => {
-                    context.commit("addGroup", {
+                    context.commit("createGroup", {
                         id: response.data.insert_id,
                         ...group
                     })
