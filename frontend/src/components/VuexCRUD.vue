@@ -22,11 +22,11 @@ export default {
             deleteModal: false,
             editModal: false,
             addModal: false,
-            dataIndex: '',
-            selected: [],
+            currentID: '',
+            selection: [],
             sortBy: '',
             sortDir: '',
-            searchResult: {},
+            listItems: {},
         }
     },
     mounted: function() {
@@ -60,11 +60,11 @@ export default {
         editFields: function() {
             return this.fields.filter(item => (this.visible(item, 'edit')))
         },
-        selectedItem: function() {
-            if (this.searchResult == undefined) {
+        current: function() {
+            if (this.listItems == undefined) {
                 return {}
             }
-            return this.searchResult[this.dataIndex]
+            return this.listItems[this.currentID]
         },
     },
     methods: {
@@ -89,40 +89,40 @@ export default {
             return false
         },
         recalcSearch() {
-            this.searchResult = {}
+            this.listItems = {}
             for (let key in this.modelValue) {
                 const value = this.modelValue[key]
-                this.searchResult[key] = {
+                this.listItems[key] = {
                     ...value,
                     __key: key,
                 }
             }
             if (this.searchInput != '') {
-                let a = _(this.searchResult).filter(item => {
+                let a = _(this.listItems).filter(item => {
                     return this.findIn(item, this.searchFields)
                 }).value()
-                this.searchResult = {}
+                this.listItems = {}
                 for (let k in a) {
                     const value = a[k]
                     const key = value.__key
-                    this.searchResult[key] = value
+                    this.listItems[key] = value
                 }
             }
             if (this.sortBy != '') {
-                let obj = _(this.searchResult)
+                let obj = _(this.listItems)
                 let sorted = {}
-                let keys = _.keys(this.searchResult)
+                let keys = _.keys(this.listItems)
                 keys.sort((x, y) => {
                     if (this.sortDir == "asc") {
-                        return this.searchResult[x][this.sortBy] > this.searchResult[y][this.sortBy] ? 1 : -1
+                        return this.listItems[x][this.sortBy] > this.listItems[y][this.sortBy] ? 1 : -1
                     } else {
-                        return this.searchResult[x][this.sortBy] < this.searchResult[y][this.sortBy] ? 1 : -1
+                        return this.listItems[x][this.sortBy] < this.listItems[y][this.sortBy] ? 1 : -1
                     }
                 })       
                 _.forEach(keys, (key) => {
-                    return sorted[key] = this.searchResult[key];
+                    return sorted[key] = this.listItems[key];
                 })
-                this.searchResult = sorted
+                this.listItems = sorted
             }
         },
         fileUpload(evt) {
@@ -137,7 +137,7 @@ export default {
                     return
                 }
                 if (eTarget.id.startsWith('edit:')) {
-                    self.selectedItem[eTarget.name] = evt.target.result
+                    self.current[eTarget.name] = evt.target.result
                 } else {
                     const name = eTarget.id.split(':')[1]
                     const hiddenField = document.getElementById('data:' + name)
@@ -146,24 +146,24 @@ export default {
             }
             reader.readAsText(evt.target.files[0])
         },
-        toggleSelected(str, e) {
+        toggleSelected(idx, e) {
             e.stopPropagation()
-            if (this.selected.includes(str)) {
-                this.selected.splice(this.selected.indexOf(str), 1)
+            if (this.selection.includes(idx)) {
+                this.selection.splice(this.selection.indexOf(idx), 1)
             } else {
-                this.selected.push(str)
+                this.selection.push(idx)
             }
         },
-        isSelected(str) {
-            return this.selected.includes(str)
+        isSelected(idx) {
+            return this.selection.includes(idx)
         },
         toggleAll(e) {
             e.stopPropagation()
             for (const key in this.value) {
-                if (this.selected.includes(key)) {
-                    this.selected.splice(this.selected.indexOf(key), 1)
+                if (this.selection.includes(key)) {
+                    this.selection.splice(this.selection.indexOf(key), 1)
                 } else {
-                    this.selected.push(key)
+                    this.selection.push(key)
                 }
             }
         },
@@ -181,7 +181,7 @@ export default {
         },
         createItem(e) {
             this.addModal = false
-            this.dataIndex = ''
+            this.currentID = ''
             e.stopPropagation()
             let data = new FormData(e.target.form)
             let item = Object.fromEntries(data.entries())
@@ -204,26 +204,26 @@ export default {
             this.editModal = false
             let id
             if (this.idField != '.'){
-                id = this.selectedItem[this.idField]
+                id = this.current[this.idField]
             } else {
-                id = this.dataIndex
+                id = this.currentID
             }
-            this.$emit('update', {id: id, item: this.selectedItem})
-            this.dataIndex = ''
+            this.$emit('update', {id: id, item: this.current})
+            this.currentID = ''
             setTimeout(() => {
                 this.$emit('fetch')
             }, 500)
         },
         deleteItem() {
-            console.log('delete', this.dataIndex)
+            console.log('delete', this.currentID)
             let id
             if (this.idField != '.'){
-                id = this.selectedItem[this.idField]
+                id = this.current[this.idField]
             } else {
-                id = this.dataIndex
+                id = this.currentID
             }
             this.deleteModal = false
-            this.dataIndex = ''
+            this.currentID = ''
             this.$emit('delete', id)
             setTimeout(() => {
                 this.$emit('fetch')
@@ -285,7 +285,7 @@ export default {
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                <tr v-for="(item,idx) in searchResult" :key="idx" class="hover:bg-gray-100" @click="toggleSelected(idx, $event)">
+                                <tr v-for="(item,idx) in listItems" :key="idx" class="hover:bg-gray-100" @click="toggleSelected(idx, $event)">
                                     <td class="p-4 w-4">
                                         <div class="flex items-center">
                                             <input :id="'checkbox-'+idx" aria-describedby="checkbox-1" type="checkbox" :checked="isSelected(idx)" @click="$event.stopPropagation()"
@@ -304,10 +304,10 @@ export default {
                                         </div>
                                     </td>
                                     <td class="p-4 whitespace-nowrap space-x-2">
-                                        <div @click="this.dataIndex = idx; this.editModal = true" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center">
+                                        <div @click="this.currentID = idx; this.editModal = true" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center">
                                             <i class="fas fa-pen"></i>
                                         </div>
-                                        <div @click="this.dataIndex = idx; this.deleteModal = true" class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center">
+                                        <div @click="this.currentID = idx; this.deleteModal = true" class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center">
                                             <i class="fas fa-trash"></i>
                                         </div>
                                     </td>
@@ -337,14 +337,14 @@ export default {
                     <!-- Modal body -->
                     <div class="p-6 space-y-6">
                         <form action="#">
-                            <div class="grid grid-cols-6 gap-6" v-if="selectedItem">
+                            <div class="grid grid-cols-6 gap-6" v-if="current">
                                 <div v-for="field in editFields" class="col-span-6 sm:col-span-3">
                                     <label :for="field.index" class="text-sm font-medium text-gray-900 block mb-2">{{field.label}}</label>
-                                    <input type="text" v-if="field.type == 'text'" :name="field.index" :id="'edit:'+field.index" v-model="selectedItem[field.index]" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required />
-                                    <input type="email" v-else-if="field.type == 'email'" :name="field.index" :id="field.index" v-model="selectedItem[field.index]" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required />
+                                    <input type="text" v-if="field.type == 'text'" :name="field.index" :id="'edit:'+field.index" v-model="current[field.index]" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required />
+                                    <input type="email" v-else-if="field.type == 'email'" :name="field.index" :id="field.index" v-model="current[field.index]" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required />
                                     <input type="file" v-else-if="field.type == 'file'" :id="'edit:'+field.index" :name="field.index" @change="fileUpload" :ref="field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required />
-                                    <Multiselect v-else-if="field.type == 'multiselect'" v-model="selectedItem[field.index]" mode="tags" :createTag="true" :appendNewTag="true" :searchable="true" :options="field.options" />
-                                    <Multiselect v-else-if="field.type == 'select'" v-model="selectedItem[field.index]" mode="single" :searchable="true" :options="field.options" />
+                                    <Multiselect v-else-if="field.type == 'multiselect'" v-model="current[field.index]" mode="tags" :createTag="true" :appendNewTag="true" :searchable="true" :options="field.options" />
+                                    <Multiselect v-else-if="field.type == 'select'" v-model="current[field.index]" mode="single" :searchable="true" :options="field.options" />
                                     <div v-else>Unhandled {{field.type}}</div>
                                 </div>
                             </div>

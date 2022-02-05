@@ -16,7 +16,7 @@ import (
 
 func TestGetAllHosts(t *testing.T) {
 	// test Hosts.GetAllHosts method
-	cfg := backend.NewConfig(false)
+	cfg := backend.NewConfig()
 	cfg.AddHost(&backend.Host{Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}})
 	h := Hosts{Prefix: ""}
 	// mock http request
@@ -41,7 +41,7 @@ func TestGetAllHosts(t *testing.T) {
 
 func TestGetHostDetails(t *testing.T) {
 	// test Hosts.GetHostDetails method
-	cfg := backend.NewConfig(false)
+	cfg := backend.NewConfig()
 	testHosts := []backend.Host{
 		backend.Host{Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}},
 	}
@@ -69,7 +69,7 @@ func TestGetHostDetails(t *testing.T) {
 
 func TestUpdateHost(t *testing.T) {
 	// test Hosts.UpdateHost method
-	cfg := backend.NewConfig(false)
+	cfg := backend.NewConfig()
 	cfg.AddHost(&backend.Host{Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}})
 	// mock http request
 	w := httptest.NewRecorder()
@@ -96,7 +96,7 @@ func TestUpdateHost(t *testing.T) {
 
 // test Hosts.CreateHost method
 func TestCreateHost(t *testing.T) {
-	cfg := backend.NewConfig(false)
+	cfg := backend.NewConfig()
 	h := Hosts{Prefix: ""}
 	// mock http request
 	w := httptest.NewRecorder()
@@ -122,7 +122,7 @@ func TestDeleteHost(t *testing.T) {
 	testHosts := map[string]*backend.Host{
 		"host1": {Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}},
 	}
-	cfg := backend.NewConfig(false)
+	cfg := backend.NewConfig()
 	cfg.AddHost(testHosts["host1"])
 	h := Hosts{Prefix: ""}
 	// mock http request
