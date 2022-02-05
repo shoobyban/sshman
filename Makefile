@@ -7,6 +7,7 @@ linux: frontend
 
 test:
 	go test ./...
+	cd frontend && yarn lint
 
 frontend:
 	cd frontend && yarn && yarn build && cd ..
