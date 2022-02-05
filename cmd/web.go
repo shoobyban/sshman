@@ -19,12 +19,14 @@ import (
 //go:embed dist/*
 var dist embed.FS
 
-func ReadConfig(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		cfg := backend.ReadConfig(true)
-		ctx := context.WithValue(r.Context(), "config", cfg)
-		next.ServeHTTP(rw, r.WithContext(ctx))
-	})
+func ReadConfig(log *backend.ILog) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+			cfg := backend.WebReadConfig(log)
+			ctx := context.WithValue(r.Context(), "config", cfg)
+			next.ServeHTTP(rw, r.WithContext(ctx))
+		})
+	}
 }
 
 // webCmd represents the web command
@@ -40,7 +42,8 @@ var webCmd = &cobra.Command{
 
 		r := chi.NewMux()
 		r.Use(middleware.Logger)
-		r.Use(ReadConfig)
+		weblog := backend.NewLog(true)
+		r.Use(ReadConfig(weblog))
 		api.Groups{Prefix: "/api/groups"}.AddRoutes(r)
 		api.Hosts{Prefix: "/api/hosts"}.AddRoutes(r)
 		api.Users{Prefix: "/api/users"}.AddRoutes(r)

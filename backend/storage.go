@@ -39,28 +39,43 @@ type Group struct {
 	Users []*User
 }
 
-func NewConfig(web bool) *Storage {
+func NewConfig() *Storage {
 	return &Storage{
 		hosts: map[string]*Host{},
 		users: map[string]*User{},
 		Conn:  &SFTPConn{},
-		Log:   NewLog(web),
+		Log:   NewLog(false),
 	}
 }
 
-func ReadConfig(webs ...bool) *Storage {
-	web := false
-	if len(webs) > 0 {
-		web = webs[0]
-	}
-	c := NewConfig(web)
+func ReadConfig() *Storage {
+	c := NewConfig()
 	c.home, _ = os.UserHomeDir()
 	err := c.load(c.home + "/.ssh/.sshman")
 	if err != nil {
 		c.Log.Infof("No configuration file ~/.ssh/.sshman, creating one")
 		return c
 	}
-	c.Log.Infof("Loaded configuration from ~/.ssh/.sshman")
+	return c
+}
+
+func NewConfigWithLog(log *ILog) *Storage {
+	return &Storage{
+		hosts: map[string]*Host{},
+		users: map[string]*User{},
+		Conn:  &SFTPConn{},
+		Log:   log,
+	}
+}
+
+func WebReadConfig(log *ILog) *Storage {
+	c := NewConfigWithLog(log)
+	c.home, _ = os.UserHomeDir()
+	err := c.load(c.home + "/.ssh/.sshman")
+	if err != nil {
+		c.Log.Infof("No configuration file ~/.ssh/.sshman, creating one")
+		return c
+	}
 	return c
 }
 

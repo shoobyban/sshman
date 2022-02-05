@@ -50,6 +50,11 @@ func (h Hosts) UpdateHost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	if host.Alias == "" {
+		cfg.Log.Errorf("Can't create host without alias")
+		http.Error(w, "Can't create host without alias", http.StatusBadRequest)
+		return
+	}
 	var oldHost *backend.Host
 	oldHost = cfg.GetHost(host.Alias)
 	if oldHost == nil { // for CreateHost handler
