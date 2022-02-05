@@ -245,6 +245,18 @@ func (c *Storage) AddHost(host *Host) error {
 }
 
 // DeleteUser removes a user from the configuration
+func (c *Storage) DeleteUserByID(id string) bool {
+	c.l.Lock()
+	defer c.l.Unlock()
+	var ok bool
+	if _, ok = c.users[id]; ok {
+		delete(c.users, id)
+		c.Write()
+		c.Log.Infof("Deleted user %s", id)
+	}
+	return ok
+}
+
 func (c *Storage) DeleteUser(email string) bool {
 	c.l.Lock()
 	defer c.l.Unlock()

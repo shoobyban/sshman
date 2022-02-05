@@ -139,9 +139,9 @@ func TestDeleteUser(t *testing.T) {
 	u := Users{Prefix: "users"}
 	// mock http request
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodDelete, "/users/sam@test1.com", nil)
+	r := httptest.NewRequest(http.MethodDelete, "/users/EHOrbNpLmRzSn56DowfzQASukyc=", nil)
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("email", "sam@test1.com")
+	rctx.URLParams.Add("id", "EHOrbNpLmRzSn56DowfzQASukyc=")
 	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
 	r = r.WithContext(context.WithValue(r.Context(), "config", cfg))
 	u.DeleteUser(w, r)
