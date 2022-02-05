@@ -1,5 +1,4 @@
 import axios from "axios"
-import _ from "lodash"
 
 export default {
     state: {
@@ -11,7 +10,9 @@ export default {
         setGroups(state, groups) {
             state.groups = groups
             state.allLabels = []
-            _.forEach(groups, (group, label) => { state.allLabels.push(label) })
+            for (let key in groups) {
+                state.allLabels.push(key)
+            }
         },
         createGroup(state, group) {
             state.groups.push(group)

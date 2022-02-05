@@ -12,7 +12,14 @@ import (
 
 type Users struct {
 	Prefix string
-	Config *backend.Storage
+}
+
+func (h Users) Config(r *http.Request) *backend.Storage {
+	ctx := r.Context()
+	if cfg, ok := ctx.Value("config").(*backend.Storage); ok {
+		return cfg
+	}
+	return &backend.Storage{}
 }
 
 func (h Users) AddRoutes(router *chi.Mux) {
@@ -24,13 +31,13 @@ func (h Users) AddRoutes(router *chi.Mux) {
 }
 
 func (h Users) GetAllUsers(w http.ResponseWriter, r *http.Request) {
-	users := h.Config.Users()
+	users := h.Config(r).Users()
 	json.NewEncoder(w).Encode(users)
 }
 
 func (h Users) GetUserDetails(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	user := h.Config.GetUser(id)
+	user := h.Config(r).GetUser(id)
 	json.NewEncoder(w).Encode(user)
 }
 
@@ -55,13 +62,13 @@ func (h Users) CreateUser(w http.ResponseWriter, r *http.Request) {
 		user.Name = parts[2]
 		user.File = ""
 	}
-	_, oldUser := h.Config.GetUserByEmail(user.Email)
+	_, oldUser := h.Config(r).GetUserByEmail(user.Email)
 	if oldUser != nil {
 		http.Error(w, "user already exists", http.StatusBadRequest)
 		return
 	}
-	user.UpdateGroups(h.Config, []string{})
-	h.Config.AddUser(&user)
+	user.UpdateGroups(h.Config(r), []string{})
+	h.Config(r).AddUser(&user)
 	json.NewEncoder(w).Encode(user)
 }
 
@@ -81,15 +88,15 @@ func (h Users) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.Unmarshal(bodyBytes, &user)
 	if err != nil {
-		h.Config.Log.Infof("Error decoding user: %v (%s)", err, string(bodyBytes))
+		h.Config(r).Log.Infof("Error decoding user: %v (%s)", err, string(bodyBytes))
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	if user.File != "" {
-		h.Config.Log.Infof("New keyfile: %s", user.File)
+		h.Config(r).Log.Infof("New keyfile: %s", user.File)
 		parts, err := backend.SplitParts(user.File)
 		if err != nil {
-			h.Config.Log.Infof("Error splitting key: %v", err)
+			h.Config(r).Log.Infof("Error splitting key: %v", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -102,26 +109,26 @@ func (h Users) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		user.File = ""
 	}
 	id := chi.URLParam(r, "id")
-	oldUser := h.Config.GetUser(id)
+	oldUser := h.Config(r).GetUser(id)
 	if oldUser == nil {
-		h.Config.Log.Infof("User %s does not exist: %v", user.Email, h.Config.Users())
+		h.Config(r).Log.Infof("User %s does not exist: %v", user.Email, h.Config(r).Users())
 		http.Error(w, "user does not exist", http.StatusBadRequest)
 		return
 	}
-	user.UpdateGroups(h.Config, oldUser.Groups)
+	user.UpdateGroups(h.Config(r), oldUser.Groups)
 	oldUser.Email = user.Email
 	oldUser.Name = user.Name
 	oldUser.Key = user.Key
 	oldUser.KeyType = user.KeyType
 	oldUser.Groups = user.Groups
-	h.Config.UpdateUser(oldUser)
-	h.Config.Write()
+	h.Config(r).UpdateUser(oldUser)
+	h.Config(r).Write()
 	json.NewEncoder(w).Encode(user)
 }
 
 func (h Users) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	email := chi.URLParam(r, "email")
-	if h.Config.DeleteUser(email) {
+	if h.Config(r).DeleteUser(email) {
 		w.WriteHeader(http.StatusNoContent)
 	} else {
 		w.WriteHeader(http.StatusNotFound)

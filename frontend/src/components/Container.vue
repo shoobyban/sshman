@@ -1,9 +1,11 @@
 <script>
 import Header from './Header.vue'
 import Navbar from './Navbar.vue'
+import Logs from './Logs.vue'
 
 export default {
     components: {
+        Logs,
         Header,
         Navbar,
     },
@@ -15,7 +17,6 @@ export default {
 }
 </script>
 
-
 <template>
     <div>
         <Header></Header>
@@ -23,6 +24,12 @@ export default {
             <Navbar></Navbar>
             <div class="h-full w-full bg-gray-50 relative overflow-y-auto lg:ml-52">
             <router-view></router-view>
+            </div>
+            <div class="sidebar bg-gray-100 text-blue-100 md:w-80 pa-2 transform -translate-x-full md:relative md:translate-x-0 transition duration-200 ease-in-out">
+                <h2 class="text-center text-black mb-2 mt-2 font-bold"><span>Server Logs</span></h2>
+                <div class="bg-white w-full h-full text-black">
+                    <Logs url="http://localhost/api/logs" />
+                </div>
             </div>
         </div>
     </div>

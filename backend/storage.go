@@ -119,7 +119,7 @@ func (c *Storage) GetUserByEmail(email string) (string, *User) {
 			return key, user
 		}
 	}
-	c.Log.Infof("No user with email %s found", email)
+	c.Log.Errorf("No user with email %s found", email)
 	return "", nil
 }
 
@@ -258,7 +258,7 @@ func (c *Storage) DeleteUser(email string) bool {
 		}
 	}
 	if !found {
-		c.Log.Infof("No user with email %s found", email)
+		c.Log.Errorf("No user with email %s found", email)
 	}
 	return found
 }

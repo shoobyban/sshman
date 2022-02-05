@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"io/fs"
@@ -18,13 +19,20 @@ import (
 //go:embed dist/*
 var dist embed.FS
 
+func ReadConfig(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		cfg := backend.ReadConfig(true)
+		ctx := context.WithValue(r.Context(), "config", cfg)
+		next.ServeHTTP(rw, r.WithContext(ctx))
+	})
+}
+
 // webCmd represents the web command
 var webCmd = &cobra.Command{
 	Use:   "web",
 	Short: "Web UI",
 	Long:  `Stays running and created a web UI.`,
 	Run: func(cmd *cobra.Command, _ []string) {
-		cfg := backend.ReadConfig(true)
 		port, err := cmd.Flags().GetInt("port")
 		if err != nil {
 			port = 80
@@ -32,13 +40,13 @@ var webCmd = &cobra.Command{
 
 		r := chi.NewMux()
 		r.Use(middleware.Logger)
-		api.Groups{Prefix: "/api/groups", Config: cfg}.AddRoutes(r)
-		api.Hosts{Prefix: "/api/hosts", Config: cfg}.AddRoutes(r)
-		api.Users{Prefix: "/api/users", Config: cfg}.AddRoutes(r)
-		api.Logs{Prefix: "/api/logs", Config: cfg}.AddRoutes(r)
-		api.Keys{Prefix: "/api/keys", Config: cfg}.AddRoutes(r)
+		r.Use(ReadConfig)
+		api.Groups{Prefix: "/api/groups"}.AddRoutes(r)
+		api.Hosts{Prefix: "/api/hosts"}.AddRoutes(r)
+		api.Users{Prefix: "/api/users"}.AddRoutes(r)
+		api.Logs{Prefix: "/api/logs"}.AddRoutes(r)
+		api.Keys{Prefix: "/api/keys"}.AddRoutes(r)
 
-		cfg.Log.Infof("Listening on http://localhost:%v", port)
 		distfs, err := fs.Sub(dist, "dist")
 		if err != nil {
 			log.Fatal(err)

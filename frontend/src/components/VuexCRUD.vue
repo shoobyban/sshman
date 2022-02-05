@@ -14,6 +14,7 @@ export default {
         idField: String, // identifier field index for update, delete
         orderBy: String, // default order by
         orderDir: String, // default order direction
+        searchFields: Array, // fields to search
     },
     data() {
         return {
@@ -21,7 +22,7 @@ export default {
             deleteModal: false,
             editModal: false,
             addModal: false,
-            dataIndex: 0,
+            dataIndex: '',
             selected: [],
             sortBy: '',
             sortDir: '',
@@ -51,9 +52,13 @@ export default {
     },
     computed: {
         listFields: function() {
-            return this.fields.filter(item => {
-                return item.hidefromlist == false || item.hidefromlist == undefined
-            })
+            return this.fields.filter(item => (this.visible(item, 'list')))
+        },
+        addFields: function() {
+            return this.fields.filter(item => (this.visible(item, 'add')))
+        },
+        editFields: function() {
+            return this.fields.filter(item => (this.visible(item, 'edit')))
         },
         selectedItem: function() {
             if (this.searchResult == undefined) {
@@ -63,13 +68,45 @@ export default {
         },
     },
     methods: {
+        visible(item, place) {
+            return item.hide == false || item.hide == undefined || item.hide.indexOf(place) == -1
+        },
+        findIn(item, searchFields) {
+            if (searchFields == undefined) {
+                searchFields = this.listFields
+            }
+            let value = ''
+            for (var i = 0; i < searchFields.length; i++) {
+                var field = searchFields[i]
+                if (item[field] == undefined) {
+                    continue
+                }
+                value += JSON.stringify(item[field]).toLowerCase()
+            }
+            if (value.indexOf(this.searchInput.toLowerCase()) != -1) {
+                return true
+            }
+            return false
+        },
         recalcSearch() {
-            this.searchResult = this.modelValue
+            this.searchResult = {}
+            for (let key in this.modelValue) {
+                const value = this.modelValue[key]
+                this.searchResult[key] = {
+                    ...value,
+                    __key: key,
+                }
+            }
             if (this.searchInput != '') {
-                this.searchResult = _(this.searchResult).filter(item => {
-                    let itemGroups = JSON.stringify(item.groups)
-                    return (item.email.toLowerCase().indexOf(this.searchInput.toLowerCase()) !== -1) || (item.name.toLowerCase().indexOf(this.searchInput.toLowerCase()) !== -1) || (itemGroups.toLowerCase().indexOf(this.searchInput.toLowerCase()) !== -1)
-                })
+                let a = _(this.searchResult).filter(item => {
+                    return this.findIn(item, this.searchFields)
+                }).value()
+                this.searchResult = {}
+                for (let k in a) {
+                    const value = a[k]
+                    const key = value.__key
+                    this.searchResult[key] = value
+                }
             }
             if (this.sortBy != '') {
                 let obj = _(this.searchResult)
@@ -86,7 +123,6 @@ export default {
                     return sorted[key] = this.searchResult[key];
                 })
                 this.searchResult = sorted
-                console.log(this.sortBy,keys)
             }
         },
         fileUpload(evt) {
@@ -101,10 +137,8 @@ export default {
                     return
                 }
                 if (eTarget.id.startsWith('edit:')) {
-                    console.log('edit:', eTarget.name, self.selectedItem)
                     self.selectedItem[eTarget.name] = evt.target.result
                 } else {
-                    console.log('add:', eTarget.id, eTarget.name, self.selectedItem)
                     const name = eTarget.id.split(':')[1]
                     const hiddenField = document.getElementById('data:' + name)
                     hiddenField.value = evt.target.result
@@ -147,17 +181,20 @@ export default {
         },
         createItem(e) {
             this.addModal = false
-            this.dataIndex = 0
+            this.dataIndex = ''
             e.stopPropagation()
-            let data = new FormData(e.target)
+            let data = new FormData(e.target.form)
             let item = Object.fromEntries(data.entries())
             let id 
             if (this.idField != '.'){
-                id = this.selectedItem[this.idField]
-            } else {
-                id = this.selectedItem['_key']
+                id = item[this.idField]
             }
-
+            for (const field of this.addFields) {
+                if (field.type == 'multiselect') {
+                    const value = this.$refs['add:'+field.index][0].plainValue
+                    item[field.index] = value
+                }
+            }
             this.$emit('create', {id, item})
             setTimeout(() => {
                 this.$emit('fetch')
@@ -172,14 +209,21 @@ export default {
                 id = this.dataIndex
             }
             this.$emit('update', {id: id, item: this.selectedItem})
-            this.dataIndex = 0
+            this.dataIndex = ''
             setTimeout(() => {
                 this.$emit('fetch')
             }, 500)
         },
-        deleteItem(id) {
+        deleteItem() {
+            console.log('delete', this.dataIndex)
+            let id
+            if (this.idField != '.'){
+                id = this.selectedItem[this.idField]
+            } else {
+                id = this.dataIndex
+            }
             this.deleteModal = false
-            this.dataIndex = 0
+            this.dataIndex = ''
             this.$emit('delete', id)
             setTimeout(() => {
                 this.$emit('fetch')
@@ -263,6 +307,7 @@ export default {
                                         <div @click="this.dataIndex = idx; this.editModal = true" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center">
                                             <i class="fas fa-pen"></i>
                                         </div>
+                                        {{idx}}
                                         <div @click="this.dataIndex = idx; this.deleteModal = true" class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center">
                                             <i class="fas fa-trash"></i>
                                         </div>
@@ -294,7 +339,7 @@ export default {
                     <div class="p-6 space-y-6">
                         <form action="#">
                             <div class="grid grid-cols-6 gap-6" v-if="selectedItem">
-                                <div v-for="field in fields" class="col-span-6 sm:col-span-3">
+                                <div v-for="field in editFields" class="col-span-6 sm:col-span-3">
                                     <label :for="field.index" class="text-sm font-medium text-gray-900 block mb-2">{{field.label}}</label>
                                     <input type="text" v-if="field.type == 'text'" :name="field.index" :id="'edit:'+field.index" v-model="selectedItem[field.index]" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required />
                                     <input type="email" v-else-if="field.type == 'email'" :name="field.index" :id="field.index" v-model="selectedItem[field.index]" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required />
@@ -333,7 +378,7 @@ export default {
                     <div class="p-6 space-y-6">
                         <form @submit.prevent="createItem">
                             <div class="grid grid-cols-6 gap-6">
-                                <div v-for="field in fields" class="col-span-6 sm:col-span-3">
+                                <div v-for="field in addFields" class="col-span-6 sm:col-span-3">
                                     <label :for="field.index" class="text-sm font-medium text-gray-900 block mb-2">{{field.label}}</label>
                                     <input type="text" v-if="field.type == 'text'" :name="field.index" :id="'add:'+field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required />
                                     <input type="email" v-else-if="field.type == 'email'" :name="field.index" :id="'add:'+field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required />
@@ -341,14 +386,14 @@ export default {
                                         <input type="hidden" :name="field.index" :id="'data:'+field.index" :ref="field.index" />
                                         <input type="file" :id="'add:'+field.index" :name="'add:'+field.index" @change="fileUpload" :ref="field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required />
                                     </template>
-                                    <Multiselect v-else-if="field.type == 'multiselect'" mode="tags" :createTag="true" :appendNewTag="true" :searchable="true" :options="field.options" />
-                                    <Multiselect v-else-if="field.type == 'select'" mode="single" :searchable="true" :options="field.options" />
+                                    <Multiselect v-else-if="field.type == 'multiselect'"  :ref="'add:'+field.index" mode="tags" :createTag="true" :appendNewTag="true" :searchable="true" :options="field.options" />
+                                    <Multiselect v-else-if="field.type == 'select'" :ref="'add:'+field.index" mode="single" :searchable="true" :options="field.options" />
                                     <div v-else>Unhandled {{field.type}}</div>
                                 </div>
                             </div> 
                             <!-- Modal footer -->
                             <div class="items-center mt-6 border-gray-200 rounded-b">
-                                <button class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center" type="submit">Save</button>
+                                <button class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center" @click="createItem">Save</button>
                             </div>
                         </form>
                     </div>
@@ -364,7 +409,7 @@ export default {
                 <div class="bg-white rounded-lg shadow relative">
                     <!-- Modal header -->
                     <div class="flex justify-end p-2">
-                        <div @click="this.deleteModal=false" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center" data-modal-toggle="delete-resource-modal">
+                        <div @click="deleteModal=false" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center" data-modal-toggle="delete-resource-modal">
                             <i class="fas fa-times"></i>
                         </div>
                     </div>
@@ -372,12 +417,12 @@ export default {
                     <div class="p-6 pt-0 text-center">
                         <i class="fas fa-trash-alt text-5xl text-red-600"></i>
                         <h3 class="text-xl font-normal text-gray-500 mt-5 mb-6">Are you sure you want to delete this {{resourceName.toLowerCase()}}?</h3>
-                        <a href="#" class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-base inline-flex items-center px-3 py-2.5 text-center mr-2">
+                        <button @click="deleteItem()" class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-base inline-flex items-center px-3 py-2.5 text-center mr-2">
                             Yes, I'm sure
-                        </a>
-                        <a href="#" class="text-gray-900 bg-white hover:bg-gray-100 focus:ring-4 focus:ring-blue-200 border border-gray-200 font-medium inline-flex items-center rounded-lg text-base px-3 py-2.5 text-center" data-modal-toggle="delete-resource-modal">
+                        </button>
+                        <button @click="deleteModal=false" class="text-gray-900 bg-white hover:bg-gray-100 focus:ring-4 focus:ring-blue-200 border border-gray-200 font-medium inline-flex items-center rounded-lg text-base px-3 py-2.5 text-center" data-modal-toggle="delete-resource-modal">
                             No, cancel
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>

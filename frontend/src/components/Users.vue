@@ -44,10 +44,11 @@ export default {
             @delete="deleteUser"
             @fetch="fetchAll"
             idField="."
+            :searchFields="['email', 'name', 'groups']"
             :fields="[
                 {label: 'Email', index: 'email', placeholder: 'sam@host.com', type:'email'},
-                {label: 'Public Key (.pub)', hidefromlist:true, index: 'keyfile', placeholder: '~/.ssh/key.pub', type:'file'},
-                {label: 'Name in key', index: 'name', placeholder: 'sam', type:'text'},
+                {label: 'Public Key (.pub)', hide:['list'], index: 'keyfile', placeholder: '~/.ssh/key.pub', type:'file'},
+                {label: 'Name in key', index: 'name', hide:['add'], placeholder: 'sam', type:'text'},
                 {label: 'Groups', index: 'groups', placeholder: 'group1,group2', type:'multiselect', options: groups.allLabels},
                 ]" />
     </div>

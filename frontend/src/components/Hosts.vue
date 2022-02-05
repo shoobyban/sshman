@@ -46,7 +46,8 @@ export default {
             @update="updateHost"
             @delete="deleteHost"
             @fetch="fetchAll"
-            idField="alias"
+            idField="."
+            :searchFields="['alias', 'host', 'user', 'groups', 'key']"
             :fields="[
                 {label: 'Alias', apikey: true, index: 'alias', placeholder: 'home.host', type:'text'},
                 {label: 'Hostname', index: 'host', placeholder: '127.0.0.1:22', type:'text'},

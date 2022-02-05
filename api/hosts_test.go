@@ -18,10 +18,11 @@ func TestGetAllHosts(t *testing.T) {
 	// test Hosts.GetAllHosts method
 	cfg := backend.NewConfig(false)
 	cfg.AddHost(&backend.Host{Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}})
-	h := Hosts{Prefix: "", Config: cfg}
+	h := Hosts{Prefix: ""}
 	// mock http request
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/", nil)
+	r = r.WithContext(context.WithValue(r.Context(), "config", cfg))
 	h.GetAllHosts(w, r)
 	// check response
 	if w.Code != http.StatusOK {
@@ -42,16 +43,17 @@ func TestGetHostDetails(t *testing.T) {
 	// test Hosts.GetHostDetails method
 	cfg := backend.NewConfig(false)
 	testHosts := []backend.Host{
-		backend.Host{Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}, Config: cfg},
+		backend.Host{Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}},
 	}
 	cfg.AddHost(&testHosts[0])
-	h := Hosts{Prefix: "", Config: cfg}
+	h := Hosts{Prefix: ""}
 	// mock http request
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/host1", nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "host1")
 	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
+	r = r.WithContext(context.WithValue(r.Context(), "config", cfg))
 	h.GetHostDetails(w, r)
 	// check response
 	if w.Code != http.StatusOK {
@@ -77,7 +79,8 @@ func TestUpdateHost(t *testing.T) {
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "host1")
 	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
-	h := Hosts{Prefix: "", Config: cfg}
+	r = r.WithContext(context.WithValue(r.Context(), "config", cfg))
+	h := Hosts{Prefix: ""}
 	h.UpdateHost(w, r)
 	// check response
 	if w.Code != http.StatusOK {
@@ -94,12 +97,13 @@ func TestUpdateHost(t *testing.T) {
 // test Hosts.CreateHost method
 func TestCreateHost(t *testing.T) {
 	cfg := backend.NewConfig(false)
-	h := Hosts{Prefix: "", Config: cfg}
+	h := Hosts{Prefix: ""}
 	// mock http request
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/",
 		strings.NewReader(`{"alias": "host1", "host": "host1.com", "keyfile": "ssh dummy key", "user": "user2", "groups": ["group1", "group2"]}`),
 	)
+	r = r.WithContext(context.WithValue(r.Context(), "config", cfg))
 	h.CreateHost(w, r)
 	// check response
 	if w.Code != http.StatusOK {
@@ -120,13 +124,14 @@ func TestDeleteHost(t *testing.T) {
 	}
 	cfg := backend.NewConfig(false)
 	cfg.AddHost(testHosts["host1"])
-	h := Hosts{Prefix: "", Config: cfg}
+	h := Hosts{Prefix: ""}
 	// mock http request
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodDelete, "/host1", nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "host1")
 	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
+	r = r.WithContext(context.WithValue(r.Context(), "config", cfg))
 	h.DeleteHost(w, r)
 	// check response
 	if w.Code != http.StatusNoContent {

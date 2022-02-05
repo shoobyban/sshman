@@ -12,7 +12,14 @@ import (
 
 type Keys struct {
 	Prefix string
-	Config *backend.Storage
+}
+
+func (h Keys) Config(r *http.Request) *backend.Storage {
+	ctx := r.Context()
+	if cfg, ok := ctx.Value("config").(*backend.Storage); ok {
+		return cfg
+	}
+	return &backend.Storage{}
 }
 
 func (h Keys) AddRoutes(router *chi.Mux) {
@@ -32,7 +39,7 @@ func (h Keys) GetAllKeys(w http.ResponseWriter, r *http.Request) {
 	home, _ := os.UserHomeDir()
 	files, err := os.ReadDir(home + "/.ssh")
 	if err != nil {
-		h.Config.Log.Errorf("Can't read ~/.ssh: %s", err)
+		h.Config(r).Log.Errorf("Can't read ~/.ssh: %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -71,7 +78,7 @@ func (h Keys) CreateKey(w http.ResponseWriter, r *http.Request) {
 	}
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
-		h.Config.Log.Errorf("Can't decode key data %s", err)
+		h.Config(r).Log.Errorf("Can't decode key data %s", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

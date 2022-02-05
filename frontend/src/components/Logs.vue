@@ -1,6 +1,6 @@
 <template>
-    <div class="h-1/2 overflow-y-auto">
-        <div v-for="item in items" :class="item.type">
+    <div class="overflow-y-auto h-full">
+        <div v-for="item in items" class="mt-1 whitespace-nowrap" :class="item.type">
             {{item.message}}
         </div>
     </div>
@@ -67,8 +67,14 @@ export default {
 <style scoped>
 .error {
     background-color: #f8d7da !important;
+    border-left: 3px solid rgb(220,38,38) !important;
+    padding-left: 5px;
+    width: 100%;
 }
 .info {
-    background-color: #d4edda !important;
+    background-color: #d4edfa !important;
+    border-left: 3px solid #BADA55 !important;
+    padding-left: 5px;
+    width: 100%;
 }
 </style>
