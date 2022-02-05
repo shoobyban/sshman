@@ -307,7 +307,6 @@ export default {
                                         <div @click="this.dataIndex = idx; this.editModal = true" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center">
                                             <i class="fas fa-pen"></i>
                                         </div>
-                                        {{idx}}
                                         <div @click="this.dataIndex = idx; this.deleteModal = true" class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center">
                                             <i class="fas fa-trash"></i>
                                         </div>
