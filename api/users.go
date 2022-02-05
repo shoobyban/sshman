@@ -62,13 +62,14 @@ func (h Users) CreateUser(w http.ResponseWriter, r *http.Request) {
 		user.Name = parts[2]
 		user.File = ""
 	}
-	_, oldUser := h.Config(r).GetUserByEmail(user.Email)
+	cfg := h.Config(r)
+	_, oldUser := cfg.GetUserByEmail(user.Email)
 	if oldUser != nil {
 		http.Error(w, "user already exists", http.StatusBadRequest)
 		return
 	}
-	user.UpdateGroups(h.Config(r), []string{})
-	h.Config(r).AddUser(&user)
+	user.UpdateGroups(cfg, []string{})
+	cfg.AddUser(&user)
 	json.NewEncoder(w).Encode(user)
 }
 
@@ -86,17 +87,18 @@ func (h Users) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "empty body", http.StatusBadRequest)
 		return
 	}
+	cfg := h.Config(r)
 	err = json.Unmarshal(bodyBytes, &user)
 	if err != nil {
-		h.Config(r).Log.Infof("Error decoding user: %v (%s)", err, string(bodyBytes))
+		cfg.Log.Infof("Error decoding user: %v (%s)", err, string(bodyBytes))
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	if user.File != "" {
-		h.Config(r).Log.Infof("New keyfile: %s", user.File)
+		cfg.Log.Infof("New keyfile: %s", user.File)
 		parts, err := backend.SplitParts(user.File)
 		if err != nil {
-			h.Config(r).Log.Infof("Error splitting key: %v", err)
+			cfg.Log.Infof("Error splitting key: %v", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -109,20 +111,20 @@ func (h Users) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		user.File = ""
 	}
 	id := chi.URLParam(r, "id")
-	oldUser := h.Config(r).GetUser(id)
+	oldUser := cfg.GetUser(id)
 	if oldUser == nil {
-		h.Config(r).Log.Infof("User %s does not exist: %v", user.Email, h.Config(r).Users())
+		cfg.Log.Infof("User %s does not exist: %v", user.Email, cfg.Users())
 		http.Error(w, "user does not exist", http.StatusBadRequest)
 		return
 	}
-	user.UpdateGroups(h.Config(r), oldUser.Groups)
+	user.UpdateGroups(cfg, oldUser.Groups)
 	oldUser.Email = user.Email
 	oldUser.Name = user.Name
 	oldUser.Key = user.Key
 	oldUser.KeyType = user.KeyType
 	oldUser.Groups = user.Groups
-	h.Config(r).UpdateUser(oldUser)
-	h.Config(r).Write()
+	cfg.UpdateUser(oldUser)
+	cfg.Write()
 	json.NewEncoder(w).Encode(user)
 }
 
