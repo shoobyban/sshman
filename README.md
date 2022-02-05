@@ -129,29 +129,35 @@ $ ./sshman groups host hostalias group1 group2
 ```
 Note: Removing host from a group will remove all users that are on the host only because of that group. If the host is in another group, the users that are in both groups will not be removed.
 
-### Things to fix before new release
+### Things To Fix Before Release
+- [ ] Fix adding users
 - [ ] Group editing
     - [ ] Add group should add users and groups
     - [ ] Update group should remove / add resources
     - [ ] Delete group should remove resources
-- [ ] Screenshot with test data (not with sensitive data)
-- [ ] Frontend Auth (maybe next release)
+- [ ] Test all CRUD (users, hosts, groups) together
 - [ ] Sync to servers operation
-- [ ] Audit log (maybe next release)
+- [ ] Screenshot with test data (not with sensitive data)
+
+### TODO For Next Release
+
+- [ ] CLI to use API (not sure)
+- [ ] Web Interface Authentication (where to store creds?)
+- [ ] Audit log
 ### (Possible) Future Plans
 
 - [x] Reuse stored ssh key for modifying user
 - [x] Adding host to download information without the need of running update
 - [x] Tests, refactor for testability
 - [x] Complete CRUD for missing use cases
-- [ ] Web interface
+- [x] Web interface
     - [ ] Authentication
-    - [ ] Aria tags
+    - [ ] Aria tags (at least tagging buttons better and connecting labels)
 - [ ] Testing connection after creating authorized_keys entry
 - [ ] More backend (currently .ssh/.sshman configuration file)
-- [ ] Adding using password auth
-- [ ] Text UI
-- [ ] State handling
+- [ ] Adding host key to server using password auth
+- [ ] Text UI based on Web frontend
+- [ ] State handling (see below)
 
 ### State Handling TODO
 I've been using the systems for a while and I've noticed that the current version gets out of sync quite easy.
