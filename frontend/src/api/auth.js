@@ -1,6 +1,6 @@
-import axios from 'axios';
+import axios from 'axios'
 
-const API_URL = '/api/';
+const API_URL = '/api/'
 
 class AuthService {
   login(user) {
@@ -11,16 +11,16 @@ class AuthService {
       })
       .then(response => {
         if (response.data.accessToken) {
-          localStorage.setItem('user', JSON.stringify(response.data));
+          localStorage.setItem('user', JSON.stringify(response.data))
         }
 
-        return response.data;
-      });
+        return response.data
+      })
   }
 
   logout() {
-    localStorage.removeItem('user');
+    localStorage.removeItem('user')
   }
 }
 
-export default new AuthService();
+export default new AuthService()

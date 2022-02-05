@@ -46,14 +46,14 @@ func NewLog(web bool) *ILog {
 }
 
 func (l *ILog) Open(worker LogWorker) {
-	log.Println("----open----")
+	log.Println("Log opened from frontend")
 	l.l.Lock()
 	defer l.l.Unlock()
 	l.workers[worker] = true
 }
 
 func (l *ILog) Close(worker LogWorker) {
-	log.Println("----close----")
+	log.Println("Frontend log closed")
 	l.l.Lock()
 	defer l.l.Unlock()
 	delete(l.workers, worker)

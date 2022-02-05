@@ -2,7 +2,7 @@ import axios from "axios"
 
 export default {
     state: {
-        users: [],
+        users: {},
         allEmails: [],
     },
     mutations: {
@@ -10,24 +10,21 @@ export default {
             console.log('setUsers', users)
             state.users = users
             state.allEmails = []
-            for (let i = 0; i < users.length; i++) {
-                state.allEmails.push(users[i].email)
+            if (users != null) {
+                let obkeys = Object.keys(users)
+                for (let i = 0; i < obkeys.length; i++) {
+                    state.allEmails.push(users[obkeys[i]].email)
+                }
             }
         },
-        createUser(state, user) {
-            state.users.push(user)
+        createUser(state, payload) {
+            state.users[payload.id] = payload.item
         },
-        updateUser(state, user) {
-            let index = state.users.findIndex((c) => c.id == user.id)
-            if (index > -1) {
-                state.users[index] = user
-            }
+        updateUser(state, payload) {
+            state.users[payload.id] = payload.item
         },
         deleteUser(state, userID) {
-            let index = state.users.findIndex((c) => c.id == userID)
-            if (index > -1) {
-                state.users.splice(index, 1)
-            }
+            delete(state.users[userID])
         }
     },
     actions: {
@@ -37,24 +34,27 @@ export default {
                     context.commit("setUsers", response.data)
                 })
         },
-        async createUser(context, user) {
-            return axios.post("api/users", JSON.stringify(user))
+        async createUser(context, payload) {
+            return axios.post("api/users", JSON.stringify(payload.item))
                 .then((response) => {
                     context.commit("createUser", {
                         id: response.data.insert_id,
-                        ...user
+                        item: payload.item
                     })
                 })
         },
-        async updateUser(context, user) {
-            return axios.put("api/users/" + user.email, JSON.stringify(user))
-                .then((response) => {
-                    context.commit("updateUser", user)
+        async updateUser(context, payload) {
+            return axios.put("api/users/" + payload.id, JSON.stringify(payload.item))
+                .then(() => {
+                    context.commit("updateUser", {
+                        id: payload.id,
+                        item: payload.item
+                    })
                 })
         },
         async deleteUser(context, user) {
             return axios.delete("api/user/" + user.email)
-                .then((response) => {
+                .then(() => {
                     context.commit("deleteUser", user.Email)
                 })
         }

@@ -46,13 +46,13 @@ export default {
         },
         async updateHost(context, host) {
             return axios.put("api/hosts/" + host.email, JSON.stringify(host))
-                .then((response) => {
+                .then(() => {
                     context.commit("updateHost", host)
                 })
         },
         async deleteHost(context, host) {
             return axios.delete("api/host/" + host.email)
-                .then((response) => {
+                .then(() => {
                     context.commit("deleteHost", host.Email)
                 })
         }
