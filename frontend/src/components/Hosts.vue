@@ -46,9 +46,9 @@ export default {
             @update="updateHost"
             @delete="deleteHost"
             @fetch="fetchAll"
-            idField="email"
+            idField="alias"
             :fields="[
-                {label: 'Alias', index: 'alias', placeholder: 'home.host', type:'text'},
+                {label: 'Alias', apikey: true, index: 'alias', placeholder: 'home.host', type:'text'},
                 {label: 'Hostname', index: 'host', placeholder: '127.0.0.1:22', type:'text'},
                 {label: 'Username', index: 'user', placeholder: 'root', type:'text'},
                 {label: 'Keyfile', index: 'key', placeholder: '~/.ssh/keys.key', type:'select', options: keys.keys},

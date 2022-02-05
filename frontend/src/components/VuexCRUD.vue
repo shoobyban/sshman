@@ -8,7 +8,7 @@ export default {
         Multiselect,
     },
     props: {
-        modelValue: Array, // v-model
+        modelValue: Object, // v-model, unique identifier for each row
         resourceName: String, // e.g. 'Users'
         fields: Array,   // format: [{label: 'Email', index: 'email', placeholder: 'sam@test1.com', type:'email'}] 
         idField: String, // identifier field index for update, delete
@@ -25,6 +25,7 @@ export default {
             selected: [],
             sortBy: '',
             sortDir: '',
+            searchResult: {},
         }
     },
     mounted: function() {
@@ -34,22 +35,21 @@ export default {
             this.sortDir = 'asc'
         }
     },
-    computed: {
-        searchResult: function() {
-            var data
-            if (this.searchInput != '') {
-                data = this.modelValue.filter(item => {
-                    var itemGroups = JSON.stringify(item.groups)
-                    return (item.email.toLowerCase().indexOf(this.searchInput.toLowerCase()) !== -1) || (item.name.toLowerCase().indexOf(this.searchInput.toLowerCase()) !== -1) || (itemGroups.toLowerCase().indexOf(this.searchInput.toLowerCase()) !== -1)
-                })
-            } else {
-                data = this.modelValue
-            }
-            if (this.sortBy != '') {
-                return _.orderBy(data, this.sortBy, this.sortDir)
-            }
-            return data
+    watch: {
+        modelValue: function() {
+            this.recalcSearch()
         },
+        searchInput: function() {
+            this.recalcSearch()
+        },
+        sortBy: function() {
+            this.recalcSearch()
+        },
+        sortDir: function() {
+            this.recalcSearch()
+        },
+    },
+    computed: {
         listFields: function() {
             return this.fields.filter(item => {
                 return item.hidefromlist == false || item.hidefromlist == undefined
@@ -63,6 +63,32 @@ export default {
         },
     },
     methods: {
+        recalcSearch() {
+            this.searchResult = this.modelValue
+            if (this.searchInput != '') {
+                this.searchResult = _(this.searchResult).filter(item => {
+                    let itemGroups = JSON.stringify(item.groups)
+                    return (item.email.toLowerCase().indexOf(this.searchInput.toLowerCase()) !== -1) || (item.name.toLowerCase().indexOf(this.searchInput.toLowerCase()) !== -1) || (itemGroups.toLowerCase().indexOf(this.searchInput.toLowerCase()) !== -1)
+                })
+            }
+            if (this.sortBy != '') {
+                let obj = _(this.searchResult)
+                let sorted = {}
+                let keys = _.keys(this.searchResult)
+                keys.sort((x, y) => {
+                    if (this.sortDir == "asc") {
+                        return this.searchResult[x][this.sortBy] > this.searchResult[y][this.sortBy] ? 1 : -1
+                    } else {
+                        return this.searchResult[x][this.sortBy] < this.searchResult[y][this.sortBy] ? 1 : -1
+                    }
+                })       
+                _.forEach(keys, (key) => {
+                    return sorted[key] = this.searchResult[key];
+                })
+                this.searchResult = sorted
+                console.log(this.sortBy,keys)
+            }
+        },
         fileUpload(evt) {
             let self = this
             let eTarget = evt.target
@@ -78,8 +104,10 @@ export default {
                     console.log('edit:', eTarget.name, self.selectedItem)
                     self.selectedItem[eTarget.name] = evt.target.result
                 } else {
-                    console.log('add:', eTarget.id, self.selectedItem)
-                    self.selectedItem[eTarget.name] = evt.target.result
+                    console.log('add:', eTarget.id, eTarget.name, self.selectedItem)
+                    const name = eTarget.id.split(':')[1]
+                    const hiddenField = document.getElementById('data:' + name)
+                    hiddenField.value = evt.target.result
                 }
             }
             reader.readAsText(evt.target.files[0])
@@ -121,16 +149,29 @@ export default {
             this.addModal = false
             this.dataIndex = 0
             e.stopPropagation()
-            var data = new FormData(e.target)
-            var item = Object.fromEntries(data.entries())
-            this.$emit('create', item)
+            let data = new FormData(e.target)
+            let item = Object.fromEntries(data.entries())
+            let id 
+            if (this.idField != '.'){
+                id = this.selectedItem[this.idField]
+            } else {
+                id = this.selectedItem['_key']
+            }
+
+            this.$emit('create', {id, item})
             setTimeout(() => {
                 this.$emit('fetch')
             }, 500)
         },
         updateItem() {
             this.editModal = false
-            this.$emit('update', this.selectedItem)
+            let id
+            if (this.idField != '.'){
+                id = this.selectedItem[this.idField]
+            } else {
+                id = this.dataIndex
+            }
+            this.$emit('update', {id: id, item: this.selectedItem})
             this.dataIndex = 0
             setTimeout(() => {
                 this.$emit('fetch')
@@ -294,9 +335,12 @@ export default {
                             <div class="grid grid-cols-6 gap-6">
                                 <div v-for="field in fields" class="col-span-6 sm:col-span-3">
                                     <label :for="field.index" class="text-sm font-medium text-gray-900 block mb-2">{{field.label}}</label>
-                                    <input type="text" v-if="field.type == 'text'" :name="field.index" :id="'edit:'+field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required />
-                                    <input type="email" v-else-if="field.type == 'email'" :name="field.index" :id="field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required />
-                                    <input type="file" v-else-if="field.type == 'file'" :id="'edit:'+field.index" :name="field.index" @change="fileUpload" :ref="field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required />
+                                    <input type="text" v-if="field.type == 'text'" :name="field.index" :id="'add:'+field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required />
+                                    <input type="email" v-else-if="field.type == 'email'" :name="field.index" :id="'add:'+field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required />
+                                    <template v-else-if="field.type == 'file'">
+                                        <input type="hidden" :name="field.index" :id="'data:'+field.index" :ref="field.index" />
+                                        <input type="file" :id="'add:'+field.index" :name="'add:'+field.index" @change="fileUpload" :ref="field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" required />
+                                    </template>
                                     <Multiselect v-else-if="field.type == 'multiselect'" mode="tags" :createTag="true" :appendNewTag="true" :searchable="true" :options="field.options" />
                                     <Multiselect v-else-if="field.type == 'select'" mode="single" :searchable="true" :options="field.options" />
                                     <div v-else>Unhandled {{field.type}}</div>

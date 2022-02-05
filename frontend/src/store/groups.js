@@ -47,13 +47,13 @@ export default {
         },
         async updateGroup(context, group) {
             return axios.put("api/groups/" + group.email, JSON.stringify(group))
-                .then((response) => {
+                .then(() => {
                     context.commit("updateGroup", group)
                 })
         },
         async deleteGroup(context, group) {
             return axios.delete("api/group/" + group.email)
-                .then((response) => {
+                .then(() => {
                     context.commit("deleteGroup", group.Email)
                 })
         }
