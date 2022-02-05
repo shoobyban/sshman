@@ -34,7 +34,6 @@ type ILog struct {
 }
 
 func NewLog(web bool) *ILog {
-	log.Println("Newlog")
 	ilog := ILog{
 		l:       &sync.Mutex{},
 		workers: map[LogWorker]bool{},

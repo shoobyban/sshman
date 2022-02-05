@@ -136,6 +136,8 @@ Note: Removing host from a group will remove all users that are on the host only
 - [x] Tests, refactor for testability
 - [x] Complete CRUD for missing use cases
 - [ ] Web interface
+    - [ ] Authentication
+    - [ ] Aria tags
 - [ ] Testing connection after creating authorized_keys entry
 - [ ] More backend (currently .ssh/.sshman configuration file)
 - [ ] Adding using password auth

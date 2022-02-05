@@ -52,10 +52,10 @@ export default {
                     })
                 })
         },
-        async deleteUser(context, user) {
-            return axios.delete("api/user/" + user.email)
+        async deleteUser(context, id) {
+            return axios.delete("api/user/" + id)
                 .then(() => {
-                    context.commit("deleteUser", user.Email)
+                    context.commit("deleteUser", id)
                 })
         }
     },

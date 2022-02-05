@@ -12,7 +12,14 @@ import (
 
 type Logs struct {
 	Prefix string
-	Config *backend.Storage
+}
+
+func (h Logs) Config(r *http.Request) *backend.Storage {
+	ctx := r.Context()
+	if cfg, ok := ctx.Value("config").(*backend.Storage); ok {
+		return cfg
+	}
+	return &backend.Storage{}
 }
 
 func (h Logs) AddRoutes(router *chi.Mux) {
@@ -33,7 +40,7 @@ func (h Logs) GetLogs(w http.ResponseWriter, r *http.Request) {
 	wo := backend.LogWorker{}
 	wo.Source = make(chan interface{}, 10)
 
-	h.Config.Log.Open(wo)
+	h.Config(r).Log.Open(wo)
 	for {
 		select {
 		case logLine := <-wo.Source:
@@ -45,7 +52,7 @@ func (h Logs) GetLogs(w http.ResponseWriter, r *http.Request) {
 		case <-wo.Quit:
 			return
 		case <-r.Context().Done():
-			h.Config.Log.Close(wo)
+			h.Config(r).Log.Close(wo)
 			return
 		}
 	}
