@@ -23,7 +23,7 @@ export default {
 }
 </script>
 <template>
-    <div class="fixed hidden z-20 h-full top-0 left-0 flex lg:flex flex-shrink-0 flex-col w-52 transition-width duration-75">
+    <div class="fixed hidden h-full top-0 left-0 flex lg:flex flex-shrink-0 flex-col w-52 transition-width duration-75">
         <div class="bg-gray-800 shadow-xl h-16 fixed bottom-0 mt-12 md:relative md:h-screen z-10 w-full md:w-48">
             <div class="md:mt-12 md:w-48 md:fixed md:left-0 md:top-0 content-center md:content-start text-left justify-between">
                 <ul class="list-reset flex flex-row md:flex-col py-0 md:py-3 px-1 md:px-2 text-center md:text-left">
