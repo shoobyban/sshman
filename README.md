@@ -129,6 +129,15 @@ $ ./sshman groups host hostalias group1 group2
 ```
 Note: Removing host from a group will remove all users that are on the host only because of that group. If the host is in another group, the users that are in both groups will not be removed.
 
+### Things to fix before new release
+- [ ] Group editing
+    - [ ] Add group should add users and groups
+    - [ ] Update group should remove / add resources
+    - [ ] Delete group should remove resources
+- [ ] Screenshot with test data (not with sensitive data)
+- [ ] Frontend Auth (maybe next release)
+- [ ] Sync to servers operation
+- [ ] Audit log (maybe next release)
 ### (Possible) Future Plans
 
 - [x] Reuse stored ssh key for modifying user
@@ -142,6 +151,16 @@ Note: Removing host from a group will remove all users that are on the host only
 - [ ] More backend (currently .ssh/.sshman configuration file)
 - [ ] Adding using password auth
 - [ ] Text UI
+- [ ] State handling
+
+### State Handling TODO
+I've been using the systems for a while and I've noticed that the current version gets out of sync quite easy.
+
+The idea is to have 3 states: the host's read state (current files on host), the "stable" state (that's in theory we have in config) and a "staging" state (that we are clicking together).
+
+In theory stable and staging will make sense on bigger systems, so we could just have two states. 
+
+I'm planning to have a Refresh (read state) and a Publish button / command.
 
 ## Mentions
 

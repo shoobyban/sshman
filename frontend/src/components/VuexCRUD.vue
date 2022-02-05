@@ -235,7 +235,7 @@ export default {
 
 <template>
     <div>
-        <h2 class="font-bold pl-3 pt-3">{{resourceName}}</h2>
+        <h2 class="text-xl pl-3 pt-3">{{resourceName}}</h2>
 
         <div class="p-4 bg-white block sm:flex items-center justify-between border-b border-gray-200 lg:mt-1.5">
             <div class="mb-1 w-full">
