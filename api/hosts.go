@@ -43,31 +43,33 @@ func (h Hosts) CreateHost(w http.ResponseWriter, r *http.Request) {
 
 func (h Hosts) UpdateHost(w http.ResponseWriter, r *http.Request) {
 	var host backend.Host
+	cfg := h.Config(r)
 	err := json.NewDecoder(r.Body).Decode(&host)
 	if err != nil {
-		h.Config(r).Log.Errorf("Can't decode host %s", err)
+		cfg.Log.Errorf("Can't decode host %s", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	var oldHost *backend.Host
-	oldHost = h.Config(r).GetHost(host.Alias)
+	oldHost = cfg.GetHost(host.Alias)
 	if oldHost == nil { // for CreateHost handler
 		oldHost = &backend.Host{}
 	}
-	h.Config(r).SetHost(host.Alias, &host)
-	host.UpdateGroups(h.Config(r), oldHost.Groups)
-	h.Config(r).Write()
+	cfg.SetHost(host.Alias, &host)
+	host.UpdateGroups(cfg, oldHost.Groups)
+	cfg.Write()
 	json.NewEncoder(w).Encode(host)
 }
 
 func (h Hosts) DeleteHost(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	h.Config(r).Log.Infof("Deleting host by alias: %s", id)
-	if h.Config(r).DeleteHost(id) {
-		h.Config(r).Log.Infof("Deleted host %s", id)
+	cfg := h.Config(r)
+	cfg.Log.Infof("Deleting host by alias: %s", id)
+	if cfg.DeleteHost(id) {
+		cfg.Log.Infof("Deleted host %s", id)
 		w.WriteHeader(http.StatusNoContent)
 	} else {
-		h.Config(r).Log.Errorf("No such host: %s", id)
+		cfg.Log.Errorf("No such host: %s", id)
 		w.WriteHeader(http.StatusNotFound)
 	}
 }
