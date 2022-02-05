@@ -129,8 +129,15 @@ func (h Users) UpdateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h Users) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	email := chi.URLParam(r, "email")
-	if h.Config(r).DeleteUser(email) {
+	id := chi.URLParam(r, "id")
+	log.Printf("Deleting user %s", id)
+	cfg := h.Config(r)
+	user := cfg.GetUser(id)
+	if user == nil {
+		http.Error(w, "user does not exist", http.StatusBadRequest)
+		return
+	}
+	if h.Config(r).DeleteUserByID(id) {
 		w.WriteHeader(http.StatusNoContent)
 	} else {
 		w.WriteHeader(http.StatusNotFound)

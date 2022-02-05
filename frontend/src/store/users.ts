@@ -53,7 +53,7 @@ export default {
                 })
         },
         async deleteUser(context, id) {
-            return axios.delete("api/user/" + id)
+            return axios.delete("api/users/" + id)
                 .then(() => {
                     context.commit("deleteUser", id)
                 })

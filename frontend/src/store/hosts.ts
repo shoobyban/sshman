@@ -53,7 +53,7 @@ export default {
                 })
         },
         async deleteHost(context, id) {
-            return axios.delete("api/host/" + id)
+            return axios.delete("api/hosts/" + id)
                 .then(() => {
                     context.commit("deleteHost", id)
                 })
