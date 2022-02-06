@@ -19,11 +19,12 @@ import (
 //go:embed dist/*
 var dist embed.FS
 
+// ReadConfig is a go-chi middleware that reads a fresh config and adds it to the request context
 func ReadConfig(log *backend.ILog) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 			cfg := backend.WebReadConfig(log)
-			ctx := context.WithValue(r.Context(), "config", cfg)
+			ctx := context.WithValue(r.Context(), api.ConfigKey, cfg)
 			next.ServeHTTP(rw, r.WithContext(ctx))
 		})
 	}
@@ -44,11 +45,11 @@ var webCmd = &cobra.Command{
 		r.Use(middleware.Logger)
 		weblog := backend.NewLog(true)
 		r.Use(ReadConfig(weblog))
-		api.Groups{Prefix: "/api/groups"}.AddRoutes(r)
-		api.Hosts{Prefix: "/api/hosts"}.AddRoutes(r)
-		api.Users{Prefix: "/api/users"}.AddRoutes(r)
-		api.Logs{Prefix: "/api/logs"}.AddRoutes(r)
-		api.Keys{Prefix: "/api/keys"}.AddRoutes(r)
+		api.GroupsHandler{Prefix: "/api/groups"}.AddRoutes(r)
+		api.HostsHandler{Prefix: "/api/hosts"}.AddRoutes(r)
+		api.UsersHandler{Prefix: "/api/users"}.AddRoutes(r)
+		api.LogsHandler{Prefix: "/api/logs"}.AddRoutes(r)
+		api.KeysHandler{Prefix: "/api/keys"}.AddRoutes(r)
 
 		distfs, err := fs.Sub(dist, "dist")
 		if err != nil {

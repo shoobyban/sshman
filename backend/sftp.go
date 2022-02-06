@@ -13,6 +13,15 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+// SFTP is interface for handling authorized_keys files
+type SFTP interface {
+	Connect(keyfile, host, user string) error
+	Write(data string) error
+	Read() ([]byte, error)
+	Close()
+}
+
+// SFTPConn is a wrapper around sftp.Client, implements SFTP interface
 type SFTPConn struct {
 	host      SFTPMockHost
 	client    *sftp.Client
@@ -23,19 +32,14 @@ type SFTPConn struct {
 	testError bool
 }
 
+// SFTPMockHost is a build-in mock for testing
 type SFTPMockHost struct {
 	Host string
 	User string
 	File string
 }
 
-type SFTP interface {
-	Connect(keyfile, host, user string) error
-	Write(data string) error
-	Read() ([]byte, error)
-	Close()
-}
-
+// Connect connects to the host using the given keyfile and user
 func (s *SFTPConn) Connect(keyfile, host, user string) error {
 	if strings.HasPrefix(keyfile, "~/") {
 		home, _ := os.UserHomeDir()
@@ -77,14 +81,18 @@ func (s *SFTPConn) Connect(keyfile, host, user string) error {
 	return nil
 }
 
+// GetHosts is used for testing, returns the list of hosts
 func (s *SFTPConn) GetHosts() map[string]SFTPMockHost {
 	return s.testHosts
 }
 
+// SetError is used for testing, sets the error flag
 func (s *SFTPConn) SetError(willError bool) {
 	s.testError = willError
 }
 
+// Write writes the given data to the authorized_keys file on the remote host
+// when data is empty, or if it's running from tests, simply returns
 func (s *SFTPConn) Write(data string) error {
 	if data == "" || s.testError {
 		return fmt.Errorf("empty data, not writing it")
@@ -108,6 +116,8 @@ func (s *SFTPConn) Write(data string) error {
 	return nil
 }
 
+// Read reads the authorized_keys file from the remote host
+// when running from tests, returns the mocked data
 func (s *SFTPConn) Read() ([]byte, error) {
 	if s.mock {
 		if s.testError {
@@ -123,6 +133,7 @@ func (s *SFTPConn) Read() ([]byte, error) {
 	return io.ReadAll(f)
 }
 
+// Close closes the connection to the remote host
 func (s *SFTPConn) Close() {
 	if !s.mock {
 		s.client.Close()

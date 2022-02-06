@@ -8,19 +8,22 @@ import (
 	"github.com/shoobyban/sshman/backend"
 )
 
-type Hosts struct {
+// HostsHandler is a struct for handling hosts
+type HostsHandler struct {
 	Prefix string
 }
 
-func (h Hosts) Config(r *http.Request) *backend.Storage {
+// Config returns a loaded configuration for the handler
+func (h HostsHandler) Config(r *http.Request) *backend.Storage {
 	ctx := r.Context()
-	if cfg, ok := ctx.Value("config").(*backend.Storage); ok {
+	if cfg, ok := ctx.Value(ConfigKey).(*backend.Storage); ok {
 		return cfg
 	}
-	return &backend.Storage{}
+	return backend.NewConfig()
 }
 
-func (h Hosts) AddRoutes(router *chi.Mux) {
+// AddRoutes adds hosthandler specific routes to the router
+func (h HostsHandler) AddRoutes(router *chi.Mux) {
 	router.Get(h.Prefix, h.GetAllHosts)
 	router.Get(h.Prefix+"/{id}", h.GetHostDetails)
 	router.Delete(h.Prefix+"/{id}", h.DeleteHost)
@@ -28,20 +31,24 @@ func (h Hosts) AddRoutes(router *chi.Mux) {
 	router.Post(h.Prefix, h.CreateHost)
 }
 
-func (h Hosts) GetAllHosts(w http.ResponseWriter, r *http.Request) {
+// GetAllHosts returns all hosts
+func (h HostsHandler) GetAllHosts(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(h.Config(r).Hosts())
 }
 
-func (h Hosts) GetHostDetails(w http.ResponseWriter, r *http.Request) {
+// GetHostDetails returns host details
+func (h HostsHandler) GetHostDetails(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	json.NewEncoder(w).Encode(h.Config(r).GetHost(id))
 }
 
-func (h Hosts) CreateHost(w http.ResponseWriter, r *http.Request) {
+// CreateHost creates a new host
+func (h HostsHandler) CreateHost(w http.ResponseWriter, r *http.Request) {
 	h.UpdateHost(w, r)
 }
 
-func (h Hosts) UpdateHost(w http.ResponseWriter, r *http.Request) {
+// UpdateHost updates a host
+func (h HostsHandler) UpdateHost(w http.ResponseWriter, r *http.Request) {
 	var host backend.Host
 	cfg := h.Config(r)
 	err := json.NewDecoder(r.Body).Decode(&host)
@@ -66,7 +73,8 @@ func (h Hosts) UpdateHost(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(host)
 }
 
-func (h Hosts) DeleteHost(w http.ResponseWriter, r *http.Request) {
+// DeleteHost deletes a host
+func (h HostsHandler) DeleteHost(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	cfg := h.Config(r)
 	cfg.Log.Infof("Deleting host by alias: %s", id)

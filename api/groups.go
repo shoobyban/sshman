@@ -8,19 +8,22 @@ import (
 	"github.com/shoobyban/sshman/backend"
 )
 
-type Groups struct {
+// GroupsHandler handler
+type GroupsHandler struct {
 	Prefix string
 }
 
-func (h Groups) Config(r *http.Request) *backend.Storage {
+// Config returns a loaded configuration from context
+func (h GroupsHandler) Config(r *http.Request) *backend.Storage {
 	ctx := r.Context()
-	if cfg, ok := ctx.Value("config").(*backend.Storage); ok {
+	if cfg, ok := ctx.Value(ConfigKey).(*backend.Storage); ok {
 		return cfg
 	}
 	return &backend.Storage{}
 }
 
-func (h Groups) AddRoutes(router *chi.Mux) {
+// AddRoutes adds group specific routes to the router
+func (h GroupsHandler) AddRoutes(router *chi.Mux) {
 	router.Get(h.Prefix, h.GetAllGroups)
 	router.Get(h.Prefix+"/{id}", h.GetGroupDetails)
 	router.Delete(h.Prefix+"/{id}", h.DeleteGroup)
@@ -28,33 +31,42 @@ func (h Groups) AddRoutes(router *chi.Mux) {
 	router.Post(h.Prefix, h.CreateGroup)
 }
 
-func (h Groups) GetAllGroups(w http.ResponseWriter, r *http.Request) {
+// GetAllGroups handler returns all groups
+func (h GroupsHandler) GetAllGroups(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(h.Config(r).GetGroups())
 }
 
-func (h Groups) GetGroupDetails(w http.ResponseWriter, r *http.Request) {
+// GetGroupDetails handler returns group details
+func (h GroupsHandler) GetGroupDetails(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	json.NewEncoder(w).Encode(h.Config(r).Groups[id])
 }
 
-// format: label => [servers: [server1, server2], users: [user1, user2]]
-func (h Groups) CreateGroup(w http.ResponseWriter, r *http.Request) {
+// CreateGroup handler creates a group and adds users and hosts to it
+// format: label => [hosts: [host1, host2], users: [user1, user2]]
+func (h GroupsHandler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 	h.UpdateGroup(w, r)
 }
 
-// format: label => [servers: [server1, server2], users: [user1, user2]]
-func (h Groups) UpdateGroup(w http.ResponseWriter, r *http.Request) {
+// UpdateGroup handler updates a group and updates users and hosts binding
+// format: label => [hosts: [host1, host2], users: [user1, user2]]
+func (h GroupsHandler) UpdateGroup(w http.ResponseWriter, r *http.Request) {
 	var group struct {
 		Label   string
 		Users   []string
 		Servers []string
+	}
+	id := chi.URLParam(r, "id")
+	if id != "" {
+		h.Config(r).DeleteGroup(id)
 	}
 	json.NewDecoder(r.Body).Decode(&group)
 	h.Config(r).UpdateGroup(group.Label, group.Users, group.Servers)
 	json.NewEncoder(w).Encode(group)
 }
 
-func (h Groups) DeleteGroup(w http.ResponseWriter, r *http.Request) {
+// DeleteGroup handler deletes a group
+func (h GroupsHandler) DeleteGroup(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if h.Config(r).DeleteGroup(id) {
 		w.WriteHeader(http.StatusNoContent)

@@ -121,7 +121,7 @@ func TestAddAndDeleteHost(t *testing.T) {
 	if err != nil {
 		t.Errorf("Adding host did not work: %v", err)
 	}
-	err = cfg.AddHost(h)
+	err = cfg.AddHost(h, false)
 	if err != nil {
 		t.Errorf("Adding host did not work: %v", err)
 	}

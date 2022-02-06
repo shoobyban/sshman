@@ -19,11 +19,11 @@ func TestGetAllUsers(t *testing.T) {
 		"user1": {Email: "sam@test.com", KeyType: "dummy", Key: "key1", Groups: []string{"group1", "group2"}, Config: cfg},
 	}
 	cfg.AddUser(testUsers["user1"])
-	u := Users{Prefix: "users"}
+	u := UsersHandler{Prefix: "users"}
 	// mock http request
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/users", nil)
-	r = r.WithContext(context.WithValue(r.Context(), "config", cfg))
+	r = r.WithContext(context.WithValue(r.Context(), ConfigKey, cfg))
 	u.GetAllUsers(w, r)
 	// check response
 	if w.Code != http.StatusOK {
@@ -45,14 +45,14 @@ func TestGetUserDetails(t *testing.T) {
 		"u1": {Email: "sam@test1.com", KeyType: "dummy", Key: "key1", Groups: []string{"group1", "group2"}},
 	}
 	cfg.AddUser(testUsers["u1"])
-	u := Users{Prefix: "users"}
+	u := UsersHandler{Prefix: "users"}
 	// mock http request
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/users/EHOrbNpLmRzSn56DowfzQASukyc=", nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "EHOrbNpLmRzSn56DowfzQASukyc=")
 	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
-	r = r.WithContext(context.WithValue(r.Context(), "config", cfg))
+	r = r.WithContext(context.WithValue(r.Context(), ConfigKey, cfg))
 	u.GetUserDetails(w, r)
 	// check response
 	if w.Code != http.StatusOK {
@@ -70,13 +70,13 @@ func TestCreateUser(t *testing.T) {
 	testUsers := map[string]*backend.User{}
 	cfg := backend.NewConfig()
 	cfg.AddUser(testUsers["user1"])
-	u := Users{Prefix: "users"}
+	u := UsersHandler{Prefix: "users"}
 	// mock http request
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPost, "/users",
 		strings.NewReader(`{"email": "sam@test1.com","keyfile": "dummy key info", "groups": ["group1", "group2"]}`),
 	)
-	r = r.WithContext(context.WithValue(r.Context(), "config", cfg))
+	r = r.WithContext(context.WithValue(r.Context(), ConfigKey, cfg))
 	u.CreateUser(w, r)
 	// check response
 	if w.Code != http.StatusOK {
@@ -100,7 +100,7 @@ func TestUpdateUser(t *testing.T) {
 		"user1": {Email: "sam@test1.com", KeyType: "dummy", Key: "key1", Groups: []string{"group1", "group2"}, Config: cfg},
 	}
 	cfg.AddUser(testUsers["user1"])
-	u := Users{Prefix: "users"}
+	u := UsersHandler{Prefix: "users"}
 	// mock http request
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPut, "/users/EHOrbNpLmRzSn56DowfzQASukyc=",
@@ -109,7 +109,7 @@ func TestUpdateUser(t *testing.T) {
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "EHOrbNpLmRzSn56DowfzQASukyc=")
 	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
-	r = r.WithContext(context.WithValue(r.Context(), "config", cfg))
+	r = r.WithContext(context.WithValue(r.Context(), ConfigKey, cfg))
 	u.UpdateUser(w, r)
 	// check response
 	if w.Code != http.StatusOK {
@@ -136,14 +136,14 @@ func TestDeleteUser(t *testing.T) {
 	for _, user := range testUsers {
 		cfg.AddUser(&user)
 	}
-	u := Users{Prefix: "users"}
+	u := UsersHandler{Prefix: "users"}
 	// mock http request
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodDelete, "/users/EHOrbNpLmRzSn56DowfzQASukyc=", nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "EHOrbNpLmRzSn56DowfzQASukyc=")
 	r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
-	r = r.WithContext(context.WithValue(r.Context(), "config", cfg))
+	r = r.WithContext(context.WithValue(r.Context(), ConfigKey, cfg))
 	u.DeleteUser(w, r)
 	// check response
 	if w.Code != http.StatusNoContent {

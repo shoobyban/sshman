@@ -40,7 +40,7 @@ sshman register host google my.google.com:22 myuser ~/.ssh/google.pub deploy hos
 			fmt.Printf("Error: %v\n", err)
 			os.Exit(1)
 		}
-		conf.AddHost(h)
+		conf.AddHost(h, true)
 		host.UpdateGroups(conf, oldgroups)
 		conf.Update(args[0])
 	},
