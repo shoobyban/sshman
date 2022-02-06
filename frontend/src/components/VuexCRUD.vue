@@ -147,27 +147,6 @@ export default {
                 this.listItems = sorted
             }
         },
-        fileUpload(evt) {
-            let self = this
-            let eTarget = evt.target
-            if (!window.FileReader) return // Browser is not compatible
-            let reader = new FileReader()
-            reader.onload = function (evt) {
-                if (evt.target.readyState !== 2) return
-                if (evt.target.error) {
-                    alert("Error while reading file")
-                    return
-                }
-                if (eTarget.id.startsWith('edit:')) {
-                    self.current[eTarget.name] = evt.target.result
-                } else {
-                    const name = eTarget.id.split(':')[1]
-                    const hiddenField = document.getElementById('data:' + name)
-                    hiddenField.value = evt.target.result
-                }
-            }
-            reader.readAsText(evt.target.files[0])
-        },
         toggleSelected(idx, e) {
             e.stopPropagation()
             if (this.selection.includes(idx)) {
@@ -201,7 +180,39 @@ export default {
                 this.sortDir = 'asc'
             }
         },
-        createItem(e) {
+        async prepareItem(item, prefix) {
+            for (const field of this.addFields) {
+                if (field.type == 'multiselect') {
+                    const value = this.$refs[prefix + field.index][0].plainValue
+                    item[field.index] = value
+                } else if (field.type == 'file') {
+                    const eTarget = this.$refs[prefix + field.index][0]
+                    if (eTarget.files.length == 0) {
+                        continue
+                    }
+                    let result = await this.readFile(eTarget.files[0])
+                    item[field.index] = result
+                } else {
+                    console.log('field', field.index, item[field.index])
+                }
+            }
+            return item
+        },
+        readFile(file){
+            return new Promise((resolve, reject) => {
+                let reader = new FileReader()
+                reader.onload = function (evt) {
+                    if (evt.target.readyState !== 2) return
+                    if (evt.target.error) {
+                        reject(evt.target.error)
+                        return
+                    }
+                    resolve(evt.target.result)
+                }
+                reader.readAsText(file)
+            })
+        },
+        async createItem(e) {
             this.addModal = false
             this.currentID = ''
             e.stopPropagation()
@@ -211,12 +222,7 @@ export default {
             if (this.idField != '.') {
                 id = item[this.idField]
             }
-            for (const field of this.addFields) {
-                if (field.type == 'multiselect') {
-                    const value = this.$refs['add:' + field.index][0].plainValue
-                    item[field.index] = value
-                }
-            }
+            item = await this.prepareItem(item, 'add:')
             this.$emit('create', {
                 id,
                 item
@@ -225,7 +231,7 @@ export default {
                 this.$emit('fetch')
             }, 500)
         },
-        updateItem() {
+        async updateItem() {
             this.editModal = false
             let id
             if (this.idField != '.') {
@@ -233,9 +239,10 @@ export default {
             } else {
                 id = this.currentID
             }
+            let item = await this.prepareItem(this.current, 'edit:')
             this.$emit('update', {
                 id: id,
-                item: this.current
+                item: item
             })
             this.currentID = ''
             setTimeout(() => {
@@ -272,17 +279,17 @@ export default {
             <div class="sm:flex">
                 <div class="hidden sm:flex items-center sm:divide-x sm:divide-gray-100 mb-3 sm:mb-0">
                     <form class="lg:pr-3" action="#" method="GET">
-                        <label for="value-search" class="sr-only">Search</label>
+                        <label for="search-input" class="sr-only">Search</label>
                         <div class="mt-1 relative lg:w-52 xl:w-96">
-                            <input id="value-search" v-model="searchInput" type="text" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="'Search for '+resourceName.toLowerCase()">
+                            <input id="search-input" v-model="searchInput" type="text" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="'Search for '+resourceName.toLowerCase()">
                         </div>
                     </form>
                 </div>
                 <div class="flex items-center space-x-2 sm:space-x-3 ml-auto">
-                    <div class="w-1/2 text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium inline-flex items-center justify-center rounded-lg text-sm px-3 py-2 text-center sm:w-auto" @click="addModal = true">
+                    <button id="add-items" class="w-1/2 text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium inline-flex items-center justify-center rounded-lg text-sm px-3 py-2 text-center sm:w-auto" @click="addModal = true">
                         <i class="fas fa-plus mr-2" />
                         Add {{ resourceName }}
-                    </div>
+                    </button>
                 </div>
             </div>
         </div>
@@ -313,8 +320,8 @@ export default {
                                 </th>
                             </tr>
                         </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <tr v-for="(item,idx) in listItems" :key="idx" class="hover:bg-gray-100" @click="toggleSelected(idx, $event)">
+                        <tbody id="list-items" class="bg-white divide-y divide-gray-200">
+                            <tr v-for="(item,idx) in listItems" :key="idx" :data-rowid="idx" class="hover:bg-gray-100" @click="toggleSelected(idx, $event)">
                                 <td class="p-4 w-4">
                                     <div class="flex items-center">
                                         <input :id="'checkbox-'+idx" aria-describedby="checkbox-1" type="checkbox" :checked="isSelected(idx)" class="bg-gray-50 border-gray-300 focus:ring-3 focus:ring-blue-200 h-4 w-4 rounded" @click="$event.stopPropagation()">
@@ -323,9 +330,9 @@ export default {
                                 </td>
                                 <td v-for="field in listFields" :key="field.index" class="p-4 items-center space-x-6 mr-12 lg:mr-0 max-w-lg">
                                     <div v-if="field.type == 'multiselect'">
-                                        <button v-for="(grp, index) in item[field.index]" :key="index" class="px-2 bg-green-600 hover:bg-red-700 text-white text-sm font-small rounded-full mb-1 mr-1">
+                                        <div v-for="(grp, index) in item[field.index]" :key="index" class="px-2 bg-green-600 inline hover:bg-red-700 text-white text-sm font-small rounded-full mb-1 mr-1">
                                             {{ grp }}
-                                        </button>
+                                        </div>
                                     </div>
                                     <div v-else class="text-sm font-normal text-gray-500">
                                         <div class="text-sm font-normal text-gray-500">
@@ -334,12 +341,12 @@ export default {
                                     </div>
                                 </td>
                                 <td class="p-4 whitespace-nowrap space-x-2">
-                                    <div class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center" @click="currentID = idx; editModal = true">
+                                    <button class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center" @click="currentID = idx; editModal = true">
                                         <i class="fas fa-pen" />
-                                    </div>
-                                    <div class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center" @click="currentID = idx; deleteModal = true">
+                                    </button>
+                                    <button class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center" @click="currentID = idx; deleteModal = true">
                                         <i class="fas fa-trash" />
-                                    </div>
+                                    </button>
                                 </td>
                             </tr>
                         </tbody>
@@ -350,7 +357,7 @@ export default {
     </div>
 
     <!-- Edit Modal -->
-    <div v-show="editModal" class="overflow-x-hidden overflow-y-auto fixed top-4 left-0 right-0 md:inset-0 z-50 justify-center items-center h-modal sm:h-full flex">
+    <div v-show="editModal" id="edit-modal" class="overflow-x-hidden overflow-y-auto fixed top-4 left-0 right-0 md:inset-0 z-50 justify-center items-center h-modal sm:h-full flex">
         <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50" />
         <div class="relative w-full max-w-2xl px-4 h-full md:h-auto">
             <!-- Modal content -->
@@ -366,15 +373,15 @@ export default {
                 </div>
                 <!-- Modal body -->
                 <div class="p-6 space-y-6">
-                    <form action="#">
+                    <form @submit.prevent="true">
                         <div v-if="current" class="grid grid-cols-6 gap-6">
                             <div v-for="(field,index) in editFields" :key="index" class="col-span-6 sm:col-span-3">
                                 <label :for="field.index" class="text-sm font-medium text-gray-900 block mb-2">{{ field.label }}</label>
-                                <input v-if="field.type == 'text'" :id="'edit:'+field.index" v-model="current[field.index]" type="text" :name="field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">
-                                <input v-else-if="field.type == 'email'" :id="field.index" v-model="current[field.index]" :name="field.index" type="email" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">
-                                <input v-else-if="field.type == 'file'" :id="'edit:'+field.index" :ref="field.index" type="file" :name="field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false" @change="fileUpload">
-                                <Multiselect v-else-if="field.type == 'multiselect'" v-model="current[field.index]" mode="tags" :create-tag="true" :append-new-tag="true" :searchable="true" :options="field.options" />
-                                <Multiselect v-else-if="field.type == 'select'" v-model="current[field.index]" mode="single" :searchable="true" :options="field.options" />
+                                <input v-if="field.type == 'text'" :id="'edit-'+field.index" :ref="'edit:'+field.index" v-model="current[field.index]" type="text" :name="field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">
+                                <input v-else-if="field.type == 'email'" :id="'edit-'+field.index" :ref="'edit:'+field.index" v-model="current[field.index]" :name="field.index" type="email" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">
+                                <input v-else-if="field.type == 'file'" :id="'edit-'+field.index" :ref="'edit:'+field.index" type="file" :name="field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">
+                                <Multiselect v-else-if="field.type == 'multiselect'" :id="'edit-'+field.index" :ref="'edit:'+field.index" v-model="current[field.index]" mode="tags" :create-tag="true" :append-new-tag="true" :searchable="true" :options="field.options" />
+                                <Multiselect v-else-if="field.type == 'select'" :id="'edit-'+field.index" :ref="'edit:'+field.index" v-model="current[field.index]" mode="single" :searchable="true" :options="field.options" />
                                 <div v-else>
                                     Unhandled {{ field.type }}
                                 </div>
@@ -384,7 +391,7 @@ export default {
                 </div>
                 <!-- Modal footer -->
                 <div class="items-center p-6 border-gray-200 rounded-b">
-                    <button class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center" @click="updateItem">
+                    <button id="edit-save" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center" @click="updateItem">
                         Save
                     </button>
                 </div>
@@ -393,7 +400,7 @@ export default {
     </div>
 
     <!-- Add Modal -->
-    <div v-show="addModal" id="add-resource-modal" class="overflow-x-hidden overflow-y-auto fixed top-4 left-0 right-0 md:inset-0 z-50 justify-center items-center h-modal sm:h-full flex">
+    <div v-show="addModal" id="add-modal" class="overflow-x-hidden overflow-y-auto fixed top-4 left-0 right-0 md:inset-0 z-50 justify-center items-center h-modal sm:h-full flex">
         <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50" />
         <div class="relative w-full max-w-2xl px-4 h-full md:h-auto">
             <!-- Modal content -->
@@ -409,18 +416,15 @@ export default {
                 </div>
                 <!-- Modal body -->
                 <div class="p-6 space-y-6">
-                    <form @submit.prevent="createItem">
+                    <form @submit.prevent="true">
                         <div class="grid grid-cols-6 gap-6">
                             <div v-for="(field,index) in addFields" :key="index" class="col-span-6 sm:col-span-3">
                                 <label :for="field.index" class="text-sm font-medium text-gray-900 block mb-2">{{ field.label }}</label>
-                                <input v-if="field.type == 'text'" :id="'add:'+field.index" type="text" :name="field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">
-                                <input v-else-if="field.type == 'email'" :id="'add:'+field.index" type="email" :name="field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">
-                                <template v-else-if="field.type == 'file'">
-                                    <input :id="'data:'+field.index" :ref="field.index" type="hidden" :name="field.index">
-                                    <input :id="'add:'+field.index" :ref="field.index" type="file" :name="'add:'+field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false" @change="fileUpload">
-                                </template>
-                                <Multiselect v-else-if="field.type == 'multiselect'" :ref="'add:'+field.index" mode="tags" :create-tag="true" :append-new-tag="true" :searchable="true" :options="field.options" />
-                                <Multiselect v-else-if="field.type == 'select'" :ref="'add:'+field.index" mode="single" :searchable="true" :options="field.options" />
+                                <input v-if="field.type == 'text'" :id="'add-'+field.index" type="text" :name="field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">
+                                <input v-else-if="field.type == 'email'" :id="'add-'+field.index" type="email" :name="field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">
+                                <input v-else-if="field.type == 'file'" :id="'add-'+field.index" :ref="'add:'+field.index" type="file" :name="'add:'+field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">
+                                <Multiselect v-else-if="field.type == 'multiselect'" :id="'add-'+field.index" :ref="'add:'+field.index" mode="tags" :create-tag="true" :append-new-tag="true" :searchable="true" :options="field.options" />
+                                <Multiselect v-else-if="field.type == 'select'" :id="'add-'+field.index" :ref="'add:'+field.index" mode="single" :searchable="true" :options="field.options" />
                                 <div v-else>
                                     Unhandled {{ field.type }}
                                 </div>
@@ -428,7 +432,7 @@ export default {
                         </div>
                         <!-- Modal footer -->
                         <div class="items-center mt-6 border-gray-200 rounded-b">
-                            <button class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center" @click="createItem">
+                            <button id="add-save" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm px-5 py-2.5 text-center" @click="createItem">
                                 Save
                             </button>
                         </div>
@@ -439,7 +443,7 @@ export default {
     </div>
 
     <!-- Delete Modal -->
-    <div v-show="deleteModal" id="delete-resource-modal" class="overflow-x-hidden overflow-y-auto fixed top-4 left-0 right-0 md:inset-0 z-50 justify-center items-center h-modal sm:h-full flex">
+    <div v-show="deleteModal" id="delete-modal" class="overflow-x-hidden overflow-y-auto fixed top-4 left-0 right-0 md:inset-0 z-50 justify-center items-center h-modal sm:h-full flex">
         <div class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50" />
         <div class="relative w-full max-w-md px-4 h-full md:h-auto">
             <!-- Modal content -->
