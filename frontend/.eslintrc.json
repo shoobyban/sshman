@@ -13,7 +13,14 @@
         "indent": [0],
         "self-closing-void-elements": "off",
         "vue/html-indent": [0, 2],
-        "vue/multi-word-component-names": "off"
+        "vue/multi-word-component-names": "off",
+        "vue/max-attributes-per-line": [0, {
+            "singleline": 8,
+            "multiline": {
+                "max": 5,
+                "allowFirstLine": true
+            }
+        }]
     },
     "ignorePatterns": [
         "node_modules/",

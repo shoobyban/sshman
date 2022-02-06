@@ -35,6 +35,9 @@ export default {
                 })
         },
         async createUser(context, payload) {
+            if (payload.item.email == null || payload.item.email == "") {
+                return  
+            }
             return axios.post("api/users", JSON.stringify(payload.item))
                 .then((response) => {
                     context.commit("createUser", {
