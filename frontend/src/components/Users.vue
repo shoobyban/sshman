@@ -13,6 +13,9 @@ export default {
             groups: state => state.groups,
         }),
     },
+    mounted() {
+        this.fetchAll()
+    },
     methods: {
         ...mapActions([
             'fetchUsers',
@@ -25,9 +28,6 @@ export default {
             this.fetchUsers()
             this.fetchGroups()
         }
-    },
-    mounted() {
-        this.fetchAll()
     },
 }
 </script>
