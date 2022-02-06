@@ -138,7 +138,7 @@ $ ./sshman groups host hostalias group1 group2
 Note: Removing host from a group will remove all users that are on the host only because of that group. If the host is in another group, the users that are in both groups will not be removed.
 
 ### Things To Fix Before Release
-- [ ] Fix adding users
+- [x] Fix adding users
 - [ ] Group editing
     - [ ] Add group should add users and groups
     - [ ] Update group should remove / add resources
