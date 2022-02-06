@@ -69,13 +69,18 @@ func (h UsersHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		user.File = ""
 	}
 	cfg := h.Config(r)
+	if user.Email == "" || user.Key == "" || user.KeyType == "" || user.Name == "" {
+		cfg.Log.Errorf("Missing required fields: email: '%s' key: '%s' keytype: '%s' name: '%s'", user.Email, user.Key, user.KeyType, user.Name)
+		http.Error(w, "missing required fields", http.StatusBadRequest)
+		return
+	}
 	_, oldUser := cfg.GetUserByEmail(user.Email)
 	if oldUser != nil {
 		http.Error(w, "user already exists", http.StatusBadRequest)
 		return
 	}
-	user.UpdateGroups(cfg, []string{})
 	cfg.AddUser(&user)
+	user.UpdateGroups(cfg, []string{})
 	json.NewEncoder(w).Encode(user)
 }
 
