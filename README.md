@@ -1,8 +1,8 @@
 # SSH Manager - manage authorized_key file on remote hosts
 
-This is a simple tool that I came up after having to on-boarding and off-boarding developers on a very colourful palette of environments from AWS to 3rd party hosting providers.
+This is a simple tool that I came up after having to on-boarding and off-boarding developers on a wide of environments from AWS to 3rd party hosting providers.
 
-As every one of my creations this tool is solving _my_ problem. It does not warranty your problem will be solved, but in that highly unlikely event please let me know, fixes and pull requests, issues are all very welcome without again the promise that I'll do anything, I'm normally really busy, apologies.
+As every one of my creations this tool is solving _my_ problems. It does not warranty your problem will be solved, but in that highly unlikely event please let me know, fixes and pull requests, issues are all very welcome without again the promise that I'll do anything, I'm normally really busy, apologies.
 
 **Caution**: Plan your group memberships carefully, keep your management key out of any groups so you don't accidentally remove management key from any host, locking yourself out.
 
