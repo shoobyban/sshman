@@ -1,6 +1,6 @@
 <script>
 import VuexCRUD from './VuexCRUD.vue'
-import { mapState, mapActions, mapGetters } from 'vuex'
+import { mapState, mapActions } from 'vuex'
 
 export default {
     name: 'Groups',
@@ -13,6 +13,9 @@ export default {
             groups: state => state.groups,
             users: state => state.users,
         }),
+    },
+    mounted() {
+        this.fetchAll()
     },
     methods: {
         ...mapActions([
@@ -29,9 +32,6 @@ export default {
             this.fetchUsers()
         }
     },
-    mounted() {
-        this.fetchAll()
-    },
 }
 </script>
 
@@ -39,19 +39,20 @@ export default {
     <div>
         <VuexCRUD 
             v-if="groups"
-            resourceName="Groups" 
             v-model="groups.groups"
-            orderBy="label" 
-            @create="createGroups"
-            @update="updateGroups"
-            @delete="deleteGroups"
-            @fetch="fetchAll"
-            idField="label"
-            :searchFields="['label', 'hosts', 'users']"
+            resource-name="Groups" 
+            order-by="label" 
+            id-field="label"
+            :search-fields="['label', 'hosts', 'users']"
             :fields="[
                 {label: 'Label', index: 'label', placeholder: 'group1', type:'text'},
                 {label: 'Users', index: 'users', placeholder: 'email@host1,email@host2', type:'multiselect', options: users.allEmails},
                 {label: 'Groups', index: 'hosts', placeholder: 'host1,host2', type:'multiselect', options: hosts.allLabels},
-                ]" />
+                ]" 
+            @create="createGroups"
+            @update="updateGroups"
+            @delete="deleteGroups"
+            @fetch="fetchAll"
+            />
     </div>
 </template>

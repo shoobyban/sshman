@@ -1,6 +1,6 @@
 <script>
 import VuexCRUD from './VuexCRUD.vue'
-import { mapState, mapActions, mapGetters } from 'vuex'
+import { mapState, mapActions } from 'vuex'
 
 export default {
     name: 'Hosts',
@@ -13,6 +13,9 @@ export default {
             groups: state => state.groups,
             keys: state => state.keys,
         }),
+    },
+    mounted() {
+        this.fetchAll()
     },
     methods: {
         ...mapActions([
@@ -29,9 +32,6 @@ export default {
             this.fetchKeys('private')
         }
     },
-    mounted() {
-        this.fetchAll()
-    },
 }
 </script>
 
@@ -39,21 +39,22 @@ export default {
     <div>
         <VuexCRUD
             v-if="hosts"
-            resourceName="Hosts" 
             v-model="hosts.hosts"
-            orderBy="alias"
-            @create="createHost"
-            @update="updateHost"
-            @delete="deleteHost"
-            @fetch="fetchAll"
-            idField="."
-            :searchFields="['alias', 'host', 'user', 'groups', 'key']"
+            resource-name="Hosts" 
+            order-by="alias"
+            id-field="."
+            :search-fields="['alias', 'host', 'user', 'groups', 'key']"
             :fields="[
                 {label: 'Alias', apikey: true, index: 'alias', placeholder: 'home.host', type:'text'},
                 {label: 'Hostname', index: 'host', placeholder: '127.0.0.1:22', type:'text'},
                 {label: 'Username', index: 'user', placeholder: 'root', type:'text'},
                 {label: 'Keyfile', index: 'key', placeholder: '~/.ssh/keys.key', type:'select', options: keys.keys},
                 {label: 'Groups', index: 'groups', placeholder: 'group1,group2', type:'multiselect', options: groups.allLabels},
-                ]" /> 
+                ]"
+            @create="createHost"
+            @update="updateHost"
+            @delete="deleteHost"
+            @fetch="fetchAll"
+            /> 
     </div>
 </template>
