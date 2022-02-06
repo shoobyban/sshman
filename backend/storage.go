@@ -141,7 +141,7 @@ func (c *Storage) GetUserByEmail(email string) (string, *User) {
 			return key, user
 		}
 	}
-	c.Log.Errorf("No user with email %s found", email)
+	//	c.Log.Errorf("No user with email %s found", email)
 	return "", nil
 }
 

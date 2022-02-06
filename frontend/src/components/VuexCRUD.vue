@@ -8,14 +8,36 @@ export default {
         Multiselect,
     },
     props: {
-        modelValue: Object, // v-model, unique identifier for each row
-        resourceName: String, // e.g. 'Users'
-        fields: Array,   // format: [{label: 'Email', index: 'email', placeholder: 'sam@test1.com', type:'email'}] 
-        idField: String, // identifier field index for update, delete
-        orderBy: String, // default order by
-        orderDir: String, // default order direction
-        searchFields: Array, // fields to search
+        modelValue: { // v-model, unique identifier for each row
+            type: Function,
+            default: () => {},
+        }, 
+        resourceName: { // e.g. 'Users'
+            type: String,
+            default: 'Items'
+        }, 
+        fields: {  // format: [{label: 'Email', index: 'email', placeholder: 'sam@test1.com', type:'email'}] 
+            type: Array,
+            default: () => [],
+        },
+        idField: { // identifier field index for update, delete
+            type: String,
+            default: 'id',
+        },
+        orderBy: { // default order by
+            type: String,
+            default: 'id',
+        },
+        orderDir: { // default order direction
+            type: String,
+            default: 'asc',
+        },
+        searchFields: { // fields to search
+            type: Array,
+            default: () => [],
+        },
     },
+    emits: ['create', 'update', 'delete', 'fetch'],
     data() {
         return {
             searchInput: '',
@@ -28,27 +50,6 @@ export default {
             sortDir: '',
             listItems: {},
         }
-    },
-    mounted: function() {
-        this.sortBy = this.orderBy
-        this.sortDir = this.orderDir
-        if (this.orderDir == undefined || this.orderDir == '') {
-            this.sortDir = 'asc'
-        }
-    },
-    watch: {
-        modelValue: function() {
-            this.recalcSearch()
-        },
-        searchInput: function() {
-            this.recalcSearch()
-        },
-        sortBy: function() {
-            this.recalcSearch()
-        },
-        sortDir: function() {
-            this.recalcSearch()
-        },
     },
     computed: {
         listFields: function() {
@@ -67,6 +68,28 @@ export default {
             return this.listItems[this.currentID]
         },
     },
+    watch: {
+        modelValue: function() {
+            this.recalcSearch()
+        },
+        searchInput: function() {
+            this.recalcSearch()
+        },
+        sortBy: function() {
+            this.recalcSearch()
+        },
+        sortDir: function() {
+            this.recalcSearch()
+        },
+    },
+    mounted: function() {
+        this.sortBy = this.orderBy
+        this.sortDir = this.orderDir
+        if (this.orderDir == undefined || this.orderDir == '') {
+            this.sortDir = 'asc'
+        }
+    },
+
     methods: {
         visible(item, place) {
             return item.hide == false || item.hide == undefined || item.hide.indexOf(place) == -1
@@ -109,7 +132,6 @@ export default {
                 }
             }
             if (this.sortBy != '') {
-                let obj = _(this.listItems)
                 let sorted = {}
                 let keys = _.keys(this.listItems)
                 keys.sort((x, y) => {
@@ -120,7 +142,7 @@ export default {
                     }
                 })       
                 _.forEach(keys, (key) => {
-                    return sorted[key] = this.listItems[key];
+                    return sorted[key] = this.listItems[key]
                 })
                 this.listItems = sorted
             }
