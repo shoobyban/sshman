@@ -14,6 +14,7 @@ type configFile struct {
 	Users map[string]*User `json:"users"`
 }
 
+// Storage is the main configuration (data storage) for the sshman backend
 type Storage struct {
 	l          sync.Mutex
 	key        string
@@ -26,12 +27,14 @@ type Storage struct {
 	Log        *ILog
 }
 
+// LabelGroup is used for returning group information to frontend
 type LabelGroup struct {
 	Label string   `json:"label"`
 	Hosts []string `json:"hosts"`
 	Users []string `json:"users"`
 }
 
+// Group is used to store group information (connecting hosts and users)
 type Group struct {
 	Name  string
 	Size  int
@@ -39,6 +42,7 @@ type Group struct {
 	Users []*User
 }
 
+// NewConfig creates a new configuration with a logger
 func NewConfig() *Storage {
 	return &Storage{
 		hosts: map[string]*Host{},
@@ -48,6 +52,17 @@ func NewConfig() *Storage {
 	}
 }
 
+// NewConfigWithLog creates a new configuration with a given logger, used for frontend
+func newConfigWithLog(log *ILog) *Storage {
+	return &Storage{
+		hosts: map[string]*Host{},
+		users: map[string]*User{},
+		Conn:  &SFTPConn{},
+		Log:   log,
+	}
+}
+
+// ReadConfig reads the configuration file ~/.ssh/.sshman and returns a new Storage
 func ReadConfig() *Storage {
 	c := NewConfig()
 	c.home, _ = os.UserHomeDir()
@@ -59,17 +74,9 @@ func ReadConfig() *Storage {
 	return c
 }
 
-func NewConfigWithLog(log *ILog) *Storage {
-	return &Storage{
-		hosts: map[string]*Host{},
-		users: map[string]*User{},
-		Conn:  &SFTPConn{},
-		Log:   log,
-	}
-}
-
+// WebReadConfig reads the configuration file ~/.ssh/.sshman and returns a new Storage with a logger, used for web
 func WebReadConfig(log *ILog) *Storage {
-	c := NewConfigWithLog(log)
+	c := newConfigWithLog(log)
 	c.home, _ = os.UserHomeDir()
 	err := c.load(c.home + "/.ssh/.sshman")
 	if err != nil {
@@ -159,7 +166,7 @@ func (c *Storage) getHosts(group string) []*Host {
 	return hosts
 }
 
-// getUsers will return users that have the given group
+// GetUsers will return users that have the given group
 func (c *Storage) GetUsers(group string) []*User {
 	var users []*User
 	for _, user := range c.Users() {
@@ -181,6 +188,7 @@ func (c *Storage) AddUserToHosts(newuser *User) {
 	c.Write()
 }
 
+// SetHost is a setter for hosts
 func (c *Storage) SetHost(alias string, host *Host) {
 	c.l.Lock()
 	defer c.l.Unlock()
@@ -189,18 +197,21 @@ func (c *Storage) SetHost(alias string, host *Host) {
 	c.Write()
 }
 
+// Hosts is a getter for hosts
 func (c *Storage) Hosts() map[string]*Host {
 	c.l.Lock()
 	defer c.l.Unlock()
 	return c.hosts
 }
 
+// Users is a getter for users
 func (c *Storage) Users() map[string]*User {
 	c.l.Lock()
 	defer c.l.Unlock()
 	return c.users
 }
 
+// UserExists checks if a user exists ignoring the result
 func (c *Storage) UserExists(lsum string) bool {
 	_, ok := c.users[lsum]
 	return ok
@@ -212,7 +223,6 @@ func (c *Storage) DelUserFromHosts(deluser *User) error {
 		return fmt.Errorf("User is nil")
 	}
 	for alias, host := range c.Hosts() {
-		host.ReadUsers()
 		err := host.DelUser(deluser)
 		if err != nil {
 			c.Log.Errorf("Can't delete user %s from host %s %v", deluser.Email, host.Alias, err)
@@ -224,6 +234,8 @@ func (c *Storage) DelUserFromHosts(deluser *User) error {
 	return nil
 }
 
+// PrepareHost will prepare a host entry from array of strings
+// Args: alias, hostname, user, keyfile, groups
 func (c *Storage) PrepareHost(args ...string) (*Host, error) {
 	alias := args[0]
 	if _, err := os.Stat(args[3]); os.IsNotExist(err) {
@@ -245,8 +257,7 @@ func (c *Storage) PrepareHost(args ...string) (*Host, error) {
 }
 
 // AddHost adds a host to the configuration
-// Args: alias, hostname, user, keyfile, groups
-func (c *Storage) AddHost(host *Host) error {
+func (c *Storage) AddHost(host *Host, withUsers bool) error {
 	c.l.Lock()
 	defer c.l.Unlock()
 	c.Log.Infof("Adding host %s", host.Alias)
@@ -255,11 +266,19 @@ func (c *Storage) AddHost(host *Host) error {
 	}
 	c.hosts[host.Alias] = host
 	c.Write()
-	host.ReadUsers()
+	if withUsers {
+		users, err := host.ReadUsers()
+		if err != nil {
+			return err
+		}
+		for _, user := range users {
+			c.AddUser(user)
+		}
+	}
 	return nil
 }
 
-// DeleteUser removes a user from the configuration
+// DeleteUserByID removes a user from the configuration
 func (c *Storage) DeleteUserByID(id string) bool {
 	c.l.Lock()
 	defer c.l.Unlock()
@@ -272,6 +291,7 @@ func (c *Storage) DeleteUserByID(id string) bool {
 	return ok
 }
 
+// DeleteUser removes a user from the configuration
 func (c *Storage) DeleteUser(email string) bool {
 	c.l.Lock()
 	defer c.l.Unlock()
@@ -290,6 +310,7 @@ func (c *Storage) DeleteUser(email string) bool {
 	return found
 }
 
+// PrepareUser will prepare a user entry from array of strings
 // New user: old groups, email, key file, new groups
 func (c *Storage) PrepareUser(args ...string) (*User, error) {
 	parts, err := readKeyFile(args[1])
@@ -350,6 +371,7 @@ func (c *Storage) DeleteHost(alias string) bool {
 	return false
 }
 
+// Update updates all hosts by given aliases
 func (c *Storage) Update(aliases ...string) {
 	c.l.Lock()
 	hosts := c.hosts
@@ -363,10 +385,18 @@ func (c *Storage) Update(aliases ...string) {
 	}
 	c.l.Unlock()
 	for _, host := range hosts {
-		host.ReadUsers()
+		users, err := host.ReadUsers()
+		if err != nil {
+			c.Log.Errorf("Can't read users from host %s: %v", host.Alias, err)
+			continue
+		}
+		for _, user := range users {
+			c.AddUser(user)
+		}
 	}
 }
 
+// Regenerate updates group information for given hosts
 func (c *Storage) Regenerate(aliases ...string) {
 	c.l.Lock()
 	defer c.l.Unlock()
@@ -379,6 +409,7 @@ func (c *Storage) Regenerate(aliases ...string) {
 	}
 }
 
+// GetGroups returns all groups for frontend (web and cli)
 func (c *Storage) GetGroups() map[string]LabelGroup {
 	c.l.Lock()
 	defer c.l.Unlock()
@@ -407,6 +438,7 @@ func (c *Storage) GetGroups() map[string]LabelGroup {
 	return groups
 }
 
+// AddUserByEmail adds a user to the hosts indicated by config groups
 func (c *Storage) AddUserByEmail(email string) bool {
 	_, u := c.GetUserByEmail(email)
 	if u != nil {
@@ -416,18 +448,21 @@ func (c *Storage) AddUserByEmail(email string) bool {
 	return false
 }
 
+// GetUser is getting user by id
 func (c *Storage) GetUser(lsum string) *User {
 	c.l.Lock()
 	defer c.l.Unlock()
 	return c.users[lsum]
 }
 
+// GetHost is getting host by alias
 func (c *Storage) GetHost(alias string) *Host {
 	c.l.Lock()
 	defer c.l.Unlock()
 	return c.hosts[alias]
 }
 
+// DeleteGroup removes a group from the config, removing all users and hosts group labels
 func (c *Storage) DeleteGroup(label string) bool {
 	c.l.Lock()
 	defer c.l.Unlock()
@@ -448,6 +483,8 @@ func (c *Storage) DeleteGroup(label string) bool {
 	return false
 }
 
+// UpdateGroup updates a group in the config
+// removing all users and hosts group labels then adding them again
 func (c *Storage) UpdateGroup(groupLabel string, users, servers []string) {
 	c.l.Lock()
 	// loop through hosts and add groupLabel to host.Groups

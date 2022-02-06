@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// Host holds and manages a host entry in the config
 type Host struct {
 	Host     string   `json:"host"`
 	User     string   `json:"user"`
@@ -16,11 +17,13 @@ type Host struct {
 	Groups   []string `json:"groups"`
 }
 
-func (h *Host) ReadUsers() error {
+// ReadUsers reads any new users from the host's authorized_keys file
+func (h *Host) ReadUsers() (map[string]*User, error) {
 	sum, lines, err := h.read()
 	if err != nil {
-		return err
+		return nil, err
 	}
+	newUsers := map[string]*User{}
 	var userlist []string
 	for _, line := range lines {
 		parts := strings.Split(line, " ")
@@ -35,7 +38,7 @@ func (h *Host) ReadUsers() error {
 					Email:   email,
 					Config:  h.Config,
 				}
-				h.Config.AddUser(user)
+				newUsers[lsum] = user
 			}
 			userlist = append(userlist, email)
 		}
@@ -43,7 +46,7 @@ func (h *Host) ReadUsers() error {
 	h.Checksum = sum
 	h.Users = userlist
 	h.Config.Write()
-	return nil
+	return newUsers, nil
 }
 
 func (h *Host) read() (string, []string, error) {
@@ -76,22 +79,27 @@ func (h *Host) write(lines []string) error {
 	return h.Config.Conn.Write(strings.Join(lines, "\n") + "\n")
 }
 
+// GetUsers is a getter for host's Users
 func (h *Host) GetUsers() []string {
 	return h.Users
 }
 
+// GetGroups is a getter for host's Groups
 func (h *Host) GetGroups() []string {
 	return h.Groups
 }
 
+// SetGroups is a setter for host's Groups (overwrite all groups at once)
 func (h *Host) SetGroups(groups []string) {
 	h.Groups = groups
 }
 
+// HasMatchingGroups checks if the host has any matching groups with the user
 func (h *Host) HasMatchingGroups(user *User) bool {
 	return match(h.GetGroups(), user.GetGroups())
 }
 
+// HasUser checks if the host has a user with the given email
 func (h *Host) HasUser(email string) bool {
 	for _, e := range h.Users {
 		if e == email {
@@ -101,22 +109,23 @@ func (h *Host) HasUser(email string) bool {
 	return false
 }
 
+// AddUser adds a user to the host's authorized_keys file
 func (h *Host) AddUser(u *User) error {
 	h.Users = append(h.Users, u.Email)
 	var lines []string
 	for _, email := range h.Users {
+		// double-check old user entries
 		_, userentry := h.Config.GetUserByEmail(email)
 		if userentry == nil {
 			// Shall we add a warning here?
 			continue
 		}
-		if userentry.Email == email {
-			lines = append(lines, userentry.KeyType+" "+userentry.Key+" "+userentry.Name)
-		}
+		lines = append(lines, userentry.KeyType+" "+userentry.Key+" "+userentry.Name)
 	}
 	return h.write(lines)
 }
 
+// DelUser removes a user from the host's authorized_keys file
 func (h *Host) DelUser(u *User) error {
 	if u == nil {
 		return fmt.Errorf("user is nil")
@@ -158,6 +167,7 @@ func (h *Host) DelUser(u *User) error {
 	return nil
 }
 
+// UpdateGroups updates the host's groups based on old groups
 func (h *Host) UpdateGroups(c *Storage, oldgroups []string) bool {
 	success := true
 	added, removed := updates(oldgroups, h.Groups)

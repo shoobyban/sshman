@@ -96,6 +96,7 @@ func SplitParts(content string) ([]string, error) {
 	return parts, nil
 }
 
+// JSON string from any value
 func JSON(data interface{}) string {
 	// marshal data into json
 	bs, _ := json.MarshalIndent(data, "", "  ")

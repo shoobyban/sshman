@@ -10,19 +10,22 @@ import (
 	"github.com/shoobyban/sshman/backend"
 )
 
-type Keys struct {
+// KeysHandler returns a list of ssh key filename from ~/.ssh
+type KeysHandler struct {
 	Prefix string
 }
 
-func (h Keys) Config(r *http.Request) *backend.Storage {
+// Config returns a loaded configuration for the handler
+func (h KeysHandler) Config(r *http.Request) *backend.Storage {
 	ctx := r.Context()
-	if cfg, ok := ctx.Value("config").(*backend.Storage); ok {
+	if cfg, ok := ctx.Value(ConfigKey).(*backend.Storage); ok {
 		return cfg
 	}
 	return &backend.Storage{}
 }
 
-func (h Keys) AddRoutes(router *chi.Mux) {
+// AddRoutes adds keyhandler specific routes to the router
+func (h KeysHandler) AddRoutes(router *chi.Mux) {
 	router.Get(h.Prefix, h.GetAllKeys)
 	// router.Get(h.Prefix+"/{filename}", h.GetKeyDetails)
 	// router.Delete(h.Prefix+"/{filename}", h.DeleteKey)
@@ -30,7 +33,8 @@ func (h Keys) AddRoutes(router *chi.Mux) {
 	router.Post(h.Prefix, h.CreateKey)
 }
 
-func (h Keys) GetAllKeys(w http.ResponseWriter, r *http.Request) {
+// GetAllKeys returns a list of all ssh key files from ~/.ssh filtered by type={all|public|private}
+func (h KeysHandler) GetAllKeys(w http.ResponseWriter, r *http.Request) {
 
 	t := r.URL.Query().Get("type")
 	if t == "" {
@@ -71,7 +75,8 @@ func (h Keys) GetAllKeys(w http.ResponseWriter, r *http.Request) {
 	e.Encode(keys)
 }
 
-func (h Keys) CreateKey(w http.ResponseWriter, r *http.Request) {
+// CreateKey creates a new ssh key from uploaded file
+func (h KeysHandler) CreateKey(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
 		Filename string `json:"filename"`
 		File     string `json:"file"`

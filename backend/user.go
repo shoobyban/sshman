@@ -2,6 +2,7 @@ package backend
 
 import "fmt"
 
+// User holds the user information in the config
 type User struct {
 	KeyType string   `json:"type"`
 	Name    string   `json:"name"`
@@ -12,6 +13,7 @@ type User struct {
 	Config  *Storage `json:"-"`
 }
 
+// NewUser creates a new user
 func NewUser(email, keytype, key, name string) *User {
 	return &User{
 		Email:   email,
@@ -21,6 +23,7 @@ func NewUser(email, keytype, key, name string) *User {
 	}
 }
 
+// UpdateGroups updates the user's groups based on old groups
 func (u *User) UpdateGroups(C *Storage, oldgroups []string) error {
 	var errors *Errors
 	added, removed := updates(oldgroups, u.Groups)
@@ -71,10 +74,12 @@ func (u *User) UpdateGroups(C *Storage, oldgroups []string) error {
 	return errors
 }
 
+// GetGroups is a getter for Groups
 func (u *User) GetGroups() []string {
 	return u.Groups
 }
 
+// SetGroups is a setter for Groups
 func (u *User) SetGroups(groups []string) {
 	u.Groups = groups
 }

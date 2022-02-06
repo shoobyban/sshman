@@ -10,19 +10,22 @@ import (
 	"github.com/shoobyban/sshman/backend"
 )
 
-type Users struct {
+// UsersHandler is the handler for users
+type UsersHandler struct {
 	Prefix string
 }
 
-func (h Users) Config(r *http.Request) *backend.Storage {
+// Config returns the config for the handler
+func (h UsersHandler) Config(r *http.Request) *backend.Storage {
 	ctx := r.Context()
-	if cfg, ok := ctx.Value("config").(*backend.Storage); ok {
+	if cfg, ok := ctx.Value(ConfigKey).(*backend.Storage); ok {
 		return cfg
 	}
 	return &backend.Storage{}
 }
 
-func (h Users) AddRoutes(router *chi.Mux) {
+// AddRoutes adds the routes for the handler
+func (h UsersHandler) AddRoutes(router *chi.Mux) {
 	router.Get(h.Prefix, h.GetAllUsers)
 	router.Get(h.Prefix+"/{id}", h.GetUserDetails)
 	router.Delete(h.Prefix+"/{id}", h.DeleteUser)
@@ -30,18 +33,21 @@ func (h Users) AddRoutes(router *chi.Mux) {
 	router.Post(h.Prefix, h.CreateUser)
 }
 
-func (h Users) GetAllUsers(w http.ResponseWriter, r *http.Request) {
+// GetAllUsers returns all users
+func (h UsersHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	users := h.Config(r).Users()
 	json.NewEncoder(w).Encode(users)
 }
 
-func (h Users) GetUserDetails(w http.ResponseWriter, r *http.Request) {
+// GetUserDetails returns the details of a user
+func (h UsersHandler) GetUserDetails(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	user := h.Config(r).GetUser(id)
 	json.NewEncoder(w).Encode(user)
 }
 
-func (h Users) CreateUser(w http.ResponseWriter, r *http.Request) {
+// CreateUser creates a new user
+func (h UsersHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var user backend.User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
@@ -73,7 +79,8 @@ func (h Users) CreateUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
-func (h Users) UpdateUser(w http.ResponseWriter, r *http.Request) {
+// UpdateUser updates a user
+func (h UsersHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	var user backend.User
 
 	bodyBytes, err := io.ReadAll(r.Body)
@@ -128,7 +135,8 @@ func (h Users) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
-func (h Users) DeleteUser(w http.ResponseWriter, r *http.Request) {
+// DeleteUser deletes a user
+func (h UsersHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	log.Printf("Deleting user %s", id)
 	cfg := h.Config(r)
