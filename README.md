@@ -2,7 +2,6 @@
 
 [![Build Status](https://github.com/shoobyban/sshman/actions/workflows/push.yaml/badge.svg?branch=main)](https://github.com/shoobyban/sshman/actions/workflows/push.yaml)
 [![Awesome GO](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/avelino/awesome-go)
-[![Coverage](https://coveralls.io/github/shoobyban/sshman)](https://coveralls.io/github/shoobyban/sshman)
 [![Go Report Card](https://goreportcard.com/badge/github.com/shoobyban/sshman)](https://goreportcard.com/report/github.com/shoobyban/sshman)
 
 This is a simple tool that I came up after having to on-boarding and off-boarding developers on a wide of environments from AWS to 3rd party hosting providers.
