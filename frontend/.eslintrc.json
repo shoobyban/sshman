@@ -10,6 +10,7 @@
         // override/add rules settings here, such as:
         "vue/no-unused-vars": "error",
         "semi": ["warn", "never"],
+        "indent": [0],
         "self-closing-void-elements": "off"
     },
     "ignorePatterns": [
