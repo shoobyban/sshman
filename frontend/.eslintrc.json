@@ -11,7 +11,9 @@
         "vue/no-unused-vars": "error",
         "semi": ["warn", "never"],
         "indent": [0],
-        "self-closing-void-elements": "off"
+        "self-closing-void-elements": "off",
+        "vue/html-indent": [0, 2],
+        "vue/multi-word-component-names": "off"
     },
     "ignorePatterns": [
         "node_modules/",

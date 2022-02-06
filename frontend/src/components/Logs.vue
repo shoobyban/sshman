@@ -1,17 +1,13 @@
-<template>
-    <div class="overflow-y-auto h-full">
-        <div v-for="item in items" class="mt-1 whitespace-nowrap" :class="item.type">
-            {{item.message}}
-        </div>
-    </div>
-</template>
 <script>
-var evtSource = false;
+var evtSource = false
 
 export default {
     name: 'Logs',
     props: {
-        url: String,
+        url: {
+            type: String,
+            default: '/logs',
+        },
     },
     data() {
         return {
@@ -22,47 +18,55 @@ export default {
             loading: false
         }
     },
+    computed: {
+        buttonLabel: function () {
+            return (this.loading ? 'Loading…' : 'Go')
+        }
+    },
     mounted() {
-        this.run();
+        this.run()
     },
     updated() {
         var elem = this.$el
-        elem.scrollTop = elem.clientHeight;
-    },
-    computed: {
-        buttonLabel: function () {
-            return (this.loading ? 'Loading…' : 'Go');
-        }
+        elem.scrollTop = elem.clientHeight
     },
     methods: {
         run: function () {
-            this.reset();
-            evtSource = new EventSource(this.url);
+            this.reset()
+            evtSource = new EventSource(this.url)
             evtSource.onmessage = (event) => {
-                console.log('message', event);
-                this.items.push(JSON.parse(event.data));
+                console.log('message', event)
+                this.items.push(JSON.parse(event.data))
             }
             evtSource.onerror = (event) => {
-                console.log('error', event);
-                this.reset();
+                console.log('error', event)
+                this.reset()
             }
             evtSource.onclose = (event) => {
-                console.log('close', event);
-                this.reset();
+                console.log('close', event)
+                this.reset()
             }
         },
         reset: function () {
             if (evtSource !== false) {
-                evtSource.close();
+                evtSource.close()
             }
 
-            this.loading = false;
-            this.items = [];
-            this.total_items = -1;
+            this.loading = false
+            this.items = []
+            this.total_items = -1
         }
     }
 }
 </script>
+
+<template>
+    <div class="overflow-y-auto h-full">
+        <div v-for="(item, i) in items" :key="i" class="mt-1 whitespace-nowrap" :class="item.type">
+            {{ item.message }}
+        </div>
+    </div>
+</template>
 
 <style scoped>
 .error {

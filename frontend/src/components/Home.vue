@@ -1,5 +1,5 @@
 <script>
-import { mapState, mapActions, mapGetters } from 'vuex'
+import { mapState, mapActions } from 'vuex'
 
 export default {
     name: 'Home',
@@ -9,6 +9,9 @@ export default {
             groups: state => state.groups,
             users: state => state.users,
         }),
+    },
+    mounted() {
+        this.fetchAll()
     },
     methods: {
         ...mapActions([
@@ -22,9 +25,6 @@ export default {
             this.fetchUsers()
         }
     },
-    mounted() {
-        this.fetchAll()
-    },
 }
 </script>
 
@@ -34,15 +34,15 @@ export default {
         <div class="flex">
             <div class="w-1/3">
                 <h4 class="font-bold">Users</h4>
-                <div v-for="(user, idx) in users.users">{{user.email}}</div>
+                <div v-for="(user, idx) in users.users" :key="idx">{{user.email}}</div>
             </div>
             <div class="w-1/3">
                 <h4 class="font-bold">Hosts</h4>
-                <div v-for="(host, idx) in hosts.hosts">{{host.alias}}</div>
+                <div v-for="(host, idx) in hosts.hosts" :key="idx">{{host.alias}}</div>
             </div>
             <div class="w-1/3">
                 <h4 class="font-bold">Groups</h4>
-                <div v-for="(group, idx) in groups.groups">{{group.label}}</div>
+                <div v-for="(group, idx) in groups.groups" :key="idx">{{group.label}}</div>
             </div>
         </div>
     </div>      
