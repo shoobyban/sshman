@@ -78,11 +78,7 @@ func ReadConfig() *Storage {
 func WebReadConfig(log *ILog) *Storage {
 	c := newConfigWithLog(log)
 	c.home, _ = os.UserHomeDir()
-	err := c.load(c.home + "/.ssh/.sshman")
-	if err != nil {
-		c.Log.Infof("No configuration file ~/.ssh/.sshman, creating one")
-		return c
-	}
+	c.load(c.home + "/.ssh/.sshman")
 	return c
 }
 
@@ -152,7 +148,7 @@ func (c *Storage) Write() {
 	}
 	cf := configFile{Key: c.key, Hosts: c.hosts, Users: c.users}
 	b, _ := json.MarshalIndent(cf, "", "  ")
-	os.WriteFile(c.home+"/.ssh/.sshman", b, 0644)
+	os.WriteFile(c.home+"/.ssh/.sshman", b, 0600)
 	c.Log.Infof("Configuration saved to ~/.ssh/.sshman")
 }
 
