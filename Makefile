@@ -1,11 +1,13 @@
 .PHONY: frontend
-all: frontend
+all: backend frontend
+
+backend: frontend
 	go build .
 
 linux: frontend
 	GOARCH=amd64 GOOS=linux go build .
 
-test:
+test: backend frontend
 	go test ./...
 	cd frontend && yarn lint
 

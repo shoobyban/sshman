@@ -8,13 +8,19 @@ import (
 	"sync"
 )
 
-type configFile struct {
+type Config struct {
+	StorageFilePath string `mapstructure:"STORAGE"`
+}
+
+var config *Config
+
+type storageFile struct {
 	Key   string           `json:"key"`
 	Hosts map[string]*Host `json:"hosts"`
 	Users map[string]*User `json:"users"`
 }
 
-// Storage is the main configuration (data storage) for the sshman backend
+// Storage is the main storage (data storage) for the sshman backend
 type Storage struct {
 	l          sync.Mutex
 	key        string
@@ -23,7 +29,6 @@ type Storage struct {
 	Groups     map[string]Group
 	Conn       SFTP
 	persistent bool
-	home       string
 	Log        *ILog
 }
 
@@ -42,8 +47,12 @@ type Group struct {
 	Users []*User
 }
 
-// NewConfig creates a new configuration with a logger
-func NewConfig() *Storage {
+func SetConfig(c *Config) {
+	config = c
+}
+
+// NewStorage creates a new storage with a logger
+func NewStorage() *Storage {
 	return &Storage{
 		hosts: map[string]*Host{},
 		users: map[string]*User{},
@@ -52,8 +61,8 @@ func NewConfig() *Storage {
 	}
 }
 
-// NewConfigWithLog creates a new configuration with a given logger, used for frontend
-func newConfigWithLog(log *ILog) *Storage {
+// newStorageWithLog creates a new storage with a given logger, used for frontend
+func newStorageWithLog(log *ILog) *Storage {
 	return &Storage{
 		hosts: map[string]*Host{},
 		users: map[string]*User{},
@@ -62,23 +71,21 @@ func newConfigWithLog(log *ILog) *Storage {
 	}
 }
 
-// ReadConfig reads the configuration file ~/.ssh/.sshman and returns a new Storage
-func ReadConfig() *Storage {
-	c := NewConfig()
-	c.home, _ = os.UserHomeDir()
-	err := c.load(c.home + "/.ssh/.sshman")
+// ReadStorage reads the storage file ~/.ssh/.sshman and returns a new Storage
+func ReadStorage() *Storage {
+	c := NewStorage()
+	err := c.load(config.StorageFilePath)
 	if err != nil {
-		c.Log.Infof("No configuration file ~/.ssh/.sshman, creating one")
+		c.Log.Infof("No storage file " + config.StorageFilePath + ", creating one")
 		return c
 	}
 	return c
 }
 
-// WebReadConfig reads the configuration file ~/.ssh/.sshman and returns a new Storage with a logger, used for web
-func WebReadConfig(log *ILog) *Storage {
-	c := newConfigWithLog(log)
-	c.home, _ = os.UserHomeDir()
-	c.load(c.home + "/.ssh/.sshman")
+// ReadStorageWithLog reads the storage file ~/.ssh/.sshman and returns a new Storage with a logger, used for web
+func ReadStorageWithLog(log *ILog) *Storage {
+	c := newStorageWithLog(log)
+	c.load(config.StorageFilePath)
 	return c
 }
 
@@ -88,10 +95,10 @@ func (c *Storage) load(filename string) error {
 		return err
 	}
 	c.persistent = true // testing doesn't have this where we just create the config
-	var cf configFile
+	var cf storageFile
 	err = json.Unmarshal(b, &cf)
 	if err != nil {
-		log.Fatalf("Error: unable to decode into struct, please correct or remove broken ~/.ssh/.sshman %v\n", err)
+		log.Fatalf("Error: unable to decode into struct, please correct or remove broken %s %v\n", config.StorageFilePath, err)
 	}
 	c.key = cf.Key
 	c.hosts = cf.Hosts
@@ -141,15 +148,15 @@ func (c *Storage) GetUserByEmail(email string) (string, *User) {
 	return "", nil
 }
 
-// Write configuration file into ~/.ssh/.sshman (if not testing)
+// Write storage file into ~/.ssh/.sshman (if not testing)
 func (c *Storage) Write() {
 	if !c.persistent {
 		return // when testing (so not from ReadConfig)
 	}
-	cf := configFile{Key: c.key, Hosts: c.hosts, Users: c.users}
+	cf := storageFile{Key: c.key, Hosts: c.hosts, Users: c.users}
 	b, _ := json.MarshalIndent(cf, "", "  ")
-	os.WriteFile(c.home+"/.ssh/.sshman", b, 0600)
-	c.Log.Infof("Configuration saved to ~/.ssh/.sshman")
+	os.WriteFile(config.StorageFilePath, b, 0600)
+	c.Log.Infof("storage saved to " + config.StorageFilePath)
 }
 
 func (c *Storage) getHosts(group string) []*Host {
@@ -252,7 +259,7 @@ func (c *Storage) PrepareHost(args ...string) (*Host, error) {
 	return host, nil
 }
 
-// AddHost adds a host to the configuration
+// AddHost adds a host to the storage
 func (c *Storage) AddHost(host *Host, withUsers bool) error {
 	c.l.Lock()
 	defer c.l.Unlock()
@@ -274,7 +281,7 @@ func (c *Storage) AddHost(host *Host, withUsers bool) error {
 	return nil
 }
 
-// DeleteUserByID removes a user from the configuration
+// DeleteUserByID removes a user from the storage
 func (c *Storage) DeleteUserByID(id string) bool {
 	c.l.Lock()
 	defer c.l.Unlock()
@@ -287,7 +294,7 @@ func (c *Storage) DeleteUserByID(id string) bool {
 	return ok
 }
 
-// DeleteUser removes a user from the configuration
+// DeleteUser removes a user from the storage
 func (c *Storage) DeleteUser(email string) bool {
 	c.l.Lock()
 	defer c.l.Unlock()

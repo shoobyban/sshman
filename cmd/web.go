@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"net"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/go-chi/chi"
@@ -23,7 +25,7 @@ var dist embed.FS
 func ReadConfig(log *backend.ILog) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-			cfg := backend.WebReadConfig(log)
+			cfg := backend.ReadStorageWithLog(log)
 			ctx := context.WithValue(r.Context(), api.ConfigKey, cfg)
 			next.ServeHTTP(rw, r.WithContext(ctx))
 		})
@@ -36,11 +38,14 @@ var webCmd = &cobra.Command{
 	Short: "Web UI",
 	Long:  `Stays running and created a web UI.`,
 	Run: func(cmd *cobra.Command, _ []string) {
-		port, err := cmd.Flags().GetInt("port")
-		if err != nil {
-			port = 80
+		port, err := cmd.Flags().GetString("port")
+		if err != nil || port == "dynamic" {
+			port = ":0"
 		}
-
+		_, err = strconv.Atoi(port)
+		if err == nil {
+			port = ":" + port
+		}
 		r := chi.NewMux()
 		r.Use(middleware.Logger)
 		weblog := backend.NewLog(true)
@@ -56,11 +61,22 @@ var webCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 		r.Handle("/*", http.FileServer(http.FS(distfs)))
-		fmt.Println(http.ListenAndServe(":"+strconv.Itoa(port), r))
+		listener, err := net.Listen("tcp", port)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if port == ":0" {
+			fmt.Println("Using port:", listener.Addr().(*net.TCPAddr).Port)
+			portfile, _ := cmd.Flags().GetString("portfile")
+			os.WriteFile(portfile, []byte(fmt.Sprint(listener.Addr().(*net.TCPAddr).Port)), 0644)
+		}
+		server := &http.Server{Addr: port, Handler: r}
+		fmt.Println(server.Serve(listener))
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(webCmd)
-	webCmd.PersistentFlags().IntP("port", "p", 80, "Port for web UI. Defaults to 80")
+	webCmd.PersistentFlags().StringP("port", "p", "dynamic", "Port for web UI. Can be a port number or 'dynamic' (without quotes). Defaults to dynamic address. Dynamic address will create a sshman.port file.")
+	webCmd.PersistentFlags().StringP("portfile", "f", "sshman.port", "Port filename for dynamic address to check, can be relative or full path, don't use ~ or $HOME")
 }

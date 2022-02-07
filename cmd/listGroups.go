@@ -13,7 +13,7 @@ var listGroupsCmd = &cobra.Command{
 	Short: "List all groups",
 	Long:  `List all groups from users and hosts`,
 	Run: func(_ *cobra.Command, _ []string) {
-		conf := backend.ReadConfig()
+		conf := backend.ReadStorage()
 		groups := conf.GetGroups()
 		for label, grp := range groups {
 			fmt.Printf("%s hosts: %v\n%s users: %v\n", label, grp.Hosts, label, grp.Users)
