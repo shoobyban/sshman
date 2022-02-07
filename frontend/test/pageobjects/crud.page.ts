@@ -20,8 +20,8 @@ export default class CrudPage extends Page {
         return (field:String) => $('#'+field);
     }
 
-    public get btnEditItem(): ((selector:String) => ChainablePromiseElement<Promise<WebdriverIO.Element>>) {
-        return (selector:String) => $('#list-items'+selector);
+    public get btnListItem(): ((selector:String) => ChainablePromiseElement<Promise<WebdriverIO.Element>>) {
+        return (selector:String) => $('#list-items '+selector);
     }
 
     public get modalAdd(): ChainablePromiseElement<Promise<WebdriverIO.Element>> {
@@ -32,15 +32,34 @@ export default class CrudPage extends Page {
         return $('#edit-modal');
     }
 
+    public get modalDelete(): ChainablePromiseElement<Promise<WebdriverIO.Element>> {
+        return $('#delete-modal');
+    }
+
     public get searchField(): ChainablePromiseElement<Promise<WebdriverIO.Element>> {
         return $('#search-input');
+    }
+
+    public get btnDeleteItem(): ChainablePromiseElement<Promise<WebdriverIO.Element>> {
+        return $('#delete-item');
     }
 
     public async addItem (searchKey: string, item: object): Promise<void> {
         await this.btnAddItems.click();
         await expect(this.modalAdd).toBeDisplayedInViewport();
         for (let key in item) {
-            await this.inputField('add-'+key).setValue(item[key]);
+            let ifield = await this.inputField('add-'+key);
+            let className = await ifield.getAttribute('class');
+            let elementType = await ifield.getTagName();
+            if (elementType == 'div' && className == 'multiselect' ) {
+                await ifield.click();
+                await ifield.keys(item[key]);
+                await browser.pause(100);
+                await ifield.keys("\uE007");
+                await browser.pause(100); // doesn't work on single vueform/multiselect yet
+            } else {
+                ifield.setValue(item[key]);
+            }
         }
         await this.btnAddSave.click();
         await browser.pause(100)
@@ -48,15 +67,15 @@ export default class CrudPage extends Page {
         await this.searchField.setValue(item[searchKey]);
         await browser.pause(100);
         const items = $('#list-items');
-        await expect(items).toHaveChildren(1);
+        await expect(items).toHaveChildren({eq: 1});
     }
 
     public async editItem (searchValue: string, searchKey: string, item: object): Promise<void> {
         await this.searchField.setValue(searchValue);
         await browser.pause(100)
         const items = $('#list-items')
-        await expect(items).toHaveChildren(1);
-        await this.btnEditItem(' :first-child button').click();
+        await expect(items).toHaveChildren({eq: 1});
+        await this.btnListItem('button.edit-item').click();
         await expect(this.modalEdit).toBeDisplayedInViewport();
         for (let key in item) {
             await this.inputField('edit-'+key).setValue(item[key]);
@@ -66,31 +85,29 @@ export default class CrudPage extends Page {
         await expect(this.modalEdit).not.toBeDisplayedInViewport();
         await this.searchField.setValue(item[searchKey]);
         await browser.pause(100);
-        const editedItems = $('#list-items');
-        await expect(editedItems).toHaveChildren(1);
+        await expect(items).toHaveChildren({eq: 1});
     }
 
     public async deleteItem (searchValue: string): Promise<void> {
         await this.searchField.setValue(searchValue);
         await browser.pause(100)
         const items = $('#list-items')
-        await expect(items).toHaveChildren(1);
-        await this.btnEditItem(' :first-child button').click();
-        await expect(this.modalEdit).toBeDisplayedInViewport();
-        await $('#edit-delete').click();
-        await browser.pause(100)
-        await expect(this.modalEdit).not.toBeDisplayedInViewport();
+        await expect(items).toHaveChildren({eq: 1});
+        await this.btnListItem('button.delete-item').click();
+        await expect(this.modalDelete).toBeDisplayedInViewport();
+        await this.btnDeleteItem.click();
+        await browser.pause(100);
+        await expect(this.modalDelete).not.toBeDisplayedInViewport();
         await this.searchField.setValue(searchValue);
         await browser.pause(100);
-        const deletedItems = $('#list-items');
-        await expect(deletedItems).toHaveChildren(0);
+        await expect(items).not.toHaveChildren({});
     }
 
     public async search (find: string): Promise<string[]> {
         await this.searchField.setValue(find);
         await browser.pause(1000);
         const items = $('#list-items');
-        await expect(items).toHaveChildren(1);
+        await expect(items).toHaveChildren({eq: 1});
         return await items.$$('tr').map(async (item) => {
             return await item.getAttribute('data-rowid');
         });

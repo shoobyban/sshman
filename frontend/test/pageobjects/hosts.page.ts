@@ -3,7 +3,7 @@ import CrudPage from './crud.page';
 class HostsPage extends CrudPage {
 
     public async addUser (user: object): Promise<void> {
-        await this.addItem('host', user);
+        await this.addItem('alias', user);
     }
 
     public async editHost (alias: string, host: object): Promise<void> {
