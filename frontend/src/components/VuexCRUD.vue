@@ -9,7 +9,7 @@ export default {
     },
     props: {
         modelValue: { // v-model, unique identifier for each row
-            type: Function,
+            type: Object,
             default: () => {},
         },
         resourceName: { // e.g. 'Users'
@@ -45,7 +45,6 @@ export default {
             editModal: false,
             addModal: false,
             currentID: '',
-            selection: [],
             sortBy: '',
             sortDir: '',
             listItems: {},
@@ -145,27 +144,6 @@ export default {
                     return sorted[key] = this.listItems[key]
                 })
                 this.listItems = sorted
-            }
-        },
-        toggleSelected(idx, e) {
-            e.stopPropagation()
-            if (this.selection.includes(idx)) {
-                this.selection.splice(this.selection.indexOf(idx), 1)
-            } else {
-                this.selection.push(idx)
-            }
-        },
-        isSelected(idx) {
-            return this.selection.includes(idx)
-        },
-        toggleAll(e) {
-            e.stopPropagation()
-            for (const key in this.value) {
-                if (this.selection.includes(key)) {
-                    this.selection.splice(this.selection.indexOf(key), 1)
-                } else {
-                    this.selection.push(key)
-                }
             }
         },
         toggleSort(fieldname) {
@@ -302,12 +280,6 @@ export default {
                     <table class="table-fixed min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-100">
                             <tr>
-                                <th scope="col" class="p-4">
-                                    <div class="flex items-center">
-                                        <input id="checkbox-all" aria-describedby="checkbox-1" type="checkbox" class="bg-gray-50 border-gray-300 focus:ring-3 focus:ring-blue-200 h-4 w-4 rounded" @click="toggleAll($event)">
-                                        <label for="checkbox-all" class="sr-only">checkbox</label>
-                                    </div>
-                                </th>
                                 <th v-for="(field, index) in listFields" :key="index" scope="col" class="p-4 text-left text-xs font-medium text-gray-500 uppercase select-none">
                                     <div @click="toggleSort(field.index)">
                                         {{ field.label }}
@@ -322,12 +294,6 @@ export default {
                         </thead>
                         <tbody id="list-items" class="bg-white divide-y divide-gray-200">
                             <tr v-for="(item,idx) in listItems" :key="idx" :data-rowid="idx" class="hover:bg-gray-100" @click="toggleSelected(idx, $event)">
-                                <td class="p-4 w-4">
-                                    <div class="flex items-center">
-                                        <input :id="'checkbox-'+idx" aria-describedby="checkbox-1" type="checkbox" :checked="isSelected(idx)" class="bg-gray-50 border-gray-300 focus:ring-3 focus:ring-blue-200 h-4 w-4 rounded" @click="$event.stopPropagation()">
-                                        <label :for="'checkbox-'+idx" class="sr-only">checkbox</label>
-                                    </div>
-                                </td>
                                 <td v-for="field in listFields" :key="field.index" class="p-4 items-center space-x-6 mr-12 lg:mr-0 max-w-lg">
                                     <div v-if="field.type == 'multiselect'">
                                         <div v-for="(grp, index) in item[field.index]" :key="index" class="px-2 bg-green-600 inline hover:bg-red-700 text-white text-sm font-small rounded-full mb-1 mr-1">
