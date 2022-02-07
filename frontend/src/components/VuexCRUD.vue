@@ -307,10 +307,10 @@ export default {
                                     </div>
                                 </td>
                                 <td class="p-4 whitespace-nowrap space-x-2">
-                                    <button class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center" @click="currentID = idx; editModal = true">
+                                    <button aria-label="Edit item" class="edit-item text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center" @click="currentID = idx; editModal = true">
                                         <i class="fas fa-pen" />
                                     </button>
-                                    <button class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center" @click="currentID = idx; deleteModal = true">
+                                    <button aria-label="Delete item" class="delete-item text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center" @click="currentID = idx; deleteModal = true">
                                         <i class="fas fa-trash" />
                                     </button>
                                 </td>
@@ -347,7 +347,7 @@ export default {
                                 <input v-else-if="field.type == 'email'" :id="'edit-'+field.index" :ref="'edit:'+field.index" v-model="current[field.index]" :name="field.index" type="email" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">
                                 <input v-else-if="field.type == 'file'" :id="'edit-'+field.index" :ref="'edit:'+field.index" type="file" :name="field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">
                                 <Multiselect v-else-if="field.type == 'multiselect'" :id="'edit-'+field.index" :ref="'edit:'+field.index" v-model="current[field.index]" mode="tags" :create-tag="true" :append-new-tag="true" :searchable="true" :options="field.options" />
-                                <Multiselect v-else-if="field.type == 'select'" :id="'edit-'+field.index" :ref="'edit:'+field.index" v-model="current[field.index]" mode="single" :searchable="true" :options="field.options" />
+                                <Multiselect v-else-if="field.type == 'select'" :id="'edit-'+field.index" :ref="'edit:'+field.index" v-model="current[field.index]" mode="single" :append-new-option="true" :searchable="true" :options="field.options" />
                                 <div v-else>
                                     Unhandled {{ field.type }}
                                 </div>
@@ -426,7 +426,7 @@ export default {
                     <h3 class="text-xl font-normal text-gray-500 mt-5 mb-6">
                         Are you sure you want to delete this {{ resourceName.toLowerCase() }}?
                     </h3>
-                    <button class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-base inline-flex items-center px-3 py-2.5 text-center mr-2" @click="deleteItem()">
+                    <button id="delete-item" class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-base inline-flex items-center px-3 py-2.5 text-center mr-2" @click="deleteItem()">
                         Yes, I'm sure
                     </button>
                     <button class="text-gray-900 bg-white hover:bg-gray-100 focus:ring-4 focus:ring-blue-200 border border-gray-200 font-medium inline-flex items-center rounded-lg text-base px-3 py-2.5 text-center" data-modal-toggle="delete-resource-modal" @click="deleteModal=false">

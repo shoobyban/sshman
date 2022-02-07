@@ -12,7 +12,7 @@ type Config struct {
 	StorageFilePath string `mapstructure:"STORAGE"`
 }
 
-var config *Config
+var config = &Config{StorageFilePath: "teststorage"}
 
 type storageFile struct {
 	Key   string           `json:"key"`
@@ -48,32 +48,35 @@ type Group struct {
 }
 
 func SetConfig(c *Config) {
+	fmt.Printf("Setting config to %v\n", c)
 	config = c
 }
 
 // NewStorage creates a new storage with a logger
-func NewStorage() *Storage {
+func NewStorage(persistent bool) *Storage {
 	return &Storage{
-		hosts: map[string]*Host{},
-		users: map[string]*User{},
-		Conn:  &SFTPConn{},
-		Log:   NewLog(false),
+		hosts:      map[string]*Host{},
+		users:      map[string]*User{},
+		Conn:       &SFTPConn{},
+		Log:        NewLog(false),
+		persistent: persistent,
 	}
 }
 
 // newStorageWithLog creates a new storage with a given logger, used for frontend
 func newStorageWithLog(log *ILog) *Storage {
 	return &Storage{
-		hosts: map[string]*Host{},
-		users: map[string]*User{},
-		Conn:  &SFTPConn{},
-		Log:   log,
+		hosts:      map[string]*Host{},
+		users:      map[string]*User{},
+		Conn:       &SFTPConn{},
+		Log:        log,
+		persistent: true,
 	}
 }
 
 // ReadStorage reads the storage file ~/.ssh/.sshman and returns a new Storage
 func ReadStorage() *Storage {
-	c := NewStorage()
+	c := NewStorage(true)
 	err := c.load(config.StorageFilePath)
 	if err != nil {
 		c.Log.Infof("No storage file " + config.StorageFilePath + ", creating one")

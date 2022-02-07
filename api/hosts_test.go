@@ -16,7 +16,7 @@ import (
 
 func TestGetAllHosts(t *testing.T) {
 	// test Hosts.GetAllHosts method
-	cfg := backend.NewStorage()
+	cfg := backend.NewStorage(false)
 	cfg.AddHost(
 		&backend.Host{Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}},
 		false)
@@ -43,7 +43,7 @@ func TestGetAllHosts(t *testing.T) {
 
 func TestGetHostDetails(t *testing.T) {
 	// test Hosts.GetHostDetails method
-	cfg := backend.NewStorage()
+	cfg := backend.NewStorage(false)
 	testHosts := []backend.Host{
 		backend.Host{Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}},
 	}
@@ -71,7 +71,7 @@ func TestGetHostDetails(t *testing.T) {
 
 func TestUpdateHost(t *testing.T) {
 	// test Hosts.UpdateHost method
-	cfg := backend.NewStorage()
+	cfg := backend.NewStorage(false)
 	cfg.AddHost(
 		&backend.Host{Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}},
 		false)
@@ -100,7 +100,7 @@ func TestUpdateHost(t *testing.T) {
 
 // test Hosts.CreateHost method
 func TestCreateHost(t *testing.T) {
-	cfg := backend.NewStorage()
+	cfg := backend.NewStorage(false)
 	h := HostsHandler{Prefix: ""}
 	// mock http request
 	w := httptest.NewRecorder()
@@ -126,7 +126,7 @@ func TestDeleteHost(t *testing.T) {
 	testHosts := map[string]*backend.Host{
 		"host1": {Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}},
 	}
-	cfg := backend.NewStorage()
+	cfg := backend.NewStorage(false)
 	cfg.AddHost(testHosts["host1"], false)
 	h := HostsHandler{Prefix: ""}
 	// mock http request
