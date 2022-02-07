@@ -295,8 +295,8 @@ export default {
                         <tbody id="list-items" class="bg-white divide-y divide-gray-200">
                             <tr v-for="(item,idx) in listItems" :key="idx" :data-rowid="idx" class="hover:bg-gray-100" @click="toggleSelected(idx, $event)">
                                 <td v-for="field in listFields" :key="field.index" class="p-4 items-center space-x-6 mr-12 lg:mr-0 max-w-lg">
-                                    <div v-if="field.type == 'multiselect'">
-                                        <div v-for="(grp, index) in item[field.index]" :key="index" class="px-2 bg-green-600 inline hover:bg-red-700 text-white text-sm font-small rounded-full mb-1 mr-1">
+                                    <div v-if="field.type == 'multiselect'" class="overflow-hidden">
+                                        <div v-for="(grp, index) in item[field.index]" :key="index" class="px-2 bg-green-600 whitespace-nowrap inline hover:bg-red-700 text-white text-sm font-small rounded-full mb-1 mr-1">
                                             {{ grp }}
                                         </div>
                                     </div>
@@ -341,7 +341,7 @@ export default {
                 <div class="p-6 space-y-6">
                     <form @submit.prevent="true">
                         <div v-if="current" class="grid grid-cols-6 gap-6">
-                            <div v-for="(field,index) in editFields" :key="index" class="col-span-6 sm:col-span-3">
+                            <div v-for="(field,index) in editFields" :key="index" :class="field.double?'col-span-6':'col-span-3'">
                                 <label :for="field.index" class="text-sm font-medium text-gray-900 block mb-2">{{ field.label }}</label>
                                 <input v-if="field.type == 'text'" :id="'edit-'+field.index" :ref="'edit:'+field.index" v-model="current[field.index]" type="text" :name="field.index" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">
                                 <input v-else-if="field.type == 'email'" :id="'edit-'+field.index" :ref="'edit:'+field.index" v-model="current[field.index]" :name="field.index" type="email" class="shadow-sm bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">

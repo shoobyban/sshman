@@ -7,13 +7,12 @@ export default {
     },
     mutations: {
         setHosts(state, hosts) {
-            console.log('setHosts', hosts)
             state.hosts = hosts
             state.allLabels = []
             if (hosts != null) {
                 let obkeys = Object.keys(hosts)
                 for (let i = 0; i < obkeys.length; i++) {
-                    state.allLabels.push(hosts[obkeys[i]].label)
+                    state.allLabels.push(obkeys[i])
                 }
             }
         },
