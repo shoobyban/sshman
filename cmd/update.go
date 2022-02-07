@@ -11,7 +11,7 @@ var readCmd = &cobra.Command{
 	Short: "Read users into configuration",
 	Long:  `Loop through all hosts, download all users from autorized_keys into configuration`,
 	Run: func(_ *cobra.Command, _ []string) {
-		cfg := backend.ReadConfig()
+		cfg := backend.ReadStorage()
 		cfg.Update()
 	},
 }

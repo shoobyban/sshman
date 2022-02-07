@@ -13,7 +13,7 @@ var removeHostCmd = &cobra.Command{
 	Short: "Remove a host from config",
 	Long:  `Remove a host from the configuration`,
 	Run: func(_ *cobra.Command, args []string) {
-		cfg := backend.ReadConfig()
+		cfg := backend.ReadStorage()
 		if len(args) < 1 {
 			return
 		}

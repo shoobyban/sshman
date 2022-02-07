@@ -27,7 +27,7 @@ sshman register host google my.google.com:22 myuser ~/.ssh/google.pub deploy hos
 `)
 			os.Exit(0)
 		}
-		conf := backend.ReadConfig()
+		conf := backend.ReadStorage()
 		host := conf.GetHost(args[0])
 		oldgroups := []string{}
 		if host != nil {
