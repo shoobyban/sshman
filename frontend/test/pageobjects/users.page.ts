@@ -7,7 +7,11 @@ class UsersPage extends CrudPage {
     }
 
     public async editUser (email: string, user: object): Promise<void> {
-        await this.editItem(email, user);
+        await this.editItem(email, 'email', user);
+    }
+
+    public async deleteUser (email: string): Promise<void> {
+        await this.deleteItem(email);
     }
 
     public open(): Promise<string> {

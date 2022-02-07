@@ -17,4 +17,10 @@ describe('SSHMan Users', () => {
             email: 'sam@host2',
         });
     });
+
+    it('should be able to delete user', async () => {
+        await UsersPage.open();
+        await UsersPage.deleteUser('sam@host2');
+    });
+
 });

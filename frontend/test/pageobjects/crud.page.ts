@@ -51,7 +51,7 @@ export default class CrudPage extends Page {
         await expect(items).toHaveChildren(1);
     }
 
-    public async editItem (searchValue: string, item: object): Promise<void> {
+    public async editItem (searchValue: string, searchKey: string, item: object): Promise<void> {
         await this.searchField.setValue(searchValue);
         await browser.pause(100)
         const items = $('#list-items')
@@ -64,6 +64,26 @@ export default class CrudPage extends Page {
         await this.btnEditSave.click();
         await browser.pause(100)
         await expect(this.modalEdit).not.toBeDisplayedInViewport();
+        await this.searchField.setValue(item[searchKey]);
+        await browser.pause(100);
+        const editedItems = $('#list-items');
+        await expect(editedItems).toHaveChildren(1);
+    }
+
+    public async deleteItem (searchValue: string): Promise<void> {
+        await this.searchField.setValue(searchValue);
+        await browser.pause(100)
+        const items = $('#list-items')
+        await expect(items).toHaveChildren(1);
+        await this.btnEditItem(' :first-child button').click();
+        await expect(this.modalEdit).toBeDisplayedInViewport();
+        await $('#edit-delete').click();
+        await browser.pause(100)
+        await expect(this.modalEdit).not.toBeDisplayedInViewport();
+        await this.searchField.setValue(searchValue);
+        await browser.pause(100);
+        const deletedItems = $('#list-items');
+        await expect(deletedItems).toHaveChildren(0);
     }
 
     public async search (find: string): Promise<string[]> {
