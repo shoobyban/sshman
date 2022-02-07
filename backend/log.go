@@ -3,6 +3,7 @@ package backend
 import (
 	"fmt"
 	"log"
+	"os"
 	"sync"
 )
 
@@ -45,6 +46,7 @@ type ILog struct {
 
 // NewLog creates a new ILog log engine, if web is false it sets StdOut mode
 func NewLog(web bool) *ILog {
+	log.SetOutput(os.Stdout)
 	ilog := ILog{
 		l:       &sync.Mutex{},
 		workers: map[LogWorker]bool{},
