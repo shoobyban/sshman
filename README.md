@@ -167,6 +167,7 @@ Note: Removing host from a group will remove all users that are on the host only
 - [ ] Adding host key to server using password auth
 - [ ] Text UI based on Web frontend
 - [ ] State handling (see below)
+- [ ] Edit multiple items (see below)
 
 ### State Handling TODO
 I've been using the systems for a while and I've noticed that the current version gets out of sync quite easy.
@@ -176,6 +177,11 @@ The idea is to have 3 states: the host's read state (current files on host), the
 In theory stable and staging will make sense on bigger systems, so we could just have two states. 
 
 I'm planning to have a Refresh (read state) and a Publish button / command.
+
+### Edit multiple items
+with checkboxes (removing them from master for now) when multiple items are selected an "Edit Selected" button will appear (implemented) by 
+Add {itemtype} button. The editor will display [ _multiple values_ ] value for non-uniform values, as soon as editing is made (after save) these values
+will be updated for every edited item.
 
 ## Mentions
 
