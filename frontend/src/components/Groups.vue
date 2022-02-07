@@ -45,9 +45,9 @@ export default {
             id-field="label"
             :search-fields="['label', 'hosts', 'users']"
             :fields="[
-                {label: 'Label', index: 'label', placeholder: 'group1', type:'text'},
+                {label: 'Label', index: 'label', placeholder: 'group1', type:'text', double: true},
                 {label: 'Users', index: 'users', placeholder: 'email@host1,email@host2', type:'multiselect', options: users.allEmails},
-                {label: 'Groups', index: 'hosts', placeholder: 'host1,host2', type:'multiselect', options: hosts.allLabels},
+                {label: 'Hosts', index: 'hosts', placeholder: 'host1,host2', type:'multiselect', options: hosts.allLabels},
                 ]" 
             @create="createGroups"
             @update="updateGroups"
