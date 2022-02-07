@@ -19,7 +19,7 @@ func (h HostsHandler) Config(r *http.Request) *backend.Storage {
 	if cfg, ok := ctx.Value(ConfigKey).(*backend.Storage); ok {
 		return cfg
 	}
-	return backend.NewStorage()
+	return backend.NewStorage(false)
 }
 
 // AddRoutes adds hosthandler specific routes to the router
