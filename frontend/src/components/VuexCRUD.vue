@@ -147,8 +147,7 @@ export default {
                 this.listItems = sorted
             }
         },
-        toggleSelected(idx, e) {
-            e.stopPropagation()
+        toggleSelected(idx) {
             if (this.selection.includes(idx)) {
                 this.selection.splice(this.selection.indexOf(idx), 1)
             } else {
@@ -158,9 +157,8 @@ export default {
         isSelected(idx) {
             return this.selection.includes(idx)
         },
-        toggleAll(e) {
-            e.stopPropagation()
-            for (const key in this.value) {
+        toggleAll() {
+            for (const key in this.listItems) {
                 if (this.selection.includes(key)) {
                     this.selection.splice(this.selection.indexOf(key), 1)
                 } else {
@@ -250,7 +248,6 @@ export default {
             }, 500)
         },
         deleteItem() {
-            console.log('delete', this.currentID)
             let id
             if (this.idField != '.') {
                 id = this.current[this.idField]
@@ -281,11 +278,15 @@ export default {
                     <form class="lg:pr-3" action="#" method="GET">
                         <label for="search-input" class="sr-only">Search</label>
                         <div class="mt-1 relative lg:w-52 xl:w-96">
-                            <input id="search-input" v-model="searchInput" type="text" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="'Search for '+resourceName.toLowerCase()">
+                            <input id="search-input" v-model="searchInput" type="text" class="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-blue-600 focus:border-blue-600 block w-full p-2.5" :placeholder="'Search for '+resourceName.toLowerCase()" @keydown.enter.prevent="false">
                         </div>
                     </form>
                 </div>
                 <div class="flex items-center space-x-2 sm:space-x-3 ml-auto">
+                    <button v-if="selection.length > 1" class="w-1/2 text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium inline-flex items-center justify-center rounded-lg text-sm px-3 py-2 text-center sm:w-auto" @click="editModal = true">
+                        <i class="fas fa-pen mr-2" />
+                        Edit Selected
+                    </button>
                     <button id="add-items" class="w-1/2 text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium inline-flex items-center justify-center rounded-lg text-sm px-3 py-2 text-center sm:w-auto" @click="addModal = true">
                         <i class="fas fa-plus mr-2" />
                         Add {{ resourceName }}
@@ -304,7 +305,7 @@ export default {
                             <tr>
                                 <th scope="col" class="p-4">
                                     <div class="flex items-center">
-                                        <input id="checkbox-all" aria-describedby="checkbox-1" type="checkbox" class="bg-gray-50 border-gray-300 focus:ring-3 focus:ring-blue-200 h-4 w-4 rounded" @click="toggleAll($event)">
+                                        <input id="checkbox-all" aria-describedby="checkbox-1" type="checkbox" class="bg-gray-50 border-gray-300 focus:ring-3 focus:ring-blue-200 h-4 w-4 rounded" @click.prevent="toggleAll($event)">
                                         <label for="checkbox-all" class="sr-only">checkbox</label>
                                     </div>
                                 </th>
@@ -321,14 +322,14 @@ export default {
                             </tr>
                         </thead>
                         <tbody id="list-items" class="bg-white divide-y divide-gray-200">
-                            <tr v-for="(item,idx) in listItems" :key="idx" :data-rowid="idx" class="hover:bg-gray-100" @click="toggleSelected(idx, $event)">
+                            <tr v-for="(item,idx) in listItems" :key="idx" :data-rowid="idx" class="hover:bg-gray-100">
                                 <td class="p-4 w-4">
                                     <div class="flex items-center">
-                                        <input :id="'checkbox-'+idx" aria-describedby="checkbox-1" type="checkbox" :checked="isSelected(idx)" class="bg-gray-50 border-gray-300 focus:ring-3 focus:ring-blue-200 h-4 w-4 rounded" @click="$event.stopPropagation()">
+                                        <input :id="'checkbox-'+idx" aria-describedby="checkbox for selecting row" type="checkbox" :checked="isSelected(idx)" class="bg-gray-50 border-gray-300 focus:ring-3 focus:ring-blue-200 h-4 w-4 rounded" @click.prevent="toggleSelected(idx)">
                                         <label :for="'checkbox-'+idx" class="sr-only">checkbox</label>
                                     </div>
                                 </td>
-                                <td v-for="field in listFields" :key="field.index" class="p-4 items-center space-x-6 mr-12 lg:mr-0 max-w-lg">
+                                <td v-for="field in listFields" :key="field.index" :aria-label="field.label" class="p-4 items-center space-x-6 mr-12 lg:mr-0 max-w-lg">
                                     <div v-if="field.type == 'multiselect'">
                                         <div v-for="(grp, index) in item[field.index]" :key="index" class="px-2 bg-green-600 inline hover:bg-red-700 text-white text-sm font-small rounded-full mb-1 mr-1">
                                             {{ grp }}
@@ -340,11 +341,11 @@ export default {
                                         </div>
                                     </div>
                                 </td>
-                                <td class="p-4 whitespace-nowrap space-x-2">
-                                    <button class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center" @click="currentID = idx; editModal = true">
+                                <td aria-label="item actions" class="p-4 whitespace-nowrap space-x-2">
+                                    <button aria-label="edit item" class="text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center" @click="currentID = idx; editModal = true">
                                         <i class="fas fa-pen" />
                                     </button>
-                                    <button class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center" @click="currentID = idx; deleteModal = true">
+                                    <button aria-label="delete item" class="text-white bg-red-600 hover:bg-red-800 focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm inline-flex items-center px-3 py-2 text-center" @click="currentID = idx; deleteModal = true">
                                         <i class="fas fa-trash" />
                                     </button>
                                 </td>
