@@ -15,7 +15,7 @@ var groupsHostCmd = &cobra.Command{
 $ ./sshman groups host hostalias group1 group2
 `,
 	Run: func(_ *cobra.Command, args []string) {
-		cfg := backend.ReadConfig()
+		cfg := backend.ReadStorage()
 		if len(args) < 1 {
 			return
 		}

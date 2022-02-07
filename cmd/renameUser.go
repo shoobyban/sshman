@@ -13,7 +13,7 @@ var renameUserCmd = &cobra.Command{
 	Short: "Rename a user (modify email)",
 	Long:  `Modify a user email in the configuration, keeping user data and hosts intact`,
 	Run: func(_ *cobra.Command, args []string) {
-		cfg := backend.ReadConfig()
+		cfg := backend.ReadStorage()
 		if len(args) < 2 {
 			return
 		}

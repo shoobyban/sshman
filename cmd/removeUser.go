@@ -13,7 +13,7 @@ var delCmd = &cobra.Command{
 	Short: "Delete user by email",
 	Long:  `Check all hosts and delete user with given email`,
 	Run: func(_ *cobra.Command, args []string) {
-		conf := backend.ReadConfig()
+		conf := backend.ReadStorage()
 		for _, email := range args {
 			_, u := conf.GetUserByEmail(email)
 			if u != nil {
