@@ -70,13 +70,18 @@ var webCmd = &cobra.Command{
 			portfile, _ := cmd.Flags().GetString("portfile")
 			os.WriteFile(portfile, []byte(fmt.Sprint(listener.Addr().(*net.TCPAddr).Port)), 0644)
 		}
-		server := &http.Server{Addr: port, Handler: r}
+		bind, err := cmd.Flags().GetString("bind")
+		if err != nil {
+			log.Fatal(err)
+		}
+		server := &http.Server{Addr: bind + port, Handler: r}
 		fmt.Println(server.Serve(listener))
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(webCmd)
+	webCmd.PersistentFlags().StringP("bind", "b", "0.0.0.0", "Bind to IP address for web UI. Can be 127.0.0.1, ::1, 192.160.0.2, etc.")
 	webCmd.PersistentFlags().StringP("port", "p", "dynamic", "Port for web UI. Can be a port number or 'dynamic' (without quotes). Defaults to dynamic address. Dynamic address will create a sshman.port file.")
 	webCmd.PersistentFlags().StringP("portfile", "f", "sshman.port", "Port filename for dynamic address to check, can be relative or full path, don't use ~ or $HOME")
 }
