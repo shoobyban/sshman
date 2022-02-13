@@ -5,3 +5,4 @@ cmd/dist
 _*
 
 frontend/test/reports
+sshman.port

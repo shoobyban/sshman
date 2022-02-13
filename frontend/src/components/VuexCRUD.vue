@@ -163,6 +163,9 @@ export default {
                 if (field.type == 'multiselect') {
                     const value = this.$refs[prefix + field.index][0].plainValue
                     item[field.index] = value
+                } else if (field.type == 'select') {
+                    const value = this.$refs[prefix + field.index][0].plainValue
+                    item[field.index] = value
                 } else if (field.type == 'file') {
                     const eTarget = this.$refs[prefix + field.index][0]
                     if (eTarget.files.length == 0) {
