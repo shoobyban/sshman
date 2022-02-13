@@ -44,7 +44,13 @@ func (h *Host) ReadUsers() (map[string]*User, error) {
 		}
 	}
 	h.Checksum = sum
-	h.Users = userlist
+	uList := []string{}
+	for _, email := range userlist {
+		if !h.Config.FromGroup(h, email) {
+			uList = append(uList, email)
+		}
+	}
+	h.Users = uList
 	h.Config.Write()
 	return newUsers, nil
 }

@@ -376,6 +376,7 @@ func TestDeleteGroup(t *testing.T) {
 	h := cfg.GetHost("a")
 	if h == nil {
 		t.Errorf("host a not found")
+		return
 	}
 	if len(h.Groups) != 1 {
 		t.Errorf("DeleteGroup did not work, host a groups: %v", h.Groups)
@@ -383,8 +384,40 @@ func TestDeleteGroup(t *testing.T) {
 	h = cfg.GetHost("b")
 	if h == nil {
 		t.Errorf("host b not found")
+		return
 	}
 	if len(h.Groups) != 1 {
 		t.Errorf("DeleteGroup did not work, host b groups: %v", h.Groups)
+	}
+}
+
+func TestFromGroup(t *testing.T) {
+	cfg := testConfig("foo", map[string]*Host{
+		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"a", "b"}, Users: []string{"foo@email"}},
+		"b": {Alias: "b", Host: "a:22", User: "aroot", Groups: []string{"c"}, Users: []string{"foo@email", "bar@email"}},
+	},
+		[]*User{
+			{Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
+			{Email: "bar@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
+		}, &SFTPConn{mock: true})
+	h := cfg.GetHost("a")
+	if h == nil {
+		t.Errorf("host a not found")
+	}
+	if !cfg.FromGroup(h, "foo@email") {
+		t.Errorf("FromGroup did not work for host a and user foo@email")
+	}
+	if cfg.FromGroup(h, "zoo@email") {
+		t.Errorf("FromGroup inventing users")
+	}
+	h = cfg.GetHost("b")
+	if h == nil {
+		t.Errorf("host b not found")
+	}
+	if cfg.FromGroup(h, "bar@email") {
+		t.Errorf("FromGroup did not work for host a and user bar@email")
+	}
+	if cfg.FromGroup(h, "foo@email") {
+		t.Errorf("FromGroup did not work for host a and user bar@email")
 	}
 }
