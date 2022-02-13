@@ -49,6 +49,7 @@ func (h HostsHandler) CreateHost(w http.ResponseWriter, r *http.Request) {
 
 // UpdateHost updates a host
 func (h HostsHandler) UpdateHost(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
 	var host backend.Host
 	cfg := h.Config(r)
 	err := json.NewDecoder(r.Body).Decode(&host)
@@ -63,12 +64,15 @@ func (h HostsHandler) UpdateHost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var oldHost *backend.Host
-	oldHost = cfg.GetHost(host.Alias)
+	oldHost = cfg.GetHost(id)
 	if oldHost == nil { // for CreateHost handler
 		oldHost = &backend.Host{}
 	}
 	cfg.SetHost(host.Alias, &host)
 	host.UpdateGroups(cfg, oldHost.Groups)
+	if host.Alias != id {
+		cfg.DeleteHost(id)
+	}
 	cfg.Write()
 	json.NewEncoder(w).Encode(host)
 }
