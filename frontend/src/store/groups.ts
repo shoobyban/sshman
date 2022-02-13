@@ -2,9 +2,8 @@ import axios from "axios"
 
 export default {
     state: {
-        groups: [],
+        groups: {},
         allLabels: [],
-        messages: [],
     },
     mutations: {
         setGroups(state, groups) {
@@ -14,20 +13,14 @@ export default {
                 state.allLabels.push(key)
             }
         },
-        createGroup(state, group) {
-            state.groups.push(group)
+        createGroup(state, payload) {
+            state.groups[payload.id] = payload.item
         },
-        updateGroup(state, group) {
-            let index = state.groups.findIndex((c) => c.id == group.id)
-            if (index > -1) {
-                state.groups[index] = group
-            }
+        updateGroup(state, payload) {
+            state.groups[payload.id] = payload.item
         },
         deleteGroup(state, groupID) {
-            let index = state.groups.findIndex((c) => c.id == groupID)
-            if (index > -1) {
-                state.groups.splice(index, 1)
-            }
+            delete(state.groups[groupID])
         }
     },
     actions: {
@@ -37,25 +30,25 @@ export default {
                     context.commit("setGroups", response.data)
                 })
         },
-        async createGroup(context, group) {
-            return axios.post("api/groups", JSON.stringify(group))
+        async createGroup(context, payload) {
+            return axios.post("api/groups", JSON.stringify(payload.item))
                 .then((response) => {
                     context.commit("createGroup", {
                         id: response.data.insert_id,
-                        ...group
+                        item: payload.item
                     })
                 })
         },
-        async updateGroup(context, group) {
-            return axios.put("api/groups/" + group.email, JSON.stringify(group))
+        async updateGroup(context, payload) {
+            return axios.put("api/groups/" + payload.id, JSON.stringify(payload.item))
                 .then(() => {
-                    context.commit("updateGroup", group)
+                    context.commit("updateGroup", payload)
                 })
         },
-        async deleteGroup(context, group) {
-            return axios.delete("api/group/" + group.email)
+        async deleteGroup(context, id) {
+            return axios.delete("api/groups/" + id)
                 .then(() => {
-                    context.commit("deleteGroup", group.Email)
+                    context.commit("deleteGroup", id)
                 })
         }
     },

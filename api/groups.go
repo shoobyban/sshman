@@ -52,16 +52,16 @@ func (h GroupsHandler) CreateGroup(w http.ResponseWriter, r *http.Request) {
 // format: label => [hosts: [host1, host2], users: [user1, user2]]
 func (h GroupsHandler) UpdateGroup(w http.ResponseWriter, r *http.Request) {
 	var group struct {
-		Label   string
-		Users   []string
-		Servers []string
+		Label string
+		Users []string
+		Hosts []string
 	}
 	id := chi.URLParam(r, "id")
-	if id != "" {
+	json.NewDecoder(r.Body).Decode(&group)
+	h.Config(r).UpdateGroup(group.Label, group.Users, group.Hosts)
+	if id != "" && group.Label != id {
 		h.Config(r).DeleteGroup(id)
 	}
-	json.NewDecoder(r.Body).Decode(&group)
-	h.Config(r).UpdateGroup(group.Label, group.Users, group.Servers)
 	json.NewEncoder(w).Encode(group)
 }
 

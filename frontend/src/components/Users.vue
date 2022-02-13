@@ -51,6 +51,6 @@ export default {
             @update="updateUser"
             @delete="deleteUser"
             @fetch="fetchAll"
- />
+            />
     </div>
 </template>

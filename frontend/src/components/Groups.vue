@@ -20,9 +20,9 @@ export default {
     methods: {
         ...mapActions([
             'fetchGroups',
-            'createGroups',
-            'updateGroups',
-            'deleteGroups',
+            'createGroup',
+            'updateGroup',
+            'deleteGroup',
             'fetchUsers',
             'fetchHosts',
         ]),
@@ -42,16 +42,16 @@ export default {
             v-model="groups.groups"
             resource-name="Groups" 
             order-by="label" 
-            id-field="label"
+            id-field="."
             :search-fields="['label', 'hosts', 'users']"
             :fields="[
                 {label: 'Label', index: 'label', placeholder: 'group1', type:'text', double: true},
                 {label: 'Users', index: 'users', placeholder: 'email@host1,email@host2', type:'multiselect', options: users.allEmails},
                 {label: 'Hosts', index: 'hosts', placeholder: 'host1,host2', type:'multiselect', options: hosts.allLabels},
                 ]" 
-            @create="createGroups"
-            @update="updateGroups"
-            @delete="deleteGroups"
+            @create="createGroup"
+            @update="updateGroup"
+            @delete="deleteGroup"
             @fetch="fetchAll"
             />
     </div>

@@ -7,7 +7,6 @@ export default {
     },
     mutations: {
         setUsers(state, users) {
-            console.log('setUsers', users)
             state.users = users
             state.allEmails = []
             if (users != null) {
@@ -49,10 +48,7 @@ export default {
         async updateUser(context, payload) {
             return axios.put("api/users/" + payload.id, JSON.stringify(payload.item))
                 .then(() => {
-                    context.commit("updateUser", {
-                        id: payload.id,
-                        item: payload.item
-                    })
+                    context.commit("updateUser", payload)
                 })
         },
         async deleteUser(context, id) {
