@@ -400,7 +400,7 @@ func (c *Storage) Update(aliases ...string) {
 			return
 		}
 		c.l.Unlock()
-		c.Log.Infof("%p Updating host %s", c, host.Alias)
+		c.Log.Infof("Updating host %s...", host.Alias)
 		// check Stop channel
 		users, err := host.ReadUsers()
 		if err != nil {
@@ -552,7 +552,7 @@ func (c *Storage) FromGroup(host *Host, email string) bool {
 
 // StopSync stops Update() loop
 func (c *Storage) StopUpdate() {
-	c.Log.Infof("%p Stopping sync", c)
+	c.Log.Infof("Stopping sync...")
 	c.l.Lock()
 	defer c.l.Unlock()
 	c.Stop = true
