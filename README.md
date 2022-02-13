@@ -153,6 +153,7 @@ Note: Removing host from a group will remove all users that are on the host only
     - [ ] ops for same host-user pair (add + delete) would apply the latest change
     - [ ] apply button should run them, preparing undo op (cache old server authorized_keys files)
     - [ ] undo op to upload cached authorized_keys and restore changeset
+- [ ] Edge case: deleting user should delete the user from all hosts (unless canceled from changeset)
 - [ ] Misfeature: Changing keyfile on host does not upload new key with old and delete old
 - [ ] Misfeature: Adding host does not check if host config is working
 - [ ] Misfeature: Adding host with groups does not upload initial users from group
