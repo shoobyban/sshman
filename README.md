@@ -139,12 +139,24 @@ Note: Removing host from a group will remove all users that are on the host only
 
 ### Things To Fix Before Release
 - [x] Fix adding users
+- [ ] Bug: Adding host on frontend does not add keyfile entry into storage, edit afterwards does
+- [ ] Bug: Renaming host (alias) created a new entry, did not delete old
+- [ ] Misfeature: Changing keyfile on host does not upload new key with old and delete old
+- [ ] Misfeature: Adding host does not check if host config is working
+- [ ] Misfeature: Adding host with groups does not upload initial users from group
+- [ ] Misfeature: Modifying user groups does not upload / delete hosts
 - [ ] Group editing
     - [ ] Add group should add users and groups
     - [ ] Update group should remove / add resources
     - [ ] Delete group should remove resources
 - [ ] Test all CRUD (users, hosts, groups) together
-- [ ] Sync to servers operation
+- [ ] Sync to servers operation (changeset)
+    - [ ] should keep a list of todo ops
+    - [ ] display the ops on frontend
+    - [ ] ops should be grouped by hosts -> 1 op for host even if many user change
+    - [ ] ops for same host-user pair (add + delete) would apply the latest change
+    - [ ] apply button should run them, preparing undo op (cache old server authorized_keys files)
+    - [ ] undo op to upload cached authorized_keys and restore changeset
 - [ ] Screenshot with test data (not with sensitive data)
 
 ### TODO For Next Release
@@ -153,6 +165,7 @@ Note: Removing host from a group will remove all users that are on the host only
 - [ ] Web Interface Authentication (where to store creds?)
 - [ ] Updated At timestamps
 - [ ] Audit log
+    - [ ] audit log logging all changes from changeset (sync op) on apply
 ### (Possible) Future Plans
 
 - [x] Reuse stored ssh key for modifying user
