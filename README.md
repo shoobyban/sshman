@@ -140,7 +140,7 @@ Note: Removing host from a group will remove all users that are on the host only
 ### Things To Fix Before Release
 - [x] Fix adding users
 - [x] Bug: Adding host on frontend does not add keyfile entry into storage, edit afterwards does
-- [ ] Bug: Renaming host (alias) created a new entry, did not delete old
+- [x] Bug: Renaming host (alias) created a new entry, did not delete old
 - [ ] Misfeature: Changing keyfile on host does not upload new key with old and delete old
 - [ ] Misfeature: Adding host does not check if host config is working
 - [ ] Misfeature: Adding host with groups does not upload initial users from group
