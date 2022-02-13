@@ -266,6 +266,7 @@ export default {
                     </form>
                 </div>
                 <div class="flex items-center space-x-2 sm:space-x-3 ml-auto">
+                    <slot name="extra-buttons" />
                     <button id="add-items" class="w-1/2 text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium inline-flex items-center justify-center rounded-lg text-sm px-3 py-2 text-center sm:w-auto" @click="addModal = true">
                         <i class="fas fa-plus mr-2" />
                         Add {{ resourceName }}

@@ -30,6 +30,7 @@ type Storage struct {
 	Conn       SFTP
 	persistent bool
 	Log        *ILog
+	Stop       bool
 }
 
 // LabelGroup is used for returning group information to frontend
@@ -389,8 +390,18 @@ func (c *Storage) Update(aliases ...string) {
 			}
 		}
 	}
+	c.Stop = false
 	c.l.Unlock()
 	for _, host := range hosts {
+		c.l.Lock()
+		if c.Stop {
+			c.l.Unlock()
+			c.Log.Infof("Received stop signal, stopping sync")
+			return
+		}
+		c.l.Unlock()
+		c.Log.Infof("%p Updating host %s", c, host.Alias)
+		// check Stop channel
 		users, err := host.ReadUsers()
 		if err != nil {
 			c.Log.Errorf("Can't read users from host %s: %v", host.Alias, err)
@@ -523,4 +534,26 @@ func (c *Storage) UpdateGroup(groupLabel string, users, hosts []string) {
 	c.l.Unlock()
 	c.updateGroups()
 	c.Write()
+}
+
+// FromGroup returns true if user (by email) is in same group as host
+func (c *Storage) FromGroup(host *Host, email string) bool {
+	_, user := c.GetUserByEmail(email)
+	if user == nil {
+		return false
+	}
+	for _, g := range host.Groups {
+		if contains(user.Groups, g) {
+			return true
+		}
+	}
+	return false
+}
+
+// StopSync stops Update() loop
+func (c *Storage) StopUpdate() {
+	c.Log.Infof("%p Stopping sync", c)
+	c.l.Lock()
+	defer c.l.Unlock()
+	c.Stop = true
 }

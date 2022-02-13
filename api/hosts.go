@@ -29,6 +29,8 @@ func (h HostsHandler) AddRoutes(router *chi.Mux) {
 	router.Delete(h.Prefix+"/{id}", h.DeleteHost)
 	router.Put(h.Prefix+"/{id}", h.UpdateHost)
 	router.Post(h.Prefix, h.CreateHost)
+	router.Get(h.Prefix+"/sync", h.SyncHandler)
+	router.Delete(h.Prefix+"/sync", h.StopSyncHandler)
 }
 
 // GetAllHosts returns all hosts
@@ -89,4 +91,18 @@ func (h HostsHandler) DeleteHost(w http.ResponseWriter, r *http.Request) {
 		cfg.Log.Errorf("No such host: %s", id)
 		w.WriteHeader(http.StatusNotFound)
 	}
+}
+
+func (h HostsHandler) SyncHandler(_ http.ResponseWriter, r *http.Request) {
+	cfg := h.Config(r)
+	cfg.Log.Infof("Syncing hosts")
+	cfg.Update()
+	cfg.Log.Infof("Done syncing")
+}
+
+func (h HostsHandler) StopSyncHandler(_ http.ResponseWriter, r *http.Request) {
+	cfg := h.Config(r)
+	cfg.Log.Infof("Stopping sync")
+	cfg.StopUpdate()
+	cfg.Log.Infof("Stopped")
 }

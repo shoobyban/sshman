@@ -22,10 +22,11 @@ import (
 var dist embed.FS
 
 // ReadConfig is a go-chi middleware that reads a fresh config and adds it to the request context
-func ReadConfig(log *backend.ILog) func(next http.Handler) http.Handler {
+func ReadConfig(ilog *backend.ILog) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
+		log.Printf("[DEBUG] Creating config")
+		cfg := backend.ReadStorageWithLog(ilog)
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-			cfg := backend.ReadStorageWithLog(log)
 			ctx := context.WithValue(r.Context(), api.ConfigKey, cfg)
 			next.ServeHTTP(rw, r.WithContext(ctx))
 		})

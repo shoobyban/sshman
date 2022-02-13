@@ -53,6 +53,12 @@ export default {
                 .then(() => {
                     context.commit("deleteHost", id)
                 })
-        }
+        },
+        async syncHosts(context) {
+            return axios.get("api/hosts/sync")
+        },
+        async stopSync(context) {
+            return axios.delete("api/hosts/sync")
+        },
     },
 }
