@@ -45,10 +45,7 @@ export default {
         async updateHost(context, payload) {
             return axios.put("api/hosts/" + payload.id, JSON.stringify(payload.item))
                 .then(() => {
-                    context.commit("updateHost", {
-                        id: payload.id,
-                        item: payload.item
-                    })
+                    context.commit("updateHost", payload)
                 })
         },
         async deleteHost(context, id) {

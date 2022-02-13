@@ -35,15 +35,15 @@ export default {
             this.reset()
             evtSource = new EventSource(this.url)
             evtSource.onmessage = (event) => {
-                console.log('message', event)
+                console.log('log message', event)
                 this.items.push(JSON.parse(event.data))
             }
             evtSource.onerror = (event) => {
-                console.log('error', event)
+                console.log('log error', event)
                 this.reset()
             }
             evtSource.onclose = (event) => {
-                console.log('close', event)
+                console.log('log close', event)
                 this.reset()
             }
         },

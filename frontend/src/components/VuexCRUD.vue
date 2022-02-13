@@ -231,7 +231,6 @@ export default {
             }, 500)
         },
         deleteItem() {
-            console.log('delete', this.currentID)
             let id
             if (this.idField != '.') {
                 id = this.current[this.idField]
@@ -296,7 +295,7 @@ export default {
                             </tr>
                         </thead>
                         <tbody id="list-items" class="bg-white divide-y divide-gray-200">
-                            <tr v-for="(item,idx) in listItems" :key="idx" :data-rowid="idx" class="hover:bg-gray-100" @click="toggleSelected(idx, $event)">
+                            <tr v-for="(item,idx) in listItems" :key="idx" :data-rowid="idx" class="hover:bg-gray-100">
                                 <td v-for="field in listFields" :key="field.index" class="p-4 items-center space-x-6 mr-12 lg:mr-0 max-w-lg">
                                     <div v-if="field.type == 'multiselect'" class="overflow-hidden">
                                         <div v-for="(grp, index) in item[field.index]" :key="index" class="px-2 bg-green-600 whitespace-nowrap inline hover:bg-red-700 text-white text-sm font-small rounded-full mb-1 mr-1">

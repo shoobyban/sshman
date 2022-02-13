@@ -472,26 +472,28 @@ func (c *Storage) GetHost(alias string) *Host {
 func (c *Storage) DeleteGroup(label string) bool {
 	c.l.Lock()
 	defer c.l.Unlock()
-	if _, ok := c.Groups[label]; ok {
-		// loop through hosts and remove group from host
-		for _, host := range c.hosts {
-			host.Groups = remove(host.Groups, label)
-		}
-		// loop through users and remove group from user
-		for _, user := range c.users {
-			user.Groups = remove(user.Groups, label)
-		}
-
-		delete(c.Groups, label)
-		c.Write()
-		return true
+	if _, ok := c.Groups[label]; !ok {
+		c.Log.Errorf("group %s not found", label)
+		return false
 	}
-	return false
+	// loop through hosts and remove group from host
+	for _, host := range c.hosts {
+		host.Groups = remove(host.Groups, label)
+	}
+	// loop through users and remove group from user
+	for _, user := range c.users {
+		user.Groups = remove(user.Groups, label)
+	}
+
+	delete(c.Groups, label)
+	c.Log.Infof("deleted group %s", label)
+	c.Write()
+	return true
 }
 
 // UpdateGroup updates a group in the config
 // removing all users and hosts group labels then adding them again
-func (c *Storage) UpdateGroup(groupLabel string, users, servers []string) {
+func (c *Storage) UpdateGroup(groupLabel string, users, hosts []string) {
 	c.l.Lock()
 	// loop through hosts and add groupLabel to host.Groups
 	for _, host := range c.hosts {
@@ -513,7 +515,7 @@ func (c *Storage) UpdateGroup(groupLabel string, users, servers []string) {
 	}
 	// loop through c.Hosts and remove item if not in servers
 	for _, host := range c.hosts {
-		if !contains(servers, host.Alias) {
+		if !contains(hosts, host.Alias) {
 			host.Groups = remove(host.Groups, groupLabel)
 		}
 	}
