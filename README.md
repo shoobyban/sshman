@@ -146,6 +146,7 @@ Note: Removing host from a group will remove all users that are on the host only
     - [x] Update group should remove / add resources
     - [x] Delete group should remove resources
 - [x] Test all CRUD (users, hosts, groups) together
+- [ ] Re-read config with file watcher in web mode
 - [ ] Sync to host operation (changeset)
     - [ ] should keep a list of todo ops
     - [ ] display the ops on frontend
