@@ -153,6 +153,7 @@ Note: Removing host from a group will remove all users that are on the host only
     - [ ] ops for same host-user pair (add + delete) would apply the latest change
     - [ ] apply button should run them, preparing undo op (cache old server authorized_keys files)
     - [ ] undo op to upload cached authorized_keys and restore changeset
+    - [ ] on update or new host list new users on frontend and on cli
 - [ ] Edge case: deleting user should delete the user from all hosts (unless canceled from changeset)
 - [ ] Misfeature: Changing keyfile on host does not upload new key with old and delete old
 - [ ] Misfeature: Adding host does not check if host config is working
@@ -199,8 +200,12 @@ with checkboxes (removing them from master for now) when multiple items are sele
 Add {itemtype} button. The editor will display [ _multiple values_ ] value for non-uniform values, as soon as editing is made (after save) these values
 will be updated for every edited item.
 
-## Mentions
+## Credits
 
-Web UI embedding wouldn't be working without [Gregor Best](https://github.com/farhaven),  nerd-sniped him into helping me with a tricky bug on Gophers Slack. 
+Most of the credits go to the pain of being a CTO for 16+ years in small and mid-sized companies, where SSH key management is not solved.
+
+The project would have been much harder without the works of [Steve Francia](https://github.com/spf13) and all the cobra and viper contributors, the web UI relies on [Chi](https://github.com/go-chi/chi) and [Vue](https://github.com/vuejs/).
+
+Web UI embedding wouldn't be working without [Gregor Best](https://github.com/farhaven), nerd-sniped him into helping me with a tricky bug on Gophers Slack. 
 
 I love the Go community.
