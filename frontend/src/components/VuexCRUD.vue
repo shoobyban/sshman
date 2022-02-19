@@ -48,6 +48,7 @@ export default {
             sortBy: '',
             sortDir: '',
             listItems: {},
+            expandAll: false,
         }
     },
     computed: {
@@ -277,6 +278,8 @@ export default {
                 </div>
                 <div class="flex items-center space-x-2 sm:space-x-3 ml-auto">
                     <slot name="extra-buttons" />
+                    <label for="expandall">Expand All</label>
+                    <input id="expandall" v-model="expandAll" type="checkbox">
                     <button id="add-items" class="btn" @click="addModal = true">
                         <i class="fas fa-plus mr-2" />
                         Add {{ resourceName }}
@@ -307,10 +310,10 @@ export default {
                         </thead>
                         <tbody id="list-items" class="appbg divide-y divide-gray-200">
                             <tr v-for="(item,idx) in listItems" :key="idx" :data-rowid="idx" class="hover:bg-gray-100 dark:hover:bg-gray-800">
-                                <td v-for="field in listFields" :key="field.index" class="p-4 items-center space-x-6 mr-12 lg:mr-0 max-w-lg">
-                                    <div v-if="field.type == 'multiselect'" class="overflow-y-scroll max-h-14 w-0 lg:w-48 md:w-16">
-                                        <div v-for="(grp, index) in item[field.index]" :key="index" class="multiselect-tag">
-                                            {{ grp }}
+                                <td v-for="field in listFields" :key="field.index" class="p-2">
+                                    <div v-if="field.type == 'multiselect'" :class="{'max-h-14': !expandAll}" class="overflow-y-scroll flex flex-wrap">
+                                        <div v-for="(grp, index) in item[field.index]" :key="index" :class="{'max-w-[150px]': !expandAll}" class="overflow-hidden pl-2 pr-2 multiselect-tag">
+                                            <span>{{ grp }}</span>
                                         </div>
                                     </div>
                                     <div v-else class="text-sm font-normal graytext">
