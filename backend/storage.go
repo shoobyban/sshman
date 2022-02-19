@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"sync"
+
+	"github.com/fsnotify/fsnotify"
 )
 
 type Config struct {
@@ -556,4 +559,54 @@ func (c *Storage) StopUpdate() {
 	c.l.Lock()
 	defer c.l.Unlock()
 	c.Stop = true
+}
+
+func (c *Storage) WatchFile(notify func()) {
+	initWG := sync.WaitGroup{}
+	initWG.Add(1)
+	go func() {
+		watcher, err := fsnotify.NewWatcher()
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer watcher.Close()
+		eventsWG := sync.WaitGroup{}
+		eventsWG.Add(1)
+		go func() {
+			for {
+				select {
+				case event, ok := <-watcher.Events:
+					if !ok {
+						eventsWG.Done()
+						return
+					}
+					const writeOrCreateMask = fsnotify.Write | fsnotify.Create
+					if filepath.Clean(event.Name) == config.StorageFilePath &&
+						event.Op&writeOrCreateMask != 0 {
+						err := c.load(config.StorageFilePath)
+						if err != nil {
+							log.Printf("error reading config file: %v\n", err)
+						}
+						notify()
+					} else if filepath.Clean(event.Name) == config.StorageFilePath &&
+						event.Op&fsnotify.Remove != 0 {
+						eventsWG.Done()
+						return
+					}
+
+				case err, ok := <-watcher.Errors:
+					if ok {
+						log.Printf("watcher error: %v\n", err)
+					}
+					eventsWG.Done()
+					return
+				}
+			}
+		}()
+		configDir := filepath.Dir(config.StorageFilePath)
+		watcher.Add(configDir)
+		initWG.Done()
+		eventsWG.Wait()
+	}()
+	initWG.Wait()
 }
