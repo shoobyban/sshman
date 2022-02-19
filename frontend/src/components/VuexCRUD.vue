@@ -489,14 +489,15 @@ export default {
     @apply appbg;
 }
 .multiselect-option:hover {
-    @apply bg-blue-100 dark:bg-gray-800 dark:text-white;
+    @apply bg-gray-100 dark:bg-gray-800 dark:text-white;
 }
 ::-webkit-scrollbar {
-    @apply bg-gray-100;
-    width: 2px;
+    @apply bg-gray-900 dark:bg-gray-100;
+    width: 5px;
+    height: 5px;
 }
 ::-webkit-scrollbar-track {
-    @apply bg-gray-800;
+    @apply bg-gray-200 dark:bg-gray-800;
 }
 ::-webkit-scrollbar-thumb {
     background: #888;
