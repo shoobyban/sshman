@@ -4,6 +4,7 @@ import users from "./users"
 import groups from "./groups"
 import hosts from "./hosts"
 import keys from "./keys"
+import theme from './theme'
 
 const store = createStore({
     modules: {
@@ -12,6 +13,7 @@ const store = createStore({
         groups,
         hosts,
         keys,
+        theme,
     },
   })
   
