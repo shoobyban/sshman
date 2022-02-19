@@ -148,7 +148,7 @@ Note: Removing host from a group will remove all users that are on the host only
 - [x] Test all CRUD (users, hosts, groups) together
 - [x] Re-read config with file watcher in web mode
 - [ ] Sync to host operation (changeset)
-    - [ ] should keep a list of todo ops
+    - [ ] should keep a list of todo ops (per server: user add or delete)
     - [ ] display the ops on frontend
     - [ ] ops should be grouped by hosts -> 1 op for host even if many user change
     - [ ] ops for same host-user pair (add + delete) would apply the latest change
