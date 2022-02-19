@@ -18,11 +18,6 @@ export default {
             loading: false
         }
     },
-    computed: {
-        buttonLabel: function () {
-            return (this.loading ? 'Loading…' : 'Go')
-        }
-    },
     mounted() {
         this.run()
     },
@@ -51,10 +46,7 @@ export default {
             if (evtSource !== false) {
                 evtSource.close()
             }
-
             this.loading = false
-            this.items = []
-            this.total_items = -1
         }
     }
 }

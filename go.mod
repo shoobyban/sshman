@@ -3,6 +3,7 @@ module github.com/shoobyban/sshman
 go 1.16
 
 require (
+	github.com/fsnotify/fsnotify v1.5.1
 	github.com/go-chi/chi v1.5.4
 	github.com/pkg/sftp v1.13.4
 	github.com/spf13/cobra v1.3.0
