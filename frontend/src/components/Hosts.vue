@@ -7,11 +7,6 @@ export default {
     components: {
         VuexCRUD
     },
-    data() {
-        return {
-            syncRunning: false,
-        }
-    },
     computed: {
         ...mapState({
             hosts: state => state.hosts,
@@ -41,20 +36,6 @@ export default {
             this.fetchUsers()
             this.fetchKeys('private')
         },
-        async sync() {
-            let syncButton = document.getElementById('sync-button')
-            if (this.syncRunning) {
-                this.stopSync()
-                return
-            }
-            syncButton.classList.add('sync-spin')
-            this.syncRunning = true
-            this.syncHosts().then(() => {
-                syncButton.classList.remove('sync-spin')
-                this.syncRunning = false
-                this.fetchHosts()
-            })
-        }
     },
 }
 </script>
@@ -80,14 +61,7 @@ export default {
             @update="updateHost"
             @delete="deleteHost"
             @fetch="fetchAll"
-            >
-            <template #extra-buttons>
-                <button id="sync-button" class="w-1/2 text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 font-medium inline-flex items-center justify-center rounded-lg text-sm px-3 py-2 text-center sm:w-auto" @click="sync">
-                    <i class="fas fa-sync mr-2" />
-                    Sync
-                </button>
-            </template>
-            </VuexCRUD> 
+            /> 
     </div>
 </template>
 
