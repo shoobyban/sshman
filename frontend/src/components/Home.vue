@@ -89,7 +89,7 @@ export default {
             </div>
             <div class="w-1/3 overflow-hidden">
                 <h4 class="font-bold">
-                    groups
+                    Groups
                 </h4>
                 <div v-for="(group, idx) in groups.groups" :key="idx">
                     {{ group.label }}
