@@ -406,7 +406,7 @@ export default {
                                 <input v-else-if="field.type == 'email'" :id="'add-'+field.index" type="email" :name="field.index" class="shadow-sm bg-gray-50 border border-gray-300 sm:text-sm rounded-lg block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">
                                 <input v-else-if="field.type == 'file'" :id="'add-'+field.index" :ref="'add:'+field.index" type="file" :name="'add:'+field.index" class="appbg" :placeholder="field.placeholder" :required="field.required?true:false">
                                 <Multiselect v-else-if="field.type == 'multiselect'" :id="'add-'+field.index" :ref="'add:'+field.index" class="appbg" mode="tags" :create-tag="true" :append-new-tag="true" :searchable="true" :options="field.options" />
-                                <Multiselect v-else-if="field.type == 'select'" :id="'add-'+field.index" :ref="'add:'+field.index" class="appbg" mode="single" :searchable="true" :options="field.options" />
+                                <Multiselect v-else-if="field.type == 'select'" :id="'add-'+field.index" :ref="'add:'+field.index" class="appbg" mode="single" :append-new-option="true" :searchable="true" :options="field.options" />
                                 <div v-else>
                                     Unhandled {{ field.type }}
                                 </div>
