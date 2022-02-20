@@ -39,6 +39,12 @@
 .multiselect-option:hover {
     @apply bg-gray-100 dark:bg-gray-800 dark:text-white;
 }
+.multiselect-search {
+    @apply appbg;
+}
+.multiselect-no-results {
+    @apply appbg;
+}
 ::-webkit-scrollbar {
     @apply bg-gray-900 dark:bg-gray-100;
     width: 5px;
