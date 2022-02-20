@@ -53,8 +53,8 @@ export default {
 </script>
 
 <template>
-    <div class="overflow-y-auto h-full">
-        <div v-for="(item, i) in items" :key="i" class="mt-1 whitespace-nowrap" :class="item.type">
+    <div class="overflow-scroll h-screen">
+        <div v-for="(item, i) in items" :key="i" class="mt-1 pa-1" :class="item.type">
             {{ item.message }}
         </div>
     </div>
@@ -62,15 +62,15 @@ export default {
 
 <style scoped>
 .error {
-    background-color: #f8d7da !important;
     border-left: 3px solid rgb(220,38,38) !important;
-    padding-left: 5px;
+    padding-left: 3px;
+    margin-left : 2px;
     width: 100%;
 }
 .info {
-    background-color: #d4edfa !important;
     border-left: 3px solid #BADA55 !important;
-    padding-left: 5px;
+    padding-left: 3px;
+    margin-left : 2px;
     width: 100%;
 }
 </style>

@@ -71,7 +71,7 @@ export default {
                 {{ len(groups.groups) }} groups
             </div>
         <div class="flex mt-10">
-            <div class="w-1/3">
+            <div class="w-1/3 overflow-hidden mr-3">
                 <h4 class="font-bold">
                     Users
                 </h4>
@@ -79,7 +79,7 @@ export default {
                     {{ user.email }}
                 </div>
             </div>
-            <div class="w-1/3">
+            <div class="w-1/3 overflow-hidden mr-3">
                 <h4 class="font-bold">
                     Hosts
                 </h4>
@@ -87,9 +87,9 @@ export default {
                     {{ host.alias }}
                 </div>
             </div>
-            <div class="w-1/3">
+            <div class="w-1/3 overflow-hidden">
                 <h4 class="font-bold">
-                    Groups
+                    groups
                 </h4>
                 <div v-for="(group, idx) in groups.groups" :key="idx">
                     {{ group.label }}

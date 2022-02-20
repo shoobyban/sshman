@@ -40,10 +40,10 @@ export default {
                 <router-view />
             </div>
             <div class="bg-gray-100 max-h-full dark:bg-gray-900 dark:text-white text-blue-100 md:w-80 pa-2 md:relative">
-                <h2 class="text-center text-black mb-2 mt-2 font-bold">
+                <h2 class="text-black dark:text-white text-center mb-2 mt-2 font-bold">
                     <span>Console</span>
                 </h2>
-                <div class="bg-white w-full overflow-y-auto text-black">
+                <div class="text-black dark:text-white w-full overflow-y-auto">
                     <Logs url="/api/logs" />
                 </div>
             </div>
