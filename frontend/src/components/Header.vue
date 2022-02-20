@@ -78,9 +78,9 @@ export default {
             <div class="ml-2 md:pl-0 flex">
                 <a class="text-gray-900 dark:text-white text-base xl:text-xl no-underline hover:no-underline font-bold" href="/">
                     <i class="fas fa-link text-pink-600 pr-3 mb-4" />
-                    SSHMan
+                    <span class="hidden md:inline">SSHMan</span>
                 </a>
-                <div v-for="(route, i) in routesWithLabel" :key="i" class="ml-10 flex-1">
+                <div v-for="(route, i) in routesWithLabel" :key="i" class="ml-3 md:ml-10 flex-1">
                     <router-link 
                         :to="route.path"
                         class="align-middle text-gray-900 dark:text-white no-underline"
@@ -89,7 +89,7 @@ export default {
                     </router-link>
                 </div>
             </div>
-            <div class="mr-2 flex">
+            <div class="mr-2 flex invisible md:visible">
                 <button id="console-button" class="headerbtn" @click="$emit('toggle-console')">
                     <i :class="{'fa-toggle-on': console, 'fa-toggle-off': !console}" class="fas mr-2" />
                     <span>Console</span>
@@ -119,7 +119,7 @@ export default {
     </nav>
 </template>
 
-<style>
+<style scoped>
 .headertooltip {
     @apply inline-block absolute invisible z-10 py-2 px-3 text-sm font-medium text-white bg-gray-900 rounded-lg shadow-sm opacity-0 transition-opacity duration-300 tooltip dark:bg-gray-700;
 }
