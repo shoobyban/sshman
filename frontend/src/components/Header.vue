@@ -3,6 +3,13 @@ import routes from '../routes.js'
 import { mapActions } from 'vuex'
 
 export default {
+    props: {
+        console: {
+            type: Boolean,
+            default: true,
+        },
+    },
+    emits: ['toggle-console'],
     data() {
         return {
             syncRunning: false,
@@ -25,6 +32,7 @@ export default {
         ...mapActions([
             'syncHosts',
             'stopSync',
+            'fetchHosts',
         ]),
         async sync() {
             let syncButton = document.getElementById('sync-button')
@@ -82,6 +90,10 @@ export default {
                 </div>
             </div>
             <div class="mr-2 flex">
+                <button id="console-button" class="headerbtn" @click="$emit('toggle-console')">
+                    <i :class="{'fa-toggle-on': console, 'fa-toggle-off': !console}" class="fas mr-2" />
+                    <span>Console</span>
+                </button>
                 <button id="sync-button" data-tooltip-target="tooltip-sync" class="headerbtn" @click="sync">
                     <i class="fas fa-sync mr-2" />
                     Update
