@@ -37,7 +37,7 @@ export default {
             Home
         </h1>
         <div v-if="len(users.users) == 0 && len(hosts.hosts) == 0" class="w-full grid place-content-center">
-        <div class="bg-blue-50 rounded-lg border-2 border-sky-500 p-3 shadow-xl max-w-xl">
+        <div class="appbg rounded-lg border-2 border-sky-500 p-3 shadow-xl max-w-xl">
             <h2 class="text-large font-bold mb-4">
                 Starting with a blank slate?
             </h2>
