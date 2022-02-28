@@ -1,11 +1,11 @@
 <script>
-import VuexCRUD from './VuexCRUD.vue'
+import Crud from './Crud.vue'
 import { mapState, mapActions } from 'vuex'
 
 export default {
     name: 'Groups',
     components: {
-        VuexCRUD
+        Crud
     },
     computed: {
         ...mapState({
@@ -37,7 +37,7 @@ export default {
 
 <template>
     <div>
-        <VuexCRUD 
+        <Crud 
             v-if="groups"
             v-model="groups.groups"
             resource-name="Groups" 

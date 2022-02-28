@@ -76,6 +76,12 @@ func (h HostsHandler) UpdateHost(w http.ResponseWriter, r *http.Request) {
 		cfg.DeleteHost(id)
 	}
 	cfg.Write()
+	err = cfg.UpdateHost(&host)
+	if err != nil {
+		cfg.Log.Errorf("Can't read host users %s", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	json.NewEncoder(w).Encode(host)
 }
 

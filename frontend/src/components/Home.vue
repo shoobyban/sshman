@@ -3,6 +3,12 @@ import { mapState, mapActions } from 'vuex'
 
 export default {
     name: 'Home',
+    data() {
+        return {
+            vvalue: '',
+            fields: ['a', 'b', 'c'],
+        }
+    },
     computed: {
         ...mapState({
             hosts: state => state.hosts,
@@ -56,7 +62,7 @@ export default {
                     </router-link>. You will see them here and in the CRUD area.
                 </p>
                 <p class="mb-2">
-                    Don't forget to add <b>groups</b> to both your users and hosts, this will connect them together.
+                    Don't forget to add <b>groups</b> to both your users and hosts, this will connect them.
                 </p>
                 <p class="mb-2">
                     Users will be uploaded to the hosts automatically by matching groups.

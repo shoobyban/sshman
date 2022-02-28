@@ -1,11 +1,14 @@
 <script>
 import _ from 'lodash'
 import Multiselect from '@vueform/multiselect'
+import SingleSelect from './SingleSelect.vue'
+import { nextTick } from 'vue'
 
 export default {
-    name: 'VuexCRUD',
+    name: 'Crud',
     components: {
         Multiselect,
+        SingleSelect,
     },
     props: {
         modelValue: { // v-model, unique identifier for each row
@@ -49,6 +52,9 @@ export default {
             sortDir: '',
             listItems: {},
             expandAll: false,
+            citem: null,
+            newItem: {},
+            counter: 0,
         }
     },
     computed: {
@@ -91,6 +97,14 @@ export default {
             }
         }
         document.addEventListener('keyup', onEscape)
+        for (let i = 0; i < this.fields.length; i++) {
+            console.log('field', this.fields[i].index)
+            if (this.fields[i].type != 'multiselect') {
+                this.newItem[this.fields[i].index] = ''
+            } else {
+                this.newItem[this.fields[i].index] = []
+            }
+        }
     },
     mounted: function () {
         this.sortBy = this.orderBy
@@ -175,8 +189,9 @@ export default {
                     const value = this.$refs[prefix + field.index][0].plainValue
                     item[field.index] = value
                 } else if (field.type == 'select') {
-                    const value = this.$refs[prefix + field.index][0].plainValue
-                    item[field.index] = value
+                    if (prefix == 'add:') {
+                        item[field.index] = this.newItem[field.index]
+                    }
                 } else if (field.type == 'file') {
                     const eTarget = this.$refs[prefix + field.index][0]
                     if (eTarget.files.length == 0) {
@@ -254,6 +269,10 @@ export default {
             setTimeout(() => {
                 this.$emit('fetch')
             }, 500)
+        },
+        async change() {
+            await nextTick()
+            console.log('change', this.newItem)
         },
     },
 }
@@ -360,10 +379,10 @@ export default {
                             <div v-for="(field,index) in editFields" :key="index" :class="field.double?'col-span-6':'col-span-3'">
                                 <label :for="field.index" class="appbg text-sm font-medium block mb-2">{{ field.label }}</label>
                                 <input v-if="field.type == 'text'" :id="'edit-'+field.index" :ref="'edit:'+field.index" v-model="current[field.index]" type="text" :name="field.index" class="appbg shadow-sm border border-gray-300 sm:text-sm rounded-lg block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">
-                                <input v-else-if="field.type == 'email'" :id="'edit-'+field.index" :ref="'edit:'+field.index" v-model="current[field.index]" :name="field.index" type="email" class="shadow-sm border border-gray-300 sm:text-sm rounded-lg block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">
+                                <input v-else-if="field.type == 'email'" :id="'edit-'+field.index" :ref="'edit:'+field.index" v-model="current[field.index]" :name="field.index" type="email" class="appbg shadow-sm border border-gray-300 sm:text-sm rounded-lg block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">
                                 <input v-else-if="field.type == 'file'" :id="'edit-'+field.index" :ref="'edit:'+field.index" type="file" :name="field.index" :placeholder="field.placeholder" :required="field.required?true:false">
-                                <Multiselect v-else-if="field.type == 'multiselect'" :id="'edit-'+field.index" :ref="'edit:'+field.index" v-model="current[field.index]" mode="tags" :create-tag="true" :append-new-tag="true" :searchable="true" :options="field.options" />
-                                <Multiselect v-else-if="field.type == 'select'" :id="'edit-'+field.index" :ref="'edit:'+field.index" v-model="current[field.index]" mode="single" :append-new-option="true" :searchable="true" :options="field.options" />
+                                <Multiselect v-else-if="field.type == 'multiselect'" :id="'edit-'+field.index" :ref="'edit:'+field.index" :key="counter" v-model="current[field.index]" mode="tags" :create-tag="true" :append-new-tag="true" :searchable="true" :options="field.options" />
+                                <SingleSelect v-else-if="field.type == 'select'" :id="'edit-'+field.index" :ref="'edit:'+field.index" v-model="current[field.index]" :field="field" :options="field.options" @input="change" />
                                 <div v-else>
                                     Unhandled {{ field.type }}
                                 </div>
@@ -400,13 +419,13 @@ export default {
                 <div class="p-6 space-y-6">
                     <form @submit.prevent="true">
                         <div class="grid grid-cols-6 gap-6">
-                            <div v-for="(field,index) in addFields" :key="index" class="col-span-6 sm:col-span-3">
+                            <div v-for="(field,index) in addFields" :key="index" :class="field.double?'col-span-6':'col-span-3'">
                                 <label :for="field.index" class="appbg text-sm font-medium block mb-2">{{ field.label }}</label>
-                                <input v-if="field.type == 'text'" :id="'add-'+field.index" type="text" :name="field.index" class="shadow-sm appbg border border-gray-300 sm:text-sm rounded-lg block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">
-                                <input v-else-if="field.type == 'email'" :id="'add-'+field.index" type="email" :name="field.index" class="shadow-sm bg-gray-50 border border-gray-300 sm:text-sm rounded-lg block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">
+                                <input v-if="field.type == 'text'" :id="'add-'+field.index" v-model="newItem[field.index]" type="text" :name="field.index" class="shadow-sm appbg border border-gray-300 sm:text-sm rounded-lg block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">
+                                <input v-else-if="field.type == 'email'" :id="'add-'+field.index" v-model="newItem[field.index]" type="email" :name="field.index" class="shadow-sm appbg border border-gray-300 sm:text-sm rounded-lg block w-full p-2.5" :placeholder="field.placeholder" :required="field.required?true:false">
                                 <input v-else-if="field.type == 'file'" :id="'add-'+field.index" :ref="'add:'+field.index" type="file" :name="'add:'+field.index" class="appbg" :placeholder="field.placeholder" :required="field.required?true:false">
-                                <Multiselect v-else-if="field.type == 'multiselect'" :id="'add-'+field.index" :ref="'add:'+field.index" class="appbg" mode="tags" :create-tag="true" :append-new-tag="true" :searchable="true" :options="field.options" />
-                                <Multiselect v-else-if="field.type == 'select'" :id="'add-'+field.index" :ref="'add:'+field.index" class="appbg" mode="single" :append-new-option="true" :searchable="true" :options="field.options" />
+                                <Multiselect v-else-if="field.type == 'multiselect'" :id="'add-'+field.index" :ref="'add:'+field.index" :key="counter" v-model="newItem[field.index]" class="appbg" mode="tags" :create-tag="true" :append-new-tag="true" :searchable="true" :options="field.options" />
+                                <SingleSelect v-else-if="field.type == 'select'" :id="'add-'+field.index" :ref="'add:'+field.index" v-model="newItem[field.index]" :field="field" class="appbg singletag" :options="field.options" @input="change" />
                                 <div v-else>
                                     Unhandled {{ field.type }}
                                 </div>
@@ -443,10 +462,10 @@ export default {
                         Are you sure you want to delete this {{ resourceName.toLowerCase() }}?
                     </h3>
                     <button id="delete-item" class="delbtn" @click="deleteItem()">
-                        Yes, I'm sure
+                        Delete
                     </button>
-                    <button class="cancelbtn" data-modal-toggle="delete-resource-modal" @click="deleteModal=false">
-                        No, cancel
+                    <button class="ml-4 cancelbtn" data-modal-toggle="delete-resource-modal" @click="deleteModal=false">
+                        Cancel
                     </button>
                 </div>
             </div>
