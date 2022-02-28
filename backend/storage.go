@@ -101,11 +101,15 @@ func (c *Storage) load(filename string) error {
 	if err != nil {
 		return err
 	}
+	if len(b) == 0 {
+		return nil
+	}
 	c.persistent = true // testing doesn't have this where we just create the config
 	var cf storageFile
 	err = json.Unmarshal(b, &cf)
 	if err != nil {
-		log.Fatalf("Error: unable to decode into struct, please correct or remove broken %s %v\n", config.StorageFilePath, err)
+		log.Printf("Error: unable to decode into struct, please correct or remove broken %s %v\n", config.StorageFilePath, err)
+		return err
 	}
 	c.key = cf.Key
 	c.hosts = cf.Hosts
@@ -405,15 +409,20 @@ func (c *Storage) Update(aliases ...string) {
 		c.l.Unlock()
 		c.Log.Infof("Updating host %s...", host.Alias)
 		// check Stop channel
-		users, err := host.ReadUsers()
-		if err != nil {
-			c.Log.Errorf("Can't read users from host %s: %v", host.Alias, err)
-			continue
-		}
-		for _, user := range users {
-			c.AddUser(user)
-		}
+		c.UpdateHost(host)
 	}
+}
+
+func (c *Storage) UpdateHost(host *Host) error {
+	users, err := host.ReadUsers()
+	if err != nil {
+		c.Log.Errorf("Can't read users from host %s: %v", host.Alias, err)
+		return err
+	}
+	for _, user := range users {
+		c.AddUser(user)
+	}
+	return nil
 }
 
 // Regenerate updates group information for given hosts

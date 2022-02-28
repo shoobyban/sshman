@@ -147,14 +147,6 @@ Note: Removing host from a group will remove all users that are on the host only
     - [x] Delete group should remove resources
 - [x] Test all CRUD (users, hosts, groups) together
 - [x] Re-read config with file watcher in web mode
-- [ ] Sync to host operation (changeset)
-    - [ ] should keep a list of todo ops (per server: user add or delete)
-    - [ ] display the ops on frontend
-    - [ ] ops should be grouped by hosts -> 1 op for host even if many user change
-    - [ ] ops for same host-user pair (add + delete) would apply the latest change
-    - [ ] apply button should run them, preparing undo op (cache old server authorized_keys files)
-    - [ ] undo op to upload cached authorized_keys and restore changeset
-    - [ ] on update or new host list new users on frontend and on cli
 - [ ] Edge case: deleting user should delete the user from all hosts (unless canceled from changeset)
 - [ ] Misfeature: Changing keyfile on host does not upload new key with old and delete old
 - [ ] Misfeature: Adding host does not check if host config is working
@@ -164,6 +156,14 @@ Note: Removing host from a group will remove all users that are on the host only
 
 ### TODO For Next Release
 
+- [ ] Sync to host operation (changeset)
+    - [ ] should keep a list of todo ops (per server: user add or delete)
+    - [ ] display the ops on frontend
+    - [ ] ops should be grouped by hosts -> 1 op for host even if many user change
+    - [ ] ops for same host-user pair (add + delete) would apply the latest change
+    - [ ] apply button should run them, preparing undo op (cache old server authorized_keys files)
+    - [ ] undo op to upload cached authorized_keys and restore changeset
+    - [ ] on update or new host list new users on frontend and on cli
 - [ ] CLI to use API (not sure)
 - [ ] Web Interface Authentication (where to store creds?)
 - [ ] Updated At timestamps
