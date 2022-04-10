@@ -78,7 +78,7 @@ func (h HostsHandler) UpdateHost(w http.ResponseWriter, r *http.Request) {
 	cfg.Write()
 	err = cfg.UpdateHost(&host)
 	if err != nil {
-		cfg.Log.Errorf("Can't read host users %s", err)
+		cfg.Log.Errorf("Can't read host users, %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

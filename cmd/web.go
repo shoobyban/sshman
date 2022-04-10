@@ -27,7 +27,8 @@ func ReadConfig(ilog *backend.ILog) func(next http.Handler) http.Handler {
 		log.Printf("[DEBUG] Creating config")
 		cfg := backend.ReadStorageWithLog(ilog)
 		cfg.WatchFile(func() {
-			cfg.Log.Infof("storage changed, reloading")
+			//			cfg.Log.Infof("storage changed, reloading")
+			backend.ReadStorageWithLog(ilog)
 		})
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), api.ConfigKey, cfg)

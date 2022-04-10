@@ -3,6 +3,7 @@ package backend
 import (
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -67,6 +68,7 @@ func (s *SFTPConn) Connect(keyfile, host, user string) error {
 		Auth:    []ssh.AuthMethod{ssh.PublicKeys(signer)},
 		Timeout: 3 * time.Second,
 		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+			log.Printf("host key callback %s %v %s", hostname, remote, key)
 			return nil
 		},
 	}
