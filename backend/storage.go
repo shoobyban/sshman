@@ -67,6 +67,16 @@ func NewStorage(persistent bool) *Storage {
 	}
 }
 
+func NewTestStorage() *Storage {
+	return &Storage{
+		hosts:      map[string]*Host{},
+		users:      map[string]*User{},
+		Conn:       &SFTPConn{mock: true},
+		Log:        NewLog(false),
+		persistent: false,
+	}
+}
+
 // newStorageWithLog creates a new storage with a given logger, used for frontend
 func newStorageWithLog(log *ILog) *Storage {
 	return &Storage{
