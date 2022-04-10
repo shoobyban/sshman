@@ -54,9 +54,11 @@ func (h UsersHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	cfg := h.Config(r)
 	if user.File != "" {
 		parts, err := backend.SplitParts(user.File)
 		if err != nil {
+			cfg.Log.Errorf("Invalid key format: %v", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -68,7 +70,6 @@ func (h UsersHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		user.Name = parts[2]
 		user.File = ""
 	}
-	cfg := h.Config(r)
 	if user.Email == "" || user.Key == "" || user.KeyType == "" || user.Name == "" {
 		cfg.Log.Errorf("Missing required fields: email: '%s' key: '%s' keytype: '%s' name: '%s'", user.Email, user.Key, user.KeyType, user.Name)
 		http.Error(w, "missing required fields", http.StatusBadRequest)
