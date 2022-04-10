@@ -3,18 +3,20 @@ package backend
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 // Host holds and manages a host entry in the config
 type Host struct {
-	Host     string   `json:"host"`
-	User     string   `json:"user"`
-	Key      string   `json:"key"`
-	Checksum string   `json:"checksum"`
-	Alias    string   `json:"alias"`
-	Config   *Storage `json:"-"`
-	Users    []string `json:"users"`
-	Groups   []string `json:"groups"`
+	Host        string    `json:"host"`
+	User        string    `json:"user"`
+	Key         string    `json:"key"`
+	Checksum    string    `json:"checksum"`
+	Alias       string    `json:"alias"`
+	Config      *Storage  `json:"-"`
+	Users       []string  `json:"users"`
+	Groups      []string  `json:"groups"`
+	LastUpdated time.Time `json:"last_updated"`
 }
 
 // ReadUsers reads any new users from the host's authorized_keys file
@@ -51,6 +53,7 @@ func (h *Host) ReadUsers() (map[string]*User, error) {
 		}
 	}
 	h.Users = uList
+	h.LastUpdated = time.Now()
 	h.Config.Write()
 	return newUsers, nil
 }
@@ -117,6 +120,9 @@ func (h *Host) HasUser(email string) bool {
 
 // AddUser adds a user to the host's authorized_keys file
 func (h *Host) AddUser(u *User) error {
+	if h.LastUpdated.IsZero() {
+		h.ReadUsers()
+	}
 	h.Users = append(h.Users, u.Email)
 	var lines []string
 	for _, email := range h.Users {
@@ -133,6 +139,9 @@ func (h *Host) AddUser(u *User) error {
 
 // DelUser removes a user from the host's authorized_keys file
 func (h *Host) DelUser(u *User) error {
+	if h.LastUpdated.IsZero() {
+		h.ReadUsers()
+	}
 	if u == nil {
 		return fmt.Errorf("user is nil")
 	}
@@ -170,6 +179,7 @@ func (h *Host) DelUser(u *User) error {
 	}
 	h.Checksum = sum
 	h.Users = userlist
+	h.LastUpdated = time.Now()
 	return nil
 }
 
