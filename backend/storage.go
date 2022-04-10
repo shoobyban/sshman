@@ -167,7 +167,7 @@ func (c *Storage) Write() {
 	cf := storageFile{Key: c.key, Hosts: c.hosts, Users: c.users}
 	b, _ := json.MarshalIndent(cf, "", "  ")
 	os.WriteFile(config.StorageFilePath, b, 0600)
-	c.Log.Infof("storage saved to " + config.StorageFilePath)
+	// c.Log.Infof("storage saved to " + config.StorageFilePath)
 }
 
 func (c *Storage) getHosts(group string) []*Host {
