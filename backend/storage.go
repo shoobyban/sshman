@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 )
@@ -434,8 +435,9 @@ func (c *Storage) UpdateHost(host *Host) error {
 	}
 	for _, user := range users {
 		c.AddUser(user)
+		host.Users = append(host.Users, user)
 	}
-	host.UpdateUsersList(users)
+	host.LastUpdated = time.Now()
 	return nil
 }
 
