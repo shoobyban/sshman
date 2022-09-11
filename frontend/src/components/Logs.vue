@@ -54,7 +54,7 @@ export default {
 
 <template>
     <div class="overflow-scroll h-screen">
-        <div v-for="(item, i) in items" :key="i" class="mt-1 pa-1" :class="item.type">
+        <div v-for="(item, i) in items" :key="i" class="resize-x mt-1 pa-1" :class="item.type">
             {{ item.message }}
         </div>
     </div>

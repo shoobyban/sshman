@@ -57,7 +57,7 @@ func (u *User) UpdateGroups(C *Storage, oldgroups []string) error {
 				continue
 			}
 			if h.HasUser(u.Email) {
-				err := h.DelUser(u)
+				err := h.RemoveUser(u)
 				if err != nil {
 					if errors == nil {
 						errors = &Errors{}

@@ -68,7 +68,7 @@ func TestAddUser(t *testing.T) {
 	}
 }
 
-func TestDelUser(t *testing.T) {
+func TestRemoveUser(t *testing.T) {
 	sftp := &SFTPConn{mock: true, testHosts: map[string]SFTPMockHost{
 		"a:22": {Host: "a:22", User: "test", File: "ssh-rsa keydata rootuser\nssh-rsa bar1 user-a.com\n\n"},
 		"b:22": {Host: "b:22", User: "test", File: "ssh-rsa keydata rootuser\nssh-rsa bar2 user-b.com\n"},
@@ -83,9 +83,9 @@ func TestDelUser(t *testing.T) {
 	if toDel == nil {
 		t.Errorf("No such user: %v", "root@foo")
 	}
-	err := cfg.DelUserFromHosts(toDel)
+	err := cfg.RemoveUserFromHosts(toDel)
 	if err != nil {
-		t.Errorf("DelUserFromHosts failed: %v", err)
+		t.Errorf("RemoveUserFromHosts failed: %v", err)
 	}
 	testHosts := sftp.GetHosts()
 	if strings.Contains(testHosts["a:22"].File, "ssh-rsa foo rootuser") {
@@ -138,6 +138,11 @@ func TestAddAndDeleteHost(t *testing.T) {
 }
 
 func TestAddAndDeleteUser(t *testing.T) {
+	users := []*User{
+		{Email: "foo@email", KeyType: "ssh-rsa", Key: "foo", Name: "rootuser", Groups: []string{"groupa"}},
+		{Email: "user-a.com@a", KeyType: "ssh-rsa", Key: "bar1", Name: "user-a.com", Groups: []string{"groupb"}},
+		{Email: "rootuser@b", KeyType: "ssh-rsa", Key: "foo2", Name: "aroot", Groups: []string{"groupc"}},
+	}
 	sftp := &SFTPConn{
 		mock:     true,
 		expected: "ssh-rsa foo rootuser\nssh-rsa bar1 user-a.com\nssh-rsa key user\n",
@@ -148,13 +153,9 @@ func TestAddAndDeleteUser(t *testing.T) {
 		testError: false,
 	}
 	cfg := testConfig("foo", map[string]*Host{
-		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"groupa"}, Users: []string{"foo@email"}},
+		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"groupa"}, Users: []*User{users[0]}},
 		"b": {Alias: "b", Host: "b:22", User: "aroot"},
-	}, []*User{
-		{Email: "foo@email", KeyType: "ssh-rsa", Key: "foo", Name: "rootuser", Groups: []string{"groupa"}},
-		{Email: "user-a.com@a", KeyType: "ssh-rsa", Key: "bar1", Name: "user-a.com", Groups: []string{"groupb"}},
-		{Email: "rootuser@b", KeyType: "ssh-rsa", Key: "foo2", Name: "aroot", Groups: []string{"groupc"}},
-	}, sftp)
+	}, users, sftp)
 	u, err := cfg.PrepareUser("bar@email", "fixtures/dummy.key", "groupa", "groupb")
 	if err != nil {
 		t.Errorf("error while preparing user: %v %v", err, cfg.Users())
@@ -179,6 +180,11 @@ func TestAddAndDeleteUser(t *testing.T) {
 }
 
 func TestModifyUserGroups(t *testing.T) {
+	users := []*User{
+		{Email: "foo@email", KeyType: "ssh-rsa", Key: "foo", Name: "rootuser", Groups: []string{"groupa"}},
+		{Email: "user-a.com@a", KeyType: "ssh-rsa", Key: "bar1", Name: "user-a.com", Groups: []string{"groupb"}},
+		{Email: "rootuser@b", KeyType: "ssh-rsa", Key: "foo2", Name: "aroot", Groups: []string{"groupc"}},
+	}
 	sftp := &SFTPConn{
 		mock:     true,
 		expected: "ssh-rsa foo rootuser\nssh-rsa bar1 user-a.com\nssh-rsa key user\n",
@@ -189,13 +195,9 @@ func TestModifyUserGroups(t *testing.T) {
 		testError: false,
 	}
 	cfg := testConfig("foo", map[string]*Host{
-		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"groupa"}, Users: []string{"foo@email"}},
+		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"groupa"}, Users: []*User{users[0]}},
 		"b": {Alias: "b", Host: "b:22", User: "aroot"},
-	}, []*User{
-		{Email: "foo@email", KeyType: "ssh-rsa", Key: "foo", Name: "rootuser", Groups: []string{"groupa"}},
-		{Email: "user-a.com@a", KeyType: "ssh-rsa", Key: "bar1", Name: "user-a.com", Groups: []string{"groupb"}},
-		{Email: "rootuser@b", KeyType: "ssh-rsa", Key: "foo2", Name: "aroot", Groups: []string{"groupc"}},
-	}, sftp)
+	}, users, sftp)
 	u, err := cfg.PrepareUser("bar@email", "fixtures/dummy.key", "groupa", "groupb")
 	if err != nil {
 		t.Errorf("error while preparing user: %v %v", err, cfg.Users())
@@ -392,14 +394,14 @@ func TestDeleteGroup(t *testing.T) {
 }
 
 func TestFromGroup(t *testing.T) {
+	users := []*User{
+		{Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
+		{Email: "bar@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
+	}
 	cfg := testConfig("foo", map[string]*Host{
-		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"a", "b"}, Users: []string{"foo@email"}},
-		"b": {Alias: "b", Host: "a:22", User: "aroot", Groups: []string{"c"}, Users: []string{"foo@email", "bar@email"}},
-	},
-		[]*User{
-			{Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
-			{Email: "bar@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
-		}, &SFTPConn{mock: true})
+		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"a", "b"}, Users: []*User{users[0]}},
+		"b": {Alias: "b", Host: "a:22", User: "aroot", Groups: []string{"c"}, Users: users},
+	}, users, &SFTPConn{mock: true})
 	h := cfg.GetHost("a")
 	if h == nil {
 		t.Errorf("host a not found")

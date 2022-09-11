@@ -33,11 +33,12 @@ To add a host into the sshman configuration, provide an alias, an ssh `.pub` key
 ## Usage
 
 ### Adding Hosts
+
 First, you need hosts, that you can already access, with `~/.ssh/authorized_keys` files on the host. Password auth doesn't work yet, there are plans to support initial configuration through user+password.
 
 To add a host, the syntax is
 
-```sshman add host {alias} {host_address:port} {user} {~/.ssh/working_keyfile.pub} [group1 group2 ...]```
+`sshman add host {alias} {host_address:port} {user} {~/.ssh/working_keyfile.pub} [group1 group2 ...]`
 
 Where groups are optional, can be provided later.
 
@@ -53,9 +54,9 @@ In this example `google` will be my alias, sshman will access `my.google.com` on
 
 This is optional if you already have all the users on the hosts and you just want to be able to move them around, auto discovery will auto-add the users for you, but defining new users will require this step.
 
-Syntax is 
+Syntax is
 
-```sshman add user {email} {sshkey.pub} [group1 group2 ...]```
+`sshman add user {email} {sshkey.pub} [group1 group2 ...]`
 
 Where groups are optional, can be provided later.
 
@@ -64,6 +65,7 @@ For example:
 ```sh
 $ sshman add user email@test.com ~/.ssh/user1.pub production-team staging-hosts
 ```
+
 `email@test.com` will be the label, it doesn't have to be an email address, but easier to identify and have secondary administrative value. `~/.ssh/user1.pub` will be read into the configuration and can be discarded right after this step if not used anywhere else. The user in this example will belong to the groups `production-team` and `staging-hosts`, if there are hosts in these groups the user's public ssh key information will be added to the `~/.ssh/authorized_keys` files for all hosts where the user's key was still not on.
 
 ### Auto Discovery users on added hosts
@@ -100,7 +102,7 @@ Notice that group alias is in every line with "hosts" and "users" for using `gre
 
 Lists host aliases, what host/port, host is in what groups.
 
-```sh 
+```sh
 $ sshman list hosts
 client1.staging        	staging.client1.com:22              [production-team dev-team]
 client1.uat        	    uat.client1.com:22               	[production-team dev-team]
@@ -118,6 +120,7 @@ Will return a mapping of email to groups.
 ### Renaming users and hosts
 
 Rename a user (modify email) or host (modify alias).
+
 ```sh
 $ ./sshman rename user oldemail@host.com newemail@host.com
 
@@ -127,24 +130,28 @@ $ ./sshman rename host oldalias newalias
 ### Modifying user and host groupping
 
 Modify user's groups, or remove groups from user to allow global access:
+
 ```sh
 $ ./sshman groups user email@host.com group1 group2
 ```
 
 Modify host groups or remove from all groups:
+
 ```sh
 $ ./sshman groups host hostalias group1 group2
 ```
+
 Note: Removing host from a group will remove all users that are on the host only because of that group. If the host is in another group, the users that are in both groups will not be removed.
 
 ### Things To Fix Before Release
+
 - [x] Fix adding users
 - [x] Bug: Adding host on frontend does not add keyfile entry into storage, edit afterwards does
 - [x] Bug: Renaming host (alias) created a new entry, did not delete old
 - [x] Group editing
-    - [x] Add group should add users and groups
-    - [x] Update group should remove / add resources
-    - [x] Delete group should remove resources
+  - [x] Add group should add users and groups
+  - [x] Update group should remove / add resources
+  - [x] Delete group should remove resources
 - [x] Test all CRUD (users, hosts, groups) together
 - [x] Re-read config with file watcher in web mode
 - [ ] Edge case: deleting user should delete the user from all hosts (unless canceled from changeset)
@@ -152,23 +159,23 @@ Note: Removing host from a group will remove all users that are on the host only
 - [ ] Misfeature: Adding host does not check if host config is working
 - [ ] Misfeature: Adding host with groups does not upload initial users from group
 - [ ] Misfeature: Modifying user groups does not upload / delete hosts
-- [ ] Screenshot with test data (not with sensitive data)
+- [x] Screenshot with test data (not with sensitive data)
 
 ### TODO For Next Release
 
 - [ ] Sync to host operation (changeset)
-    - [ ] should keep a list of todo ops (per server: user add or delete)
-    - [ ] display the ops on frontend
-    - [ ] ops should be grouped by hosts -> 1 op for host even if many user change
-    - [ ] ops for same host-user pair (add + delete) would apply the latest change
-    - [ ] apply button should run them, preparing undo op (cache old server authorized_keys files)
-    - [ ] undo op to upload cached authorized_keys and restore changeset
-    - [ ] on update or new host list new users on frontend and on cli
+  - [ ] should keep a list of todo ops (per server: user add or delete)
+  - [ ] display the ops on frontend
+  - [ ] ops should be grouped by hosts -> 1 op for host even if many user change
+  - [ ] ops for same host-user pair (add + delete) would apply the latest change
+  - [ ] apply button should run them, preparing undo op (cache old server authorized_keys files)
+  - [ ] undo op to upload cached authorized_keys and restore changeset
+  - [ ] on update or new host list new users on frontend and on cli
 - [ ] CLI to use API (not sure)
 - [ ] Web Interface Authentication (where to store creds?)
 - [ ] Updated At timestamps
 - [ ] Audit log
-    - [ ] audit log logging all changes from changeset (sync op) on apply
+  - [ ] audit log logging all changes from changeset (sync op) on apply
 - [ ] Implement user "role" group of groups for RBAC level of abstraction (developers role = uat-servers+staging-servers group)
 
 ### (Possible) Future Plans
@@ -178,8 +185,8 @@ Note: Removing host from a group will remove all users that are on the host only
 - [x] Tests, refactor for testability
 - [x] Complete CRUD for missing use cases
 - [x] Web interface
-    - [ ] Authentication
-    - [ ] Aria tags (at least tagging buttons better and connecting labels)
+  - [ ] Authentication
+  - [ ] Aria tags (at least tagging buttons better and connecting labels)
 - [ ] Testing connection after creating authorized_keys entry
 - [ ] More backend (currently .ssh/.sshman configuration file)
 - [ ] Adding host key to server using password auth
@@ -188,16 +195,18 @@ Note: Removing host from a group will remove all users that are on the host only
 - [ ] Edit multiple items (see below)
 
 ### State Handling TODO
+
 I've been using the systems for a while and I've noticed that the current version gets out of sync quite easy.
 
 The idea is to have 3 states: the host's read state (current files on host), the "stable" state (that's in theory we have in config) and a "staging" state (that we are clicking together).
 
-In theory stable and staging will make sense on bigger systems, so we could just have two states. 
+In theory stable and staging will make sense on bigger systems, so we could just have two states.
 
 I'm planning to have a Refresh (read state) and a Publish button / command.
 
 ### Edit multiple items
-with checkboxes (removing them from master for now) when multiple items are selected an "Edit Selected" button will appear (implemented) by 
+
+with checkboxes (removing them from master for now) when multiple items are selected an "Edit Selected" button will appear (implemented) by
 Add {itemtype} button. The editor will display [ _multiple values_ ] value for non-uniform values, as soon as editing is made (after save) these values
 will be updated for every edited item.
 
@@ -207,6 +216,6 @@ Most of the credits go to the pain of being a CTO for 16+ years in small and mid
 
 The project would have been much harder without the works of [Steve Francia](https://github.com/spf13) and all the cobra and viper contributors, the web UI relies on [Chi](https://github.com/go-chi/chi) and [Vue](https://github.com/vuejs/).
 
-Web UI embedding wouldn't be working without [Gregor Best](https://github.com/farhaven), nerd-sniped him into helping me with a tricky bug on Gophers Slack. 
+Web UI embedding wouldn't be working without [Gregor Best](https://github.com/farhaven), nerd-sniped him into helping me with a tricky bug on Gophers Slack.
 
 I love the Go community.
