@@ -65,15 +65,13 @@ func (h HostsHandler) UpdateHost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Can't create host without alias", http.StatusBadRequest)
 		return
 	}
-	var oldHost *backend.Host
-	oldHost = cfg.GetHost(id)
-	if oldHost == nil { // for CreateHost handler
-		oldHost = &backend.Host{}
-	}
+	oldHost := cfg.GetHost(id)
 	cfg.SetHost(host.Alias, &host)
-	host.UpdateGroups(cfg, oldHost.Groups)
-	if host.Alias != id {
-		cfg.DeleteHost(id)
+	if oldHost != nil { // for CreateHost handler
+		host.UpdateGroups(cfg, oldHost.Groups)
+		if host.Alias != id {
+			cfg.DeleteHost(id)
+		}
 	}
 	cfg.Write()
 	err = cfg.UpdateHost(&host)
@@ -81,6 +79,9 @@ func (h HostsHandler) UpdateHost(w http.ResponseWriter, r *http.Request) {
 		cfg.Log.Errorf("Can't read host users, %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+	if oldHost == nil {
+		host.UpdateGroups(cfg, []string{})
 	}
 	json.NewEncoder(w).Encode(host)
 }

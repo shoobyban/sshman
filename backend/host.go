@@ -204,7 +204,7 @@ func (h *Host) UpdateGroups(c *Storage, oldgroups []string) bool {
 				h.Config.Log.Infof("Adding %s (group %s) to %s", u.Email, group, h.Alias)
 				err := h.AddUser(u)
 				if err != nil {
-					h.Config.Log.Errorf("error adding %s to %s", u.Email, h.Alias)
+					h.Config.Log.Errorf("error adding %s to %s: %v", u.Email, h.Alias, err)
 					success = false
 					continue
 				}

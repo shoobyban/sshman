@@ -54,9 +54,8 @@ export default {
                 {label: 'Hostname', index: 'host', placeholder: '127.0.0.1:22', type: 'text'},
                 {label: 'Username', index: 'user', placeholder: 'root', type: 'text'},
                 {label: 'Keyfile', index: 'key', placeholder: '~/.ssh/keys.key', type: 'select', double: true, options: keys.keys},
-                {label: 'Groups', index: 'groups', placeholder: 'group1,group2', type: 'multiselect', options: groups.allLabels},
-                {label: 'Users', index: 'users', placeholder: '-', type: 'multiselect', options: users.allEmails}
-                ]"
+                {label: 'Groups', index: 'groups', placeholder: 'group1,group2', type: 'multiselect', options: groups.allLabels}
+            ]"
             @create="createHost"
             @update="updateHost"
             @delete="deleteHost"
