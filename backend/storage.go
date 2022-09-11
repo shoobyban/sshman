@@ -241,13 +241,21 @@ func (c *Storage) UserExists(lsum string) bool {
 	return ok
 }
 
-// DelUserFromHosts removes user's key from all hosts' authorized_keys files
-func (c *Storage) DelUserFromHosts(deluser *User) error {
+// GetUserByKey returns user if exists by ssh key
+func (c *Storage) GetUserByKey(lsum string) *User {
+	if v, ok := c.users[lsum]; ok {
+		return v
+	}
+	return nil
+}
+
+// RemoveUserFromHosts removes user's key from all hosts' authorized_keys files
+func (c *Storage) RemoveUserFromHosts(deluser *User) error {
 	if deluser == nil {
 		return fmt.Errorf("User is nil")
 	}
 	for alias, host := range c.Hosts() {
-		err := host.DelUser(deluser)
+		err := host.RemoveUser(deluser)
 		if err != nil {
 			c.Log.Errorf("Can't delete user %s from host %s %v", deluser.Email, host.Alias, err)
 			continue
@@ -271,8 +279,8 @@ func (c *Storage) PrepareHost(args ...string) (*Host, error) {
 	host := &Host{
 		Host:   args[1],
 		User:   args[2],
-		Key:    args[3],
-		Users:  []string{},
+		Key:    c.key,
+		Users:  []*User{},
 		Groups: groups,
 		Alias:  alias,
 		Config: c,
@@ -291,13 +299,7 @@ func (c *Storage) AddHost(host *Host, withUsers bool) error {
 	c.hosts[host.Alias] = host
 	c.Write()
 	if withUsers {
-		users, err := host.ReadUsers()
-		if err != nil {
-			return err
-		}
-		for _, user := range users {
-			c.AddUser(user)
-		}
+		c.UpdateHost(host)
 	}
 	return nil
 }
@@ -423,8 +425,9 @@ func (c *Storage) Update(aliases ...string) {
 	}
 }
 
+// UpdateHost reads users from host and adds them to users list
 func (c *Storage) UpdateHost(host *Host) error {
-	users, err := host.ReadUsers()
+	users, _, err := host.ReadUsers()
 	if err != nil {
 		c.Log.Errorf("Can't read users from host %s: %v", host.Alias, err)
 		return err
@@ -432,6 +435,7 @@ func (c *Storage) UpdateHost(host *Host) error {
 	for _, user := range users {
 		c.AddUser(user)
 	}
+	host.UpdateUsersList(users)
 	return nil
 }
 

@@ -17,7 +17,7 @@ var delCmd = &cobra.Command{
 		for _, email := range args {
 			_, u := conf.GetUserByEmail(email)
 			if u != nil {
-				conf.DelUserFromHosts(u)
+				conf.RemoveUserFromHosts(u)
 			} else {
 				fmt.Printf("No such user\n")
 			}

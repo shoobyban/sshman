@@ -8,88 +8,119 @@ import (
 
 // Host holds and manages a host entry in the config
 type Host struct {
-	Host        string    `json:"host"`
-	User        string    `json:"user"`
-	Key         string    `json:"key"`
-	Checksum    string    `json:"checksum"`
-	Alias       string    `json:"alias"`
-	Config      *Storage  `json:"-"`
-	Users       []string  `json:"users"`
-	Groups      []string  `json:"groups"`
-	LastUpdated time.Time `json:"last_updated"`
+	Host        string              `json:"host"`
+	User        string              `json:"user"`
+	Key         string              `json:"key"`
+	Protected   map[string]struct{} `json:"protected"`
+	Alias       string              `json:"alias"`
+	Config      *Storage            `json:"-"`
+	Users       []*User             `json:"users"`
+	Groups      []string            `json:"groups"`
+	LastUpdated time.Time           `json:"last_updated"`
+	Checksum    string              `json:"checksum"`
+	Modified    bool                `json:"modified"`
 }
 
-// ReadUsers reads any new users from the host's authorized_keys file
-func (h *Host) ReadUsers() (map[string]*User, error) {
-	sum, lines, err := h.read()
+// ReadUsers reads ssh entries from the host's authorized_keys file,
+// returning user list, checksum and error
+func (h *Host) ReadUsers() ([]*User, string, error) {
+	lines, err := h.read()
+	sum := checksum(strings.Join(lines, "\n"))
 	if err != nil {
-		return nil, err
+		return nil, sum, err
 	}
-	newUsers := map[string]*User{}
-	var userlist []string
+	var userlist []*User
 	for _, line := range lines {
 		parts := strings.Split(line, " ")
 		if len(parts) == 3 {
 			lsum := checksum(parts[1])
 			email := parts[2] + "@" + h.Alias
-			if !h.Config.UserExists(lsum) {
-				user := &User{
+			user := h.Config.GetUserByKey(lsum)
+			if user == nil {
+				user = &User{
 					KeyType: parts[0],
 					Key:     parts[1],
 					Name:    parts[2],
 					Email:   email,
 					Config:  h.Config,
 				}
-				newUsers[lsum] = user
 			}
-			userlist = append(userlist, email)
+			userlist = append(userlist, user)
 		}
 	}
-	h.Checksum = sum
-	uList := []string{}
-	for _, email := range userlist {
-		if !h.Config.FromGroup(h, email) {
-			uList = append(uList, email)
+	return userlist, sum, nil
+}
+
+func (h *Host) UpdateUsersList(userlist []*User) error {
+	if h.Modified {
+		return fmt.Errorf("host has been modified since last update, please refresh host first")
+	}
+	if len(userlist) > 0 && len(h.Protected) == 0 {
+		// right after adding to host, all users should be protected (then we can untick them as we please)
+		for _, u := range userlist {
+			h.Protected = map[string]struct{}{u.Key: {}}
+		}
+	}
+	uList := []*User{}
+	for _, user := range userlist {
+		if !h.Config.FromGroup(h, user.Email) {
+			uList = append(uList, user)
 		}
 	}
 	h.Users = uList
 	h.LastUpdated = time.Now()
 	h.Config.Write()
-	return newUsers, nil
+	return nil
 }
 
-func (h *Host) read() (string, []string, error) {
+// connects to host via ssh, downloads authorized_keys file content, updates Checksum field
+func (h *Host) read() ([]string, error) {
 	if h.Config == nil {
-		return "", nil, fmt.Errorf("host is nil")
+		return nil, fmt.Errorf("host is nil")
 	}
 	err := h.Config.Conn.Connect(h.Key, h.Host, h.User)
 	if err != nil {
-		return "", nil, fmt.Errorf("error connecting %s: %v", h.Alias, err)
+		return nil, fmt.Errorf("error connecting %s: %v", h.Alias, err)
 	}
 	defer h.Config.Conn.Close()
 	b, err := h.Config.Conn.Read()
 	if err != nil {
-		return "", nil, fmt.Errorf("error reading authorized keys on %s: %v", h.Alias, err)
+		return nil, fmt.Errorf("error reading authorized keys on %s: %v", h.Alias, err)
 	}
-	sum := checksum(string(b))
 	lines := deleteEmpty(strings.Split(string(b), "\n"))
-	return sum, lines, nil
+	h.Checksum = checksum(strings.Join(lines, "\n"))
+	return lines, nil
 }
 
+// connects to host via ssh, uploads new authorized_keys file, updates Modified, LastUpdated and Checksum field
 func (h *Host) write(lines []string) error {
+	ls, err := h.read()
+	if err != nil {
+		return fmt.Errorf("error connecting %s: %v", h.Alias, err)
+	}
+	if checksum(strings.Join(ls, "\n")) != h.Checksum {
+		return fmt.Errorf("host's authorized_keys file was modified since last update, please refresh hosts first")
+	}
 	if len(lines) == 0 {
 		return fmt.Errorf("no keys in new file for host '%s', host would be inaccessible", h.Alias)
 	}
-	err := h.Config.Conn.Connect(h.Key, h.Host, h.User)
+	err = h.Config.Conn.Connect(h.Key, h.Host, h.User)
 	if err != nil {
 		return fmt.Errorf("error connecting %s: %v", h.Alias, err)
 	}
 	defer h.Config.Conn.Close()
-	return h.Config.Conn.Write(strings.Join(lines, "\n") + "\n")
+	err = h.Config.Conn.Write(strings.Join(lines, "\n") + "\n")
+	if err != nil {
+		return err
+	}
+	h.LastUpdated = time.Now()
+	h.Modified = false
+	h.Checksum = checksum(strings.Join(lines, "\n"))
+	return nil
 }
 
 // GetUsers is a getter for host's Users
-func (h *Host) GetUsers() []string {
+func (h *Host) GetUsers() []*User {
 	return h.Users
 }
 
@@ -110,8 +141,8 @@ func (h *Host) HasMatchingGroups(user *User) bool {
 
 // HasUser checks if the host has a user with the given email
 func (h *Host) HasUser(email string) bool {
-	for _, e := range h.Users {
-		if e == email {
+	for _, u := range h.Users {
+		if u.Email == email {
 			return true
 		}
 	}
@@ -121,65 +152,43 @@ func (h *Host) HasUser(email string) bool {
 // AddUser adds a user to the host's authorized_keys file
 func (h *Host) AddUser(u *User) error {
 	if h.LastUpdated.IsZero() {
-		h.ReadUsers()
+		return fmt.Errorf("host was never read, can't update, please refresh hosts first")
 	}
-	h.Users = append(h.Users, u.Email)
+	h.Users = append(h.Users, u)
+	return h.Upload()
+}
+
+// Upload new authorized_keys file content
+func (h *Host) Upload() error {
 	var lines []string
-	for _, email := range h.Users {
+	for _, user := range h.Users {
 		// double-check old user entries
-		_, userentry := h.Config.GetUserByEmail(email)
-		if userentry == nil {
-			// Shall we add a warning here?
-			continue
-		}
-		lines = append(lines, userentry.KeyType+" "+userentry.Key+" "+userentry.Name)
+		lines = append(lines, user.KeyType+" "+user.Key+" "+user.Name)
 	}
 	return h.write(lines)
 }
 
-// DelUser removes a user from the host's authorized_keys file
-func (h *Host) DelUser(u *User) error {
+// RemoveUser removes a user from the host's authorized_keys file
+func (h *Host) RemoveUser(u *User) error {
 	if h.LastUpdated.IsZero() {
-		h.ReadUsers()
+		return fmt.Errorf("host was never read, can't update, please refresh hosts first")
 	}
 	if u == nil {
 		return fmt.Errorf("user is nil")
 	}
-	sum, lines, err := h.read()
-	if err != nil {
-		return err
-	}
-	userlist := []string{}
-	found := false
-	newlines := []string{}
-	for _, line := range lines {
-		parts := strings.Split(line, " ")
-		if len(parts) == 3 {
-			lsum := checksum(parts[1])
-			h.Config.Log.Infof("deleting user with checksum: %s, key: %s, userkey: %s", lsum, parts[1], u.Key)
-			if parts[1] == u.Key {
-				found = true
-				continue
+	userlist := []*User{}
+	for _, user := range h.Users {
+		if user.Key == u.Key {
+			if _, protected := h.Protected[user.Key]; protected {
+				return fmt.Errorf("user is protected, please remove protection first")
 			}
-			user := h.Config.GetUser(lsum)
-			if user != nil {
-				newlines = append(newlines, line)
-				userlist = append(userlist, user.Email)
-			}
+			h.Config.Log.Infof("found user, deleting %v", u)
+			h.Modified = true
+			continue
 		}
+		userlist = append(userlist, user)
 	}
-
-	if found {
-		h.Config.Log.Infof("found user, deleting %v", u)
-		newlines = deleteEmpty(newlines)
-		err = h.write(newlines)
-		if err != nil {
-			return fmt.Errorf("error writing %s: %v", h.Alias, err)
-		}
-	}
-	h.Checksum = sum
 	h.Users = userlist
-	h.LastUpdated = time.Now()
 	return nil
 }
 
@@ -212,7 +221,7 @@ func (h *Host) UpdateGroups(c *Storage, oldgroups []string) bool {
 				continue
 			}
 			if h.HasUser(u.Email) {
-				err := h.DelUser(u)
+				err := h.RemoveUser(u)
 				if err != nil {
 					c.Log.Errorf("error removing %s from %s", u.Email, h.Alias)
 					success = false
