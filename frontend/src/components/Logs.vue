@@ -1,8 +1,13 @@
 <script>
+import VirtualList from 'vue3-virtual-scroll-list'
+import Item from './LogItem.vue'
 var evtSource = false
 
 export default {
     name: 'Logs',
+    components: {
+        VirtualList,
+    },
     props: {
         url: {
             type: String,
@@ -15,8 +20,12 @@ export default {
             actual_msg: '',
             total_items: -1,
             items: [],
-            loading: false
+            loading: false,
+            itemComponent: Item,
         }
+    },
+    computed: {
+        start: () => 0,
     },
     mounted() {
         this.run()
@@ -32,6 +41,7 @@ export default {
             evtSource.onmessage = (event) => {
                 console.log('log message', event)
                 this.items.push(JSON.parse(event.data))
+                this.$refs.virturalList.scrollToBottom()
             }
             evtSource.onerror = (event) => {
                 console.log('log error', event)
@@ -53,24 +63,23 @@ export default {
 </script>
 
 <template>
-    <div class="overflow-scroll h-screen">
-        <div v-for="(item, i) in items" :key="i" class="resize-x mt-1 pa-1" :class="item.type">
-            {{ item.message }}
-        </div>
-    </div>
+    <virtual-list
+    ref="virturalList"
+    class="overflow-scroll h-screen"
+    v-bind="virtualAttrs"
+    :bench="0"
+    :start="start"
+    :data-key="'id'"
+    :data-sources="items"
+    :data-component="itemComponent"
+    >
+        <template #header>
+            <h2 class="text-black dark:text-white text-center mb-2 mt-2 font-bold">
+                    <span>Console</span>
+            </h2>
+        </template>
+        <template #footer>
+            <div style="height: 70px;" />
+        </template>
+    </virtual-list>
 </template>
-
-<style scoped>
-.error {
-    border-left: 3px solid rgb(220,38,38) !important;
-    padding-left: 3px;
-    margin-left : 2px;
-    width: 100%;
-}
-.info {
-    border-left: 3px solid #BADA55 !important;
-    padding-left: 3px;
-    margin-left : 2px;
-    width: 100%;
-}
-</style>

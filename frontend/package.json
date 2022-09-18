@@ -21,6 +21,7 @@
     "tailwindcss": "^3.0.23",
     "vue": "^3.2.31",
     "vue-router": "4.0.14",
+    "vue3-virtual-scroll-list": "^0.2.0",
     "vuex": "^4.0.2"
   },
   "devDependencies": {

@@ -47,10 +47,7 @@ export default {
             <div class="w-full bg-gray-50 dark:bg-gray-900 dark:text-white relative overflow-y-auto p-5">
                 <router-view />
             </div>
-            <div v-show="console" class="bg-gray-100 max-h-full dark:bg-gray-900 dark:text-white text-blue-100 md:w-80 pa-2 md:relative">
-                <h2 class="text-black dark:text-white text-center mb-2 mt-2 font-bold">
-                    <span>Console</span>
-                </h2>
+            <div v-show="console" class="bg-gray-100 dark:bg-gray-900 dark:text-white text-blue-100 md:w-80 pa-2 md:relative">
                 <div class="text-black dark:text-white w-full overflow-y-auto">
                     <Logs url="/api/logs" />
                 </div>
