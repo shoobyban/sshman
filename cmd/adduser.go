@@ -31,7 +31,7 @@ var addUserCmd = &cobra.Command{
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		conf.AddUser(u)
+		conf.AddUser(u, "")
 		conf.AddUserToHosts(u)
 	},
 }

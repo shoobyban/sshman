@@ -14,7 +14,7 @@ type Host struct {
 	Protected   map[string]struct{} `json:"protected"`
 	Alias       string              `json:"alias"`
 	Config      *Storage            `json:"-"`
-	Users       []*User             `json:"users"`
+	Users       []*User             `json:"userlist"`
 	Groups      []string            `json:"groups"`
 	LastUpdated time.Time           `json:"last_updated"`
 	Checksum    string              `json:"checksum"`
@@ -165,6 +165,9 @@ func (h *Host) Upload() error {
 		// double-check old user entries
 		lines = append(lines, user.KeyType+" "+user.Key+" "+user.Name)
 	}
+	lines = deleteEmpty(lines)
+	h.Config.Log.Infof("updating %s", h.Alias)
+	// return nil
 	return h.write(lines)
 }
 
@@ -182,14 +185,29 @@ func (h *Host) RemoveUser(u *User) error {
 			if _, protected := h.Protected[user.Key]; protected {
 				return fmt.Errorf("user is protected, please remove protection first")
 			}
-			h.Config.Log.Infof("found user, deleting %v", u)
+			h.Config.Log.Infof("removing %s from %s", u.Email, h.Alias)
 			h.Modified = true
 			continue
 		}
 		userlist = append(userlist, user)
 	}
 	h.Users = userlist
+	if h.Modified {
+		h.Upload()
+	}
 	return nil
+}
+
+// DueGroup answers the question if user is on host due to group membership
+func (h *Host) DueGroup(u *User) bool {
+	diff := Difference(u.Groups, h.Groups)
+	if len(diff[0]) < len(u.Groups) {
+		return true
+	}
+	if len(diff[1]) < len(h.Groups) {
+		return true
+	}
+	return false
 }
 
 // UpdateGroups updates the host's groups based on old groups

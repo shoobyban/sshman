@@ -9,6 +9,7 @@ type User struct {
 	Email   string   `json:"email"`
 	Key     string   `json:"key"`
 	Groups  []string `json:"groups"`
+	Hosts   []string `json:"hosts"`
 	File    string   `json:"keyfile,omitempty"`
 	Config  *Storage `json:"-"`
 }
