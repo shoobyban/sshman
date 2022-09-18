@@ -1,6 +1,9 @@
 package backend
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestMoveUserToGroup(t *testing.T) {
 	users := []*User{
@@ -9,8 +12,8 @@ func TestMoveUserToGroup(t *testing.T) {
 		{Email: "bar2@email", KeyType: "ssh-rsa", Key: "bar2", Name: "buser", Groups: []string{"groupa"}},
 	}
 	cfg := testConfig("foo", map[string]*Host{
-		"hosta": {Alias: "hosta", Host: "a:22", User: "aroot", Groups: []string{"groupb"}, Users: []*User{users[0]}},
-		"hostb": {Alias: "hostb", Host: "b:22", User: "aroot", Groups: []string{"groupc"}, Users: []*User{users[1]}},
+		"hosta": {Alias: "hosta", Host: "a:22", User: "aroot", Groups: []string{"groupb"}, Users: []*User{users[0]}, LastUpdated: time.Now()},
+		"hostb": {Alias: "hostb", Host: "b:22", User: "aroot", Groups: []string{"groupc"}, Users: []*User{users[1]}, LastUpdated: time.Now()},
 	}, users, &SFTPConn{mock: true, testHosts: map[string]SFTPMockHost{
 		"a:22": {Host: "a:22", User: "test", File: "ssh-rsa foo foo\nssh-rsa bar2 bar2\n"},
 		"b:22": {Host: "b:22", User: "test", File: "ssh-rsa bar1 bar\nssh-rsa bar2 bar2\n"},

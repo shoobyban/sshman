@@ -44,7 +44,7 @@ func (u *User) UpdateGroups(C *Storage, oldgroups []string) error {
 					errors.Add("Error adding %s to %s: %v", u.Email, h.Alias, err)
 					continue
 				}
-				//fmt.Printf("Added %s to %s %v\n", u.Email, h.Alias, h.Groups)
+				h.Config.Log.Infof("added %s to %s %v\n", u.Email, h.Alias, h.Groups)
 				C.SetHost(h.Alias, h)
 			}
 		}
