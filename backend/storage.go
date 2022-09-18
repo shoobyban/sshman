@@ -351,15 +351,30 @@ func (c *Storage) PrepareUser(args ...string) (*User, error) {
 }
 
 // AddUser adds a user to the config
-func (c *Storage) AddUser(newuser *User) error {
+func (c *Storage) AddUser(newuser *User, host string) error {
 	c.l.Lock()
 	defer c.l.Unlock()
 	if newuser == nil {
 		return fmt.Errorf("User is nil")
 	}
 	lsum := checksum(newuser.Key)
-	if _, ok := c.users[lsum]; ok {
+	if u, ok := c.users[lsum]; ok {
+		if host != "" {
+			c.Log.Infof("User %s exists (%v)", u.Email, u.Hosts)
+			diff := Difference(u.Hosts, []string{host})
+			if len(diff[1]) > 0 {
+				hh := c.hosts[host]
+				if !hh.DueGroup(u) {
+					u.Hosts = append(u.Hosts, host)
+					c.users[lsum] = u
+				}
+			}
+			return nil
+		}
 		return fmt.Errorf("user with key %s already exists", lsum)
+	}
+	if host != "" {
+		newuser.Hosts = []string{host}
 	}
 	c.users[lsum] = newuser
 	c.Write()
@@ -378,10 +393,10 @@ func (c *Storage) UpdateUser(newuser *User) error {
 	c.l.Lock()
 	defer c.l.Unlock()
 	delete(c.users, oldKey)
-	c.Log.Infof("deleting user %s with key %s", oldUser.Email, oldKey)
+	//	c.Log.Infof("deleting user %s with key %s", oldUser.Email, oldKey)
 	lsum := checksum(newuser.Key)
 	c.users[lsum] = newuser
-	c.Log.Infof("key %s with content %v", lsum, newuser)
+	//	c.Log.Infof("key %s with content %v", lsum, newuser)
 	c.Write()
 	return nil
 }
@@ -424,6 +439,7 @@ func (c *Storage) Update(aliases ...string) {
 		// check Stop channel
 		c.UpdateHost(host)
 	}
+	c.Write()
 }
 
 // UpdateHost reads users from host and adds them to users list
@@ -434,7 +450,7 @@ func (c *Storage) UpdateHost(host *Host) error {
 		return err
 	}
 	for _, user := range users {
-		c.AddUser(user)
+		c.AddUser(user, host.Alias)
 		host.Users = append(host.Users, user)
 	}
 	host.LastUpdated = time.Now()

@@ -80,7 +80,7 @@ func (h UsersHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "user already exists", http.StatusBadRequest)
 		return
 	}
-	cfg.AddUser(&user)
+	cfg.AddUser(&user, "")
 	user.UpdateGroups(cfg, []string{})
 	json.NewEncoder(w).Encode(user)
 }
@@ -136,6 +136,16 @@ func (h UsersHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	oldUser.Key = user.Key
 	oldUser.KeyType = user.KeyType
 	oldUser.Groups = user.Groups
+	diff := backend.Difference(oldUser.Hosts, user.Hosts)
+	for _, removedAlias := range diff[0] {
+		removedHost := cfg.GetHost(removedAlias)
+		removedHost.RemoveUser(&user)
+	}
+	for _, addedAlias := range diff[1] {
+		addedHost := cfg.GetHost(addedAlias)
+		addedHost.AddUser(&user)
+	}
+	oldUser.Hosts = user.Hosts
 	cfg.UpdateUser(oldUser)
 	cfg.Write()
 	json.NewEncoder(w).Encode(user)

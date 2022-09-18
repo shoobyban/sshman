@@ -16,13 +16,17 @@ func checksum(s string) string {
 }
 
 func deleteEmpty(s []string) []string {
-	var r []string
-	for _, str := range s {
-		if str != "" {
-			r = append(r, str)
+	unique := make(map[string]bool, len(s))
+	us := make([]string, len(unique))
+	for _, elem := range s {
+		if len(elem) != 0 {
+			if !unique[elem] {
+				us = append(us, elem)
+				unique[elem] = true
+			}
 		}
 	}
-	return r
+	return us
 }
 
 func match(group1, group2 []string) bool {

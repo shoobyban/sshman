@@ -18,7 +18,7 @@ func TestGetAllUsers(t *testing.T) {
 	testUsers := map[string]*backend.User{
 		"user1": {Email: "sam@test.com", KeyType: "dummy", Key: "key1", Groups: []string{"group1", "group2"}, Config: cfg},
 	}
-	cfg.AddUser(testUsers["user1"])
+	cfg.AddUser(testUsers["user1"], "")
 	u := UsersHandler{Prefix: "users"}
 	// mock http request
 	w := httptest.NewRecorder()
@@ -44,7 +44,7 @@ func TestGetUserDetails(t *testing.T) {
 	testUsers := map[string]*backend.User{
 		"u1": {Email: "sam@test1.com", KeyType: "dummy", Key: "key1", Groups: []string{"group1", "group2"}},
 	}
-	cfg.AddUser(testUsers["u1"])
+	cfg.AddUser(testUsers["u1"], "")
 	u := UsersHandler{Prefix: "users"}
 	// mock http request
 	w := httptest.NewRecorder()
@@ -69,7 +69,7 @@ func TestCreateUser(t *testing.T) {
 	// test Users.CreateUser method
 	testUsers := map[string]*backend.User{}
 	cfg := backend.NewTestStorage()
-	cfg.AddUser(testUsers["user1"])
+	cfg.AddUser(testUsers["user1"], "")
 	u := UsersHandler{Prefix: "users"}
 	// mock http request
 	w := httptest.NewRecorder()
@@ -99,7 +99,7 @@ func TestUpdateUser(t *testing.T) {
 	testUsers := map[string]*backend.User{
 		"user1": {Email: "sam@test1.com", KeyType: "dummy", Key: "key1", Groups: []string{"group1", "group2"}, Config: cfg},
 	}
-	cfg.AddUser(testUsers["user1"])
+	cfg.AddUser(testUsers["user1"], "")
 	u := UsersHandler{Prefix: "users"}
 	// mock http request
 	w := httptest.NewRecorder()
@@ -134,7 +134,7 @@ func TestDeleteUser(t *testing.T) {
 		{Email: "sam@test1.com", KeyType: "dummy", Key: "key1", Groups: []string{"group1", "group2"}},
 	}
 	for _, user := range testUsers {
-		cfg.AddUser(&user)
+		cfg.AddUser(&user, "")
 	}
 	u := UsersHandler{Prefix: "users"}
 	// mock http request

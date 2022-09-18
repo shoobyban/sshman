@@ -21,7 +21,7 @@ func testConfig(key string, hosts map[string]*Host, users []*User, conn SFTP) *S
 	for _, u := range users {
 		c.Log.Infof("Adding user %p %v", u, u.Email)
 		u.Config = c
-		c.AddUser(u)
+		c.AddUser(u, "")
 	}
 	emails := []string{}
 	for _, u := range c.Users() {
@@ -161,7 +161,7 @@ func TestAddAndDeleteUser(t *testing.T) {
 		t.Errorf("error while preparing user: %v %v", err, cfg.Users())
 	}
 	u.UpdateGroups(cfg, []string{})
-	err = cfg.AddUser(u)
+	err = cfg.AddUser(u, "")
 	if err != nil {
 		t.Errorf("error while registering user: %v %v", err, cfg.Users())
 	}
@@ -203,7 +203,7 @@ func TestModifyUserGroups(t *testing.T) {
 		t.Errorf("error while preparing user: %v %v", err, cfg.Users())
 	}
 	u.UpdateGroups(cfg, []string{})
-	err = cfg.AddUser(u)
+	err = cfg.AddUser(u, "")
 	if err != nil {
 		t.Errorf("error while registering user: %v %v", err, cfg.Users())
 	}
