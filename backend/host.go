@@ -193,7 +193,7 @@ func (h *Host) RemoveUser(u *User) error {
 	}
 	h.Users = userlist
 	if h.Modified {
-		h.Upload()
+		return h.Upload()
 	}
 	return nil
 }

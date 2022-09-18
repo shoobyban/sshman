@@ -3,6 +3,7 @@ package backend
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 func testConfig(key string, hosts map[string]*Host, users []*User, conn SFTP) *Storage {
@@ -50,8 +51,8 @@ func TestAddUser(t *testing.T) {
 		"b:22": {Host: "b:22", User: "test", File: "ssh-rsa foo rootuser\nssh-rsa bar2 user-b.com\n"},
 	}}
 	cfg := testConfig("foo", map[string]*Host{
-		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"a"}},
-		"b": {Alias: "b", Host: "b:22", User: "aroot", Groups: []string{"a", "b"}},
+		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"a"}, LastUpdated: time.Now()},
+		"b": {Alias: "b", Host: "b:22", User: "aroot", Groups: []string{"a", "b"}, LastUpdated: time.Now()},
 	}, []*User{
 		{Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
 	}, sftp)
@@ -197,7 +198,11 @@ func TestModifyUserGroups(t *testing.T) {
 	cfg := testConfig("foo", map[string]*Host{
 		"a": {Alias: "a", Host: "a:22", User: "aroot", Groups: []string{"groupa"}, Users: []*User{users[0]}},
 		"b": {Alias: "b", Host: "b:22", User: "aroot"},
-	}, users, sftp)
+	}, []*User{
+		{Email: "foo@email", KeyType: "ssh-rsa", Key: "foo", Name: "rootuser", Groups: []string{"groupa"}},
+		{Email: "user-a.com@a", KeyType: "ssh-rsa", Key: "bar1", Name: "user-a.com", Groups: []string{"groupb"}},
+		{Email: "rootuser@b", KeyType: "ssh-rsa", Key: "foo2", Name: "aroot", Groups: []string{"groupc"}},
+	}, sftp)
 	u, err := cfg.PrepareUser("bar@email", "fixtures/dummy.key", "groupa", "groupb")
 	if err != nil {
 		t.Errorf("error while preparing user: %v %v", err, cfg.Users())

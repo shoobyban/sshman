@@ -3,6 +3,7 @@ package backend
 import (
 	"fmt"
 	"testing"
+	"time"
 )
 
 func TestGetUsers(t *testing.T) {
@@ -33,8 +34,8 @@ func TestGetUsers(t *testing.T) {
 func TestUpdateHostGroups(t *testing.T) {
 	sftp := &SFTPConn{mock: true}
 	cfg := testConfig("foo", map[string]*Host{
-		"hosta": {Alias: "hosta", Host: "a:22", User: "aroot", Groups: []string{"groupa", "groupb"}},
-		"hostb": {Alias: "hostb", Host: "b:22", User: "aroot", Groups: []string{"groupa", "groupc"}},
+		"hosta": {Alias: "hosta", Host: "a:22", User: "aroot", Groups: []string{"groupa", "groupb"}, LastUpdated: time.Now()},
+		"hostb": {Alias: "hostb", Host: "b:22", User: "aroot", Groups: []string{"groupa", "groupc"}, LastUpdated: time.Now()},
 	}, []*User{
 		{Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"groupa", "groupb"}},
 		{Email: "bar@email", KeyType: "ssh-rsa", Key: "keydata", Name: "broot", Groups: []string{"groupa", "groupc"}},
@@ -70,8 +71,8 @@ func TestHostMoveGroup(t *testing.T) {
 		{Email: "bar2@email", KeyType: "ssh-rsa", Key: "bar2", Name: "buser", Groups: []string{"groupa"}},
 	}
 	cfg := testConfig("foo", map[string]*Host{
-		"hosta": {Alias: "hosta", Host: "a:22", User: "aroot", Groups: []string{"groupb"}, Users: []*User{users[0]}},
-		"hostb": {Alias: "hostb", Host: "b:22", User: "aroot", Groups: []string{"groupc"}, Users: []*User{users[1]}},
+		"hosta": {Alias: "hosta", Host: "a:22", User: "aroot", Groups: []string{"groupb"}, Users: []*User{users[0]}, LastUpdated: time.Now()},
+		"hostb": {Alias: "hostb", Host: "b:22", User: "aroot", Groups: []string{"groupc"}, Users: []*User{users[1]}, LastUpdated: time.Now()},
 	}, users, &SFTPConn{mock: true, testHosts: map[string]SFTPMockHost{
 		"a:22": {Host: "a:22", User: "test", File: "ssh-rsa foo foo\nssh-rsa bar2 bar2\n"},
 		"b:22": {Host: "b:22", User: "test", File: "ssh-rsa bar1 bar\nssh-rsa bar2 bar2\n"},
