@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	"time"
 )
 
 const (
@@ -17,6 +18,7 @@ const (
 type logEntry struct {
 	Type    string `json:"type"`
 	Message string `json:"message"`
+	ID      int64  `json:"id"`
 }
 
 // ILogMode is the mode for the log
@@ -88,10 +90,10 @@ func (l *ILog) print(e logEntry) {
 
 // Errorf prints an error message to the log
 func (l *ILog) Errorf(msg string, args ...interface{}) {
-	l.print(logEntry{Type: "error", Message: fmt.Sprintf(msg, args...)})
+	l.print(logEntry{Type: "error", Message: fmt.Sprintf(msg, args...), ID: time.Now().UnixNano()})
 }
 
 // Infof prints an info message to the log
 func (l *ILog) Infof(msg string, args ...interface{}) {
-	l.print(logEntry{Type: "info", Message: fmt.Sprintf(msg, args...)})
+	l.print(logEntry{Type: "info", Message: fmt.Sprintf(msg, args...), ID: time.Now().UnixNano()})
 }

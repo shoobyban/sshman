@@ -1496,6 +1496,11 @@ vue-router@4.0.14:
   dependencies:
     "@vue/devtools-api" "^6.0.0"
 
+vue3-virtual-scroll-list@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/vue3-virtual-scroll-list/-/vue3-virtual-scroll-list-0.2.0.tgz#72810f831a66b7b3a4c82924ff655213943450f4"
+  integrity sha512-BPReKBDAVvJ+VgBAHK0qLLhZpOkl/bgB3q+8Do5moc9KUJKFDf8o0/tjAUKaim5ihj254IuJGFyZCUl4aWW/0w==
+
 vue@^3.2.31:
   version "3.2.31"
   resolved "https://registry.yarnpkg.com/vue/-/vue-3.2.31.tgz#e0c49924335e9f188352816788a4cca10f817ce6"
