@@ -213,24 +213,24 @@ func (h *Host) DueGroup(u *User) bool {
 }
 
 // UpdateGroups updates the host's groups based on old groups
-func (h *Host) UpdateGroups(c *Storage, oldgroups []string) bool {
+func (h *Host) UpdateGroups(cfg *Storage, oldgroups []string) bool {
 	success := true
 	added, removed := splitUpdates(oldgroups, h.Groups)
 	h.Config.Log.Infof("added: %v removed: %v", added, removed)
 
 	// let's suppose adding is always successful
-	processAdded(added, c, h, success)
+	processAdded(added, cfg, h, success)
 
 	// are there other groups that keep user on host
-	success = processRemoved(removed, c, h, success)
-	c.SetHost(h.Alias, h)
-	c.Write()
+	success = processRemoved(removed, cfg, h, success)
+	cfg.SetHost(h.Alias, h)
+	cfg.Write()
 	return success
 }
 
-func processRemoved(removed []string, c *Storage, h *Host, success bool) bool {
+func processRemoved(removed []string, cfg *Storage, h *Host, success bool) bool {
 	for _, group := range removed {
-		users := c.GetUsers(group)
+		users := cfg.GetUsers(group)
 		for _, u := range users {
 
 			if h.HasMatchingGroups(u) {
@@ -239,20 +239,20 @@ func processRemoved(removed []string, c *Storage, h *Host, success bool) bool {
 			if h.HasUser(u.Email) {
 				err := h.RemoveUser(u)
 				if err != nil {
-					c.Log.Errorf("error removing %s from %s", u.Email, h.Alias)
+					cfg.Log.Errorf("error removing %s from %s", u.Email, h.Alias)
 					success = false
 					continue
 				}
-				c.Log.Infof("removed %s from %s", u.Email, h.Alias)
+				cfg.Log.Infof("removed %s from %s", u.Email, h.Alias)
 			}
 		}
 	}
 	return success
 }
 
-func processAdded(added []string, c *Storage, h *Host, success bool) {
+func processAdded(added []string, cfg *Storage, h *Host, success bool) {
 	for _, group := range added {
-		users := c.GetUsers(group)
+		users := cfg.GetUsers(group)
 		for _, u := range users {
 			if !h.HasUser(u.Email) {
 				h.Config.Log.Infof("Adding %s (group %s) to %s", u.Email, group, h.Alias)
