@@ -338,13 +338,13 @@ func (c *Storage) DeleteUser(email string) bool {
 
 // PrepareUser will prepare a user entry from array of strings
 // New user: old groups, email, key file, new groups
-func (c *Storage) PrepareUser(args ...string) (*User, error) {
-	parts, err := readKeyFile(args[1])
+func (c *Storage) PrepareUser(email, filename string, groups ...string) (*User, error) {
+	parts, err := readKeyFile(filename)
 	if err != nil {
 		return nil, err
 	}
-	newuser := NewUser(args[0], parts[0], parts[1], parts[2])
-	newuser.Groups = args[2:]
+	newuser := NewUser(email, parts[0], parts[1], parts[2])
+	newuser.Groups = groups
 	newuser.Config = c
 	return newuser, nil
 }
