@@ -18,6 +18,11 @@ type Config struct {
 
 var config = &Config{StorageFilePath: "teststorage"}
 
+func SetConfig(c *Config) {
+	fmt.Printf("Setting config to %v\n", c)
+	config = c
+}
+
 type storageFile struct {
 	Key   string           `json:"key"`
 	Hosts map[string]*Host `json:"hosts"`
@@ -50,11 +55,6 @@ type Group struct {
 	Size  int
 	Hosts []*Host
 	Users []*User
-}
-
-func SetConfig(c *Config) {
-	fmt.Printf("Setting config to %v\n", c)
-	config = c
 }
 
 // NewStorage creates a new storage with a logger
@@ -147,10 +147,9 @@ func (c *Storage) updateGroups() {
 	}
 	for _, user := range c.Users() {
 		for _, group := range user.Groups {
-			if _, ok := groups[group]; ok {
-				g := groups[group]
-				g.Users = append(g.Users, user)
-				groups[group] = g
+			if v, ok := groups[group]; ok {
+				v.Users = append(v.Users, user)
+				groups[group] = v
 			} else {
 				groups[group] = Group{Users: []*User{user}}
 			}
@@ -487,10 +486,9 @@ func (c *Storage) GetGroups() map[string]LabelGroup {
 	}
 	for _, user := range c.users {
 		for _, group := range user.Groups {
-			if _, ok := groups[group]; ok {
-				g := groups[group]
-				g.Users = append(g.Users, user.Email)
-				groups[group] = g
+			if v, ok := groups[group]; ok {
+				v.Users = append(v.Users, user.Email)
+				groups[group] = v
 			} else {
 				groups[group] = LabelGroup{Label: group, Users: []string{user.Email}}
 			}

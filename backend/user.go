@@ -27,7 +27,7 @@ func NewUser(email, keytype, key, name string) *User {
 // UpdateGroups updates the user's groups based on old groups
 func (u *User) UpdateGroups(C *Storage, oldgroups []string) error {
 	var errors *Errors
-	added, removed := updates(oldgroups, u.Groups)
+	added, removed := splitUpdates(oldgroups, u.Groups)
 	if u.Config == nil {
 		return fmt.Errorf("user has no config")
 	}
