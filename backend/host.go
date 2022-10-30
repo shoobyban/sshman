@@ -214,12 +214,11 @@ func (h *Host) DueGroup(u *User) bool {
 
 // UpdateGroups updates the host's groups based on old groups
 func (h *Host) UpdateGroups(cfg *Storage, oldgroups []string) bool {
-	success := true
+
 	added, removed := splitUpdates(oldgroups, h.Groups)
 	h.Config.Log.Infof("added: %v removed: %v", added, removed)
 
-	// let's suppose adding is always successful
-	processAdded(added, cfg, h, success)
+	success := processAdded(added, cfg, h)
 
 	// are there other groups that keep user on host
 	success = processRemoved(removed, cfg, h, success)
@@ -250,7 +249,8 @@ func processRemoved(removed []string, cfg *Storage, h *Host, success bool) bool 
 	return success
 }
 
-func processAdded(added []string, cfg *Storage, h *Host, success bool) {
+func processAdded(added []string, cfg *Storage, h *Host) bool {
+	success := true
 	for _, group := range added {
 		users := cfg.GetUsers(group)
 		for _, u := range users {
@@ -266,4 +266,5 @@ func processAdded(added []string, cfg *Storage, h *Host, success bool) {
 			}
 		}
 	}
+	return success
 }
