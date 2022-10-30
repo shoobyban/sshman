@@ -39,13 +39,8 @@ func (h *Host) ReadUsers() ([]*User, string, error) {
 			email := parts[2] + "@" + h.Alias
 			user := h.Config.GetUserByKey(lsum)
 			if user == nil {
-				user = &User{
-					KeyType: parts[0],
-					Key:     parts[1],
-					Name:    parts[2],
-					Email:   email,
-					Config:  h.Config,
-				}
+				user = NewUser(email, parts[0], parts[1], parts[2])
+				user.Config = h.Config
 			}
 			userlist = append(userlist, user)
 		}
@@ -53,6 +48,7 @@ func (h *Host) ReadUsers() ([]*User, string, error) {
 	return userlist, sum, nil
 }
 
+// UpdateUsersList sets the host's user list
 func (h *Host) UpdateUsersList(userlist []*User) error {
 	if h.Modified {
 		return fmt.Errorf("host has been modified since last update, please refresh host first")
@@ -218,16 +214,16 @@ func (h *Host) UpdateGroups(cfg *Storage, oldgroups []string) bool {
 	added, removed := splitUpdates(oldgroups, h.Groups)
 	h.Config.Log.Infof("added: %v removed: %v", added, removed)
 
-	success := processAdded(added, cfg, h)
+	success := processHostAdded(added, cfg, h)
 
 	// are there other groups that keep user on host
-	success = processRemoved(removed, cfg, h, success)
+	success = processHostRemoved(removed, cfg, h, success)
 	cfg.SetHost(h.Alias, h)
 	cfg.Write()
 	return success
 }
 
-func processRemoved(removed []string, cfg *Storage, h *Host, success bool) bool {
+func processHostRemoved(removed []string, cfg *Storage, h *Host, success bool) bool {
 	for _, group := range removed {
 		users := cfg.GetUsers(group)
 		for _, u := range users {
@@ -249,7 +245,7 @@ func processRemoved(removed []string, cfg *Storage, h *Host, success bool) bool 
 	return success
 }
 
-func processAdded(added []string, cfg *Storage, h *Host) bool {
+func processHostAdded(added []string, cfg *Storage, h *Host) bool {
 	success := true
 	for _, group := range added {
 		users := cfg.GetUsers(group)

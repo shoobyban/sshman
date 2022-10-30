@@ -26,7 +26,7 @@ var addUserCmd = &cobra.Command{
 			fmt.Printf("User already exists with this email, overwrite [y/n]: ")
 			exitIfNo()
 		}
-		u, err := conf.PrepareUser(args...)
+		u, err := conf.PrepareUser(args[0], args[1], args[2:]...)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
