@@ -58,7 +58,7 @@ func remove(s []string, r string) []string {
 	return s
 }
 
-func updates(oldItems, newItems []string) (added []string, removed []string) {
+func splitUpdates(oldItems, newItems []string) (added []string, removed []string) {
 	ma := make(map[string]struct{}, len(oldItems))
 	mb := make(map[string]struct{}, len(newItems))
 	for _, x := range newItems {

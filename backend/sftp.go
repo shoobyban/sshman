@@ -16,8 +16,8 @@ import (
 // SFTP is interface for handling authorized_keys files
 type SFTP interface {
 	Connect(keyfile, host, user string) error
-	Write(data string) error
-	Read() ([]byte, error)
+	Write(filename, data string) error
+	Read(filename string) ([]byte, error)
 	Close()
 }
 
@@ -94,7 +94,7 @@ func (s *SFTPConn) SetError(willError bool) {
 
 // Write writes the given data to the authorized_keys file on the remote host
 // when data is empty, or if it's running from tests, simply returns
-func (s *SFTPConn) Write(data string) error {
+func (s *SFTPConn) Write(filename, data string) error {
 	if data == "" || s.testError {
 		return fmt.Errorf("empty data, not writing it")
 	}
@@ -106,7 +106,7 @@ func (s *SFTPConn) Write(data string) error {
 		s.testHosts[s.alias] = s.host
 		return nil
 	}
-	f, err := s.client.OpenFile(".ssh/authorized_keys", os.O_RDWR|os.O_TRUNC)
+	f, err := s.client.OpenFile(filename, os.O_RDWR|os.O_TRUNC)
 	if err != nil {
 		return err
 	}
@@ -119,14 +119,14 @@ func (s *SFTPConn) Write(data string) error {
 
 // Read reads the authorized_keys file from the remote host
 // when running from tests, returns the mocked data
-func (s *SFTPConn) Read() ([]byte, error) {
+func (s *SFTPConn) Read(filename string) ([]byte, error) {
 	if s.mock {
 		if s.testError {
 			return nil, fmt.Errorf("test error reading file")
 		}
 		return []byte(s.host.File), nil
 	}
-	f, err := s.client.Open(".ssh/authorized_keys")
+	f, err := s.client.Open(filename)
 	if err != nil {
 		return nil, err
 	}

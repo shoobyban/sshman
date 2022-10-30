@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+const AUTHFILE = ".ssh/authorized_keys"
+
 // Host holds and manages a host entry in the config
 type Host struct {
 	Host        string              `json:"host"`
@@ -83,7 +85,7 @@ func (h *Host) read() ([]string, error) {
 		return nil, fmt.Errorf("error connecting %s: %v", h.Alias, err)
 	}
 	defer h.Config.Conn.Close()
-	b, err := h.Config.Conn.Read()
+	b, err := h.Config.Conn.Read(AUTHFILE)
 	if err != nil {
 		return nil, fmt.Errorf("error reading authorized keys on %s: %v", h.Alias, err)
 	}
@@ -109,7 +111,7 @@ func (h *Host) write(lines []string) error {
 		return fmt.Errorf("error connecting %s: %v", h.Alias, err)
 	}
 	defer h.Config.Conn.Close()
-	err = h.Config.Conn.Write(strings.Join(lines, "\n") + "\n")
+	err = h.Config.Conn.Write(AUTHFILE, strings.Join(lines, "\n")+"\n")
 	if err != nil {
 		return err
 	}
@@ -213,8 +215,42 @@ func (h *Host) DueGroup(u *User) bool {
 // UpdateGroups updates the host's groups based on old groups
 func (h *Host) UpdateGroups(c *Storage, oldgroups []string) bool {
 	success := true
-	added, removed := updates(oldgroups, h.Groups)
+	added, removed := splitUpdates(oldgroups, h.Groups)
 	h.Config.Log.Infof("added: %v removed: %v", added, removed)
+
+	// let's suppose adding is always successful
+	processAdded(added, c, h, success)
+
+	// are there other groups that keep user on host
+	success = processRemoved(removed, c, h, success)
+	c.SetHost(h.Alias, h)
+	c.Write()
+	return success
+}
+
+func processRemoved(removed []string, c *Storage, h *Host, success bool) bool {
+	for _, group := range removed {
+		users := c.GetUsers(group)
+		for _, u := range users {
+
+			if h.HasMatchingGroups(u) {
+				continue
+			}
+			if h.HasUser(u.Email) {
+				err := h.RemoveUser(u)
+				if err != nil {
+					c.Log.Errorf("error removing %s from %s", u.Email, h.Alias)
+					success = false
+					continue
+				}
+				c.Log.Infof("removed %s from %s", u.Email, h.Alias)
+			}
+		}
+	}
+	return success
+}
+
+func processAdded(added []string, c *Storage, h *Host, success bool) {
 	for _, group := range added {
 		users := c.GetUsers(group)
 		for _, u := range users {
@@ -230,26 +266,4 @@ func (h *Host) UpdateGroups(c *Storage, oldgroups []string) bool {
 			}
 		}
 	}
-
-	for _, group := range removed {
-		users := c.GetUsers(group)
-		for _, u := range users {
-			// are there other groups that keep user on host
-			if h.HasMatchingGroups(u) {
-				continue
-			}
-			if h.HasUser(u.Email) {
-				err := h.RemoveUser(u)
-				if err != nil {
-					c.Log.Errorf("error removing %s from %s", u.Email, h.Alias)
-					success = false
-					continue
-				}
-				c.Log.Infof("removed %s from %s", u.Email, h.Alias)
-			}
-		}
-	}
-	c.SetHost(h.Alias, h)
-	c.Write()
-	return success
 }
