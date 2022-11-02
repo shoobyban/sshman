@@ -11,7 +11,7 @@ type User struct {
 	Groups  []string `json:"groups"`
 	Hosts   []string `json:"hosts"`
 	File    string   `json:"keyfile,omitempty"`
-	Config  *Storage `json:"-"`
+	Config  Config   `json:"-"`
 }
 
 // NewUser creates a new user
@@ -25,7 +25,7 @@ func NewUser(email, keytype, key, name string) *User {
 }
 
 // UpdateGroups updates the user's groups based on old groups
-func (u *User) UpdateGroups(C *Storage, oldgroups []string) error {
+func (u *User) UpdateGroups(C Config, oldgroups []string) error {
 	added, removed := splitUpdates(oldgroups, u.Groups)
 	if u.Config == nil {
 		return fmt.Errorf("user has no config")
@@ -40,9 +40,9 @@ func (u *User) UpdateGroups(C *Storage, oldgroups []string) error {
 	return errors
 }
 
-func processUserRemoved(removed []string, C *Storage, u *User, errors *Errors) *Errors {
+func processUserRemoved(removed []string, C Config, u *User, errors *Errors) *Errors {
 	for _, group := range removed {
-		hosts := C.getHosts(group)
+		hosts := C.GetHosts(group)
 		for _, h := range hosts {
 
 			if h.HasMatchingGroups(u) {
@@ -65,10 +65,10 @@ func processUserRemoved(removed []string, C *Storage, u *User, errors *Errors) *
 	return errors
 }
 
-func processUserAdded(added []string, C *Storage, u *User) *Errors {
+func processUserAdded(added []string, C Config, u *User) *Errors {
 	var errors *Errors
 	for _, group := range added {
-		hosts := C.getHosts(group)
+		hosts := C.GetHosts(group)
 		for _, h := range hosts {
 			if !h.HasUser(u.Email) {
 				err := h.AddUser(u)

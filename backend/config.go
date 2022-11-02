@@ -1,35 +1,36 @@
 package backend
 
 type Config interface {
-	GetUserByEmail(email string) (string, *User)
-	Write()
-	GetUsers(group string) []*User
-	AddUserToHosts(newuser *User)
 	AddHost(host *Host, withUsers bool) error
-	SetHost(alias string, host *Host)
-	Hosts() map[string]*Host
-	Users() map[string]*User
-	UserExists(lsum string) bool
-	GetUserByKey(lsum string) *User
-	RemoveUserFromHosts(deluser *User) error
-	PrepareHost(args ...string) (*Host, error)
-	DeleteUserByID(id string) bool
-	DeleteUser(email string) bool
-	PrepareUser(email, filename string, groups ...string) (*User, error)
 	AddUser(newuser *User, host string) error
-	UpdateUser(newuser *User) error
-	DeleteHost(alias string) bool
-	Update(aliases ...string)
-	UpdateHost(host *Host) error
-	Regenerate(aliases ...string)
-	GetGroups() map[string]LabelGroup
 	AddUserByEmail(email string) bool
-	GetUser(lsum string) *User
-	GetHost(alias string) *Host
+	AddUserToHosts(newuser *User)
 	DeleteGroup(label string) bool
-	UpdateGroup(groupLabel string, users, hosts []string)
+	DeleteHost(alias string) bool
+	DeleteUser(email string) bool
+	DeleteUserByID(id string) bool
 	FromGroup(host *Host, email string) bool
-	StopUpdate()
-	WatchFile(notify func())
+	GetGroups() map[string]LabelGroup
+	GetHost(alias string) *Host
+	GetHosts(group string) []*Host
+	GetUser(lsum string) *User
+	GetUserByEmail(email string) (string, *User)
+	GetUserByKey(lsum string) *User
+	GetUsers(group string) []*User
+	Hosts() map[string]*Host
 	Log() *ILog
+	PrepareHost(args ...string) (*Host, error)
+	PrepareUser(email, filename string, groups ...string) (*User, error)
+	Regenerate(aliases ...string)
+	RemoveUserFromHosts(deluser *User) error
+	SetHost(alias string, host *Host)
+	StopUpdate()
+	Update(aliases ...string)
+	UpdateGroup(groupLabel string, users, hosts []string)
+	UpdateHost(host *Host) error
+	UpdateUser(newuser *User) error
+	UserExists(lsum string) bool
+	Users() map[string]*User
+	WatchFile(notify func())
+	Write()
 }
