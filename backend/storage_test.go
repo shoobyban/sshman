@@ -331,15 +331,15 @@ func TestGetHosts(t *testing.T) {
 	}, []*User{
 		{Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
 	}, &SFTPConn{mock: true})
-	hosts := cfg.getHosts("a")
+	hosts := cfg.GetHosts("a")
 	if len(hosts) != 2 {
 		t.Errorf("gethosts error: %v", hosts)
 	}
-	hosts = cfg.getHosts("b")
+	hosts = cfg.GetHosts("b")
 	if len(hosts) != 1 {
 		t.Errorf("gethosts error: %v", hosts)
 	}
-	hosts = cfg.getHosts("c")
+	hosts = cfg.GetHosts("c")
 	if len(hosts) != 1 {
 		t.Errorf("gethosts error: %v", hosts)
 	}

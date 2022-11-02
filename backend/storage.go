@@ -180,7 +180,7 @@ func (c *Storage) Write() {
 	// c.log.Infof("storage saved to " + config.StorageFilePath)
 }
 
-func (c *Storage) getHosts(group string) []*Host {
+func (c *Storage) GetHosts(group string) []*Host {
 	var hosts []*Host
 	for _, host := range c.Hosts() {
 		if contains(host.GetGroups(), group) {

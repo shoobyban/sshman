@@ -16,7 +16,7 @@ type UsersHandler struct {
 }
 
 // Config returns the config for the handler
-func (h UsersHandler) Config(r *http.Request) *backend.Storage {
+func (h UsersHandler) Config(r *http.Request) backend.Config {
 	ctx := r.Context()
 	if cfg, ok := ctx.Value(ConfigKey).(*backend.Storage); ok {
 		return cfg

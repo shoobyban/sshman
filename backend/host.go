@@ -223,7 +223,7 @@ func (h *Host) UpdateGroups(cfg *Storage, oldgroups []string) bool {
 	return success
 }
 
-func processHostRemoved(removed []string, cfg *Storage, h *Host, success bool) bool {
+func processHostRemoved(removed []string, cfg Config, h *Host, success bool) bool {
 	for _, group := range removed {
 		users := cfg.GetUsers(group)
 		for _, u := range users {
