@@ -43,7 +43,7 @@ func (h KeysHandler) GetAllKeys(w http.ResponseWriter, r *http.Request) {
 	home, _ := os.UserHomeDir()
 	files, err := os.ReadDir(home + "/.ssh")
 	if err != nil {
-		h.Config(r).Log.Errorf("Can't read ~/.ssh: %s", err)
+		h.Config(r).Log().Errorf("Can't read ~/.ssh: %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -83,7 +83,7 @@ func (h KeysHandler) CreateKey(w http.ResponseWriter, r *http.Request) {
 	}
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
-		h.Config(r).Log.Errorf("Can't decode key data %s", err)
+		h.Config(r).Log().Errorf("Can't decode key data %s", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

@@ -12,7 +12,7 @@ func testConfig(key string, hosts map[string]*Host, users []*User, conn SFTP) *S
 		users:  map[string]*User{},
 		Groups: map[string]Group{},
 		Conn:   conn,
-		Log:    NewLog(false),
+		log:    NewLog(false),
 	}
 	for a, h := range hosts {
 		h.Config = c
@@ -20,7 +20,7 @@ func testConfig(key string, hosts map[string]*Host, users []*User, conn SFTP) *S
 		c.SetHost(a, h)
 	}
 	for _, u := range users {
-		c.Log.Infof("Adding user %p %v", u, u.Email)
+		c.log.Infof("Adding user %p %v", u, u.Email)
 		u.Config = c
 		c.AddUser(u, "")
 	}
@@ -28,7 +28,7 @@ func testConfig(key string, hosts map[string]*Host, users []*User, conn SFTP) *S
 	for _, u := range c.Users() {
 		emails = append(emails, u.Email)
 	}
-	c.Log.Infof("Test Users: %v", emails)
+	c.log.Infof("Test Users: %v", emails)
 	c.updateGroups()
 	return c
 }

@@ -56,12 +56,12 @@ func (h HostsHandler) UpdateHost(w http.ResponseWriter, r *http.Request) {
 	cfg := h.Config(r)
 	err := json.NewDecoder(r.Body).Decode(&host)
 	if err != nil {
-		cfg.Log.Errorf("Can't decode host %s", err)
+		cfg.Log().Errorf("Can't decode host %s", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	if host.Alias == "" {
-		cfg.Log.Errorf("Can't create host without alias")
+		cfg.Log().Errorf("Can't create host without alias")
 		http.Error(w, "Can't create host without alias", http.StatusBadRequest)
 		return
 	}
@@ -76,7 +76,7 @@ func (h HostsHandler) UpdateHost(w http.ResponseWriter, r *http.Request) {
 	cfg.Write()
 	err = cfg.UpdateHost(&host)
 	if err != nil {
-		cfg.Log.Errorf("Can't read host users, %s", err)
+		cfg.Log().Errorf("Can't read host users, %s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -90,26 +90,26 @@ func (h HostsHandler) UpdateHost(w http.ResponseWriter, r *http.Request) {
 func (h HostsHandler) DeleteHost(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	cfg := h.Config(r)
-	cfg.Log.Infof("Deleting host by alias: %s", id)
+	cfg.Log().Infof("Deleting host by alias: %s", id)
 	if cfg.DeleteHost(id) {
-		cfg.Log.Infof("Deleted host %s", id)
+		cfg.Log().Infof("Deleted host %s", id)
 		w.WriteHeader(http.StatusNoContent)
 	} else {
-		cfg.Log.Errorf("No such host: %s", id)
+		cfg.Log().Errorf("No such host: %s", id)
 		w.WriteHeader(http.StatusNotFound)
 	}
 }
 
 func (h HostsHandler) SyncHandler(_ http.ResponseWriter, r *http.Request) {
 	cfg := h.Config(r)
-	cfg.Log.Infof("Syncing hosts")
+	cfg.Log().Infof("Syncing hosts")
 	cfg.Update()
-	cfg.Log.Infof("Done syncing")
+	cfg.Log().Infof("Done syncing")
 }
 
 func (h HostsHandler) StopSyncHandler(_ http.ResponseWriter, r *http.Request) {
 	cfg := h.Config(r)
-	cfg.Log.Infof("Stopping sync")
+	cfg.Log().Infof("Stopping sync")
 	cfg.StopUpdate()
-	cfg.Log.Infof("Stopped")
+	cfg.Log().Infof("Stopped")
 }

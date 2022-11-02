@@ -30,7 +30,7 @@ func (u *User) UpdateGroups(C *Storage, oldgroups []string) error {
 	if u.Config == nil {
 		return fmt.Errorf("user has no config")
 	}
-	u.Config.Log.Infof("added: %v removed: %v", added, removed)
+	u.Config.Log().Infof("added: %v removed: %v", added, removed)
 
 	errors := processUserAdded(added, C, u)
 
@@ -57,7 +57,7 @@ func processUserRemoved(removed []string, C *Storage, u *User, errors *Errors) *
 					errors.Add("Error removing %s from %s", u.Email, h.Alias)
 					continue
 				}
-				h.Config.Log.Infof("removed %s from %s %v\n", u.Email, h.Alias, h.Groups)
+				h.Config.Log().Infof("removed %s from %s %v\n", u.Email, h.Alias, h.Groups)
 				C.SetHost(h.Alias, h)
 			}
 		}
@@ -79,7 +79,7 @@ func processUserAdded(added []string, C *Storage, u *User) *Errors {
 					errors.Add("Error adding %s to %s: %v", u.Email, h.Alias, err)
 					continue
 				}
-				h.Config.Log.Infof("added %s to %s %v\n", u.Email, h.Alias, h.Groups)
+				h.Config.Log().Infof("added %s to %s %v\n", u.Email, h.Alias, h.Groups)
 				C.SetHost(h.Alias, h)
 			}
 		}
