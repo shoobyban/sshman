@@ -44,7 +44,7 @@ func (h LogsHandler) GetLogs(w http.ResponseWriter, r *http.Request) {
 	wo := backend.LogWorker{}
 	wo.Source = make(chan interface{}, 10)
 
-	h.Config(r).Log.Open(wo)
+	h.Config(r).Log().Open(wo)
 	for {
 		select {
 		case logLine := <-wo.Source:
@@ -56,7 +56,7 @@ func (h LogsHandler) GetLogs(w http.ResponseWriter, r *http.Request) {
 		case <-wo.Quit:
 			return
 		case <-r.Context().Done():
-			h.Config(r).Log.Close(wo)
+			h.Config(r).Log().Close(wo)
 			return
 		}
 	}

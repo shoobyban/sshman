@@ -164,7 +164,7 @@ func (h *Host) Upload() error {
 		lines = append(lines, user.KeyType+" "+user.Key+" "+user.Name)
 	}
 	lines = deleteEmpty(lines)
-	h.Config.Log.Infof("updating %s", h.Alias)
+	h.Config.Log().Infof("updating %s", h.Alias)
 	// return nil
 	return h.write(lines)
 }
@@ -183,7 +183,7 @@ func (h *Host) RemoveUser(u *User) error {
 			if _, protected := h.Protected[user.Key]; protected {
 				return fmt.Errorf("user is protected, please remove protection first")
 			}
-			h.Config.Log.Infof("removing %s from %s", u.Email, h.Alias)
+			h.Config.Log().Infof("removing %s from %s", u.Email, h.Alias)
 			h.Modified = true
 			continue
 		}
@@ -212,7 +212,7 @@ func (h *Host) DueGroup(u *User) bool {
 func (h *Host) UpdateGroups(cfg *Storage, oldgroups []string) bool {
 
 	added, removed := splitUpdates(oldgroups, h.Groups)
-	h.Config.Log.Infof("added: %v removed: %v", added, removed)
+	h.Config.Log().Infof("added: %v removed: %v", added, removed)
 
 	success := processHostAdded(added, cfg, h)
 
@@ -234,11 +234,11 @@ func processHostRemoved(removed []string, cfg *Storage, h *Host, success bool) b
 			if h.HasUser(u.Email) {
 				err := h.RemoveUser(u)
 				if err != nil {
-					cfg.Log.Errorf("error removing %s from %s", u.Email, h.Alias)
+					cfg.Log().Errorf("error removing %s from %s", u.Email, h.Alias)
 					success = false
 					continue
 				}
-				cfg.Log.Infof("removed %s from %s", u.Email, h.Alias)
+				cfg.Log().Infof("removed %s from %s", u.Email, h.Alias)
 			}
 		}
 	}
@@ -251,14 +251,14 @@ func processHostAdded(added []string, cfg *Storage, h *Host) bool {
 		users := cfg.GetUsers(group)
 		for _, u := range users {
 			if !h.HasUser(u.Email) {
-				h.Config.Log.Infof("Adding %s (group %s) to %s", u.Email, group, h.Alias)
+				h.Config.Log().Infof("Adding %s (group %s) to %s", u.Email, group, h.Alias)
 				err := h.AddUser(u)
 				if err != nil {
-					h.Config.Log.Errorf("error adding %s to %s: %v", u.Email, h.Alias, err)
+					h.Config.Log().Errorf("error adding %s to %s: %v", u.Email, h.Alias, err)
 					success = false
 					continue
 				}
-				h.Config.Log.Infof("Added %s to %s (host groups %v)", u.Email, h.Alias, h.Groups)
+				h.Config.Log().Infof("Added %s to %s (host groups %v)", u.Email, h.Alias, h.Groups)
 			}
 		}
 	}

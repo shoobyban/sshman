@@ -47,7 +47,7 @@ func init() {
 		fmt.Println("Using config file:", v.ConfigFileUsed())
 	}
 
-	var config backend.Config
+	var config backend.InternalConfig
 
 	v.AutomaticEnv()
 	v.BindEnv("storage")

@@ -58,7 +58,7 @@ func (h UsersHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	if user.File != "" {
 		parts, err := backend.SplitParts(user.File)
 		if err != nil {
-			cfg.Log.Errorf("Invalid key format: %v", err)
+			cfg.Log().Errorf("Invalid key format: %v", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -71,7 +71,7 @@ func (h UsersHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		user.File = ""
 	}
 	if user.Email == "" || user.Key == "" || user.KeyType == "" || user.Name == "" {
-		cfg.Log.Errorf("Missing required fields: email: '%s' key: '%s' keytype: '%s' name: '%s'", user.Email, user.Key, user.KeyType, user.Name)
+		cfg.Log().Errorf("Missing required fields: email: '%s' key: '%s' keytype: '%s' name: '%s'", user.Email, user.Key, user.KeyType, user.Name)
 		http.Error(w, "missing required fields", http.StatusBadRequest)
 		return
 	}
@@ -103,15 +103,15 @@ func (h UsersHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	cfg := h.Config(r)
 	err = json.Unmarshal(bodyBytes, &user)
 	if err != nil {
-		cfg.Log.Infof("Error decoding user: %v (%s)", err, string(bodyBytes))
+		cfg.Log().Infof("Error decoding user: %v (%s)", err, string(bodyBytes))
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	if user.File != "" {
-		cfg.Log.Infof("New keyfile: %s", user.File)
+		cfg.Log().Infof("New keyfile: %s", user.File)
 		parts, err := backend.SplitParts(user.File)
 		if err != nil {
-			cfg.Log.Infof("Error splitting key: %v", err)
+			cfg.Log().Infof("Error splitting key: %v", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -126,7 +126,7 @@ func (h UsersHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	oldUser := cfg.GetUser(id)
 	if oldUser == nil {
-		cfg.Log.Infof("User %s does not exist: %v", user.Email, cfg.Users())
+		cfg.Log().Infof("User %s does not exist: %v", user.Email, cfg.Users())
 		http.Error(w, "user does not exist", http.StatusBadRequest)
 		return
 	}

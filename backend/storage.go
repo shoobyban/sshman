@@ -12,13 +12,13 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-type Config struct {
+type InternalConfig struct {
 	StorageFilePath string `mapstructure:"STORAGE"`
 }
 
-var config = &Config{StorageFilePath: "teststorage"}
+var config = &InternalConfig{StorageFilePath: "teststorage"}
 
-func SetConfig(c *Config) {
+func SetConfig(c *InternalConfig) {
 	fmt.Printf("Setting config to %v\n", c)
 	config = c
 }
@@ -38,7 +38,7 @@ type Storage struct {
 	Groups     map[string]Group
 	Conn       SFTP
 	persistent bool
-	Log        *ILog
+	log        *ILog
 	Stop       bool
 }
 
@@ -63,7 +63,7 @@ func NewStorage(persistent bool) *Storage {
 		hosts:      map[string]*Host{},
 		users:      map[string]*User{},
 		Conn:       &SFTPConn{},
-		Log:        NewLog(false),
+		log:        NewLog(false),
 		persistent: persistent,
 	}
 }
@@ -73,7 +73,7 @@ func NewTestStorage() *Storage {
 		hosts:      map[string]*Host{},
 		users:      map[string]*User{},
 		Conn:       &SFTPConn{mock: true},
-		Log:        NewLog(false),
+		log:        NewLog(false),
 		persistent: false,
 	}
 }
@@ -84,7 +84,7 @@ func newStorageWithLog(log *ILog) *Storage {
 		hosts:      map[string]*Host{},
 		users:      map[string]*User{},
 		Conn:       &SFTPConn{},
-		Log:        log,
+		log:        log,
 		persistent: true,
 	}
 }
@@ -94,7 +94,7 @@ func ReadStorage() *Storage {
 	c := NewStorage(true)
 	err := c.load(config.StorageFilePath)
 	if err != nil {
-		c.Log.Infof("No storage file " + config.StorageFilePath + ", creating one")
+		c.log.Infof("No storage file " + config.StorageFilePath + ", creating one")
 		return c
 	}
 	return c
@@ -165,7 +165,7 @@ func (c *Storage) GetUserByEmail(email string) (string, *User) {
 			return key, user
 		}
 	}
-	//	c.Log.Errorf("No user with email %s found", email)
+	//	c.log.Errorf("No user with email %s found", email)
 	return "", nil
 }
 
@@ -177,7 +177,7 @@ func (c *Storage) Write() {
 	cf := storageFile{Key: c.key, Hosts: c.hosts, Users: c.users}
 	b, _ := json.MarshalIndent(cf, "", "  ")
 	os.WriteFile(config.StorageFilePath, b, 0600)
-	// c.Log.Infof("storage saved to " + config.StorageFilePath)
+	// c.log.Infof("storage saved to " + config.StorageFilePath)
 }
 
 func (c *Storage) getHosts(group string) []*Host {
@@ -205,7 +205,7 @@ func (c *Storage) GetUsers(group string) []*User {
 func (c *Storage) AddUserToHosts(newuser *User) {
 	for alias, host := range c.Hosts() {
 		if match(host.GetGroups(), newuser.Groups) {
-			c.Log.Infof("adding %s to %s", newuser.Email, alias)
+			c.log.Infof("adding %s to %s", newuser.Email, alias)
 			host.AddUser(newuser)
 		}
 	}
@@ -257,7 +257,7 @@ func (c *Storage) RemoveUserFromHosts(deluser *User) error {
 	for alias, host := range c.Hosts() {
 		err := host.RemoveUser(deluser)
 		if err != nil {
-			c.Log.Errorf("Can't delete user %s from host %s %v", deluser.Email, host.Alias, err)
+			c.log.Errorf("Can't delete user %s from host %s %v", deluser.Email, host.Alias, err)
 			continue
 		}
 		c.SetHost(alias, host)
@@ -272,7 +272,7 @@ func (c *Storage) PrepareHost(args ...string) (*Host, error) {
 	alias := args[0]
 	if _, err := os.Stat(args[3]); os.IsNotExist(err) {
 		wd, _ := os.Getwd()
-		c.Log.Errorf("key file '%s' is not in %s", args[3], wd)
+		c.log.Errorf("key file '%s' is not in %s", args[3], wd)
 		return nil, fmt.Errorf("no such file '%s'", args[3])
 	}
 	groups := args[4:]
@@ -292,7 +292,7 @@ func (c *Storage) PrepareHost(args ...string) (*Host, error) {
 func (c *Storage) AddHost(host *Host, withUsers bool) error {
 	c.l.Lock()
 	defer c.l.Unlock()
-	c.Log.Infof("Adding host %s", host.Alias)
+	c.log.Infof("Adding host %s", host.Alias)
 	if _, ok := c.hosts[host.Alias]; ok {
 		return fmt.Errorf("Host %s already exists", host.Alias)
 	}
@@ -312,7 +312,7 @@ func (c *Storage) DeleteUserByID(id string) bool {
 	if _, ok = c.users[id]; ok {
 		delete(c.users, id)
 		c.Write()
-		c.Log.Infof("Deleted user %s", id)
+		c.log.Infof("Deleted user %s", id)
 	}
 	return ok
 }
@@ -326,12 +326,12 @@ func (c *Storage) DeleteUser(email string) bool {
 		if email == user.Email {
 			delete(c.users, id)
 			c.Write()
-			c.Log.Infof("Deleted user %s", email)
+			c.log.Infof("Deleted user %s", email)
 			found = true
 		}
 	}
 	if !found {
-		c.Log.Errorf("No user with email %s found", email)
+		c.log.Errorf("No user with email %s found", email)
 	}
 	return found
 }
@@ -359,7 +359,7 @@ func (c *Storage) AddUser(newuser *User, host string) error {
 	lsum := checksum(newuser.Key)
 	if u, ok := c.users[lsum]; ok {
 		if host != "" {
-			c.Log.Infof("User %s exists (%v)", u.Email, u.Hosts)
+			c.log.Infof("User %s exists (%v)", u.Email, u.Hosts)
 			diff := Difference(u.Hosts, []string{host})
 			if len(diff[1]) > 0 {
 				hh := c.hosts[host]
@@ -392,10 +392,10 @@ func (c *Storage) UpdateUser(newuser *User) error {
 	c.l.Lock()
 	defer c.l.Unlock()
 	delete(c.users, oldKey)
-	//	c.Log.Infof("deleting user %s with key %s", oldUser.Email, oldKey)
+	//	c.log.Infof("deleting user %s with key %s", oldUser.Email, oldKey)
 	lsum := checksum(newuser.Key)
 	c.users[lsum] = newuser
-	//	c.Log.Infof("key %s with content %v", lsum, newuser)
+	//	c.log.Infof("key %s with content %v", lsum, newuser)
 	c.Write()
 	return nil
 }
@@ -430,11 +430,11 @@ func (c *Storage) Update(aliases ...string) {
 		c.l.Lock()
 		if c.Stop {
 			c.l.Unlock()
-			c.Log.Infof("Received stop signal, stopping sync")
+			c.log.Infof("Received stop signal, stopping sync")
 			return
 		}
 		c.l.Unlock()
-		c.Log.Infof("Updating host %s...", host.Alias)
+		c.log.Infof("Updating host %s...", host.Alias)
 		// check Stop channel
 		c.UpdateHost(host)
 	}
@@ -445,7 +445,7 @@ func (c *Storage) Update(aliases ...string) {
 func (c *Storage) UpdateHost(host *Host) error {
 	users, _, err := host.ReadUsers()
 	if err != nil {
-		c.Log.Errorf("Can't read users from host %s: %v", host.Alias, err)
+		c.log.Errorf("Can't read users from host %s: %v", host.Alias, err)
 		return err
 	}
 	for _, user := range users {
@@ -526,7 +526,7 @@ func (c *Storage) DeleteGroup(label string) bool {
 	c.l.Lock()
 	defer c.l.Unlock()
 	if _, ok := c.Groups[label]; !ok {
-		c.Log.Errorf("group %s not found", label)
+		c.log.Errorf("group %s not found", label)
 		return false
 	}
 	// loop through hosts and remove group from host
@@ -539,7 +539,7 @@ func (c *Storage) DeleteGroup(label string) bool {
 	}
 
 	delete(c.Groups, label)
-	c.Log.Infof("deleted group %s", label)
+	c.log.Infof("deleted group %s", label)
 	c.Write()
 	return true
 }
@@ -594,7 +594,7 @@ func (c *Storage) FromGroup(host *Host, email string) bool {
 
 // StopSync stops Update() loop
 func (c *Storage) StopUpdate() {
-	c.Log.Infof("Stopping sync...")
+	c.log.Infof("Stopping sync...")
 	c.l.Lock()
 	defer c.l.Unlock()
 	c.Stop = true
@@ -648,4 +648,8 @@ func (c *Storage) WatchFile(notify func()) {
 		eventsWG.Wait()
 	}()
 	initWG.Wait()
+}
+
+func (c *Storage) Log() *ILog {
+	return c.log
 }
