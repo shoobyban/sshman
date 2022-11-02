@@ -35,7 +35,7 @@ type Storage struct {
 	key        string
 	hosts      map[string]*Host
 	users      map[string]*User
-	Groups     map[string]Group
+	groups     map[string]Group
 	Conn       SFTP
 	persistent bool
 	log        *ILog
@@ -49,19 +49,12 @@ type LabelGroup struct {
 	Users []string `json:"users"`
 }
 
-// Group is used to store group information (connecting hosts and users)
-type Group struct {
-	Name  string
-	Size  int
-	Hosts []*Host
-	Users []*User
-}
-
 // NewStorage creates a new storage with a logger
 func NewStorage(persistent bool) *Storage {
 	return &Storage{
 		hosts:      map[string]*Host{},
 		users:      map[string]*User{},
+		groups:     map[string]Group{},
 		Conn:       &SFTPConn{},
 		log:        NewLog(false),
 		persistent: persistent,
@@ -72,6 +65,7 @@ func NewTestStorage() *Storage {
 	return &Storage{
 		hosts:      map[string]*Host{},
 		users:      map[string]*User{},
+		groups:     map[string]Group{},
 		Conn:       &SFTPConn{mock: true},
 		log:        NewLog(false),
 		persistent: false,
@@ -83,6 +77,7 @@ func newStorageWithLog(log *ILog) *Storage {
 	return &Storage{
 		hosts:      map[string]*Host{},
 		users:      map[string]*User{},
+		groups:     map[string]Group{},
 		Conn:       &SFTPConn{},
 		log:        log,
 		persistent: true,
@@ -135,7 +130,7 @@ func (c *Storage) load(filename string) error {
 
 func (c *Storage) updateGroups() {
 	groups := map[string]Group{}
-	for _, host := range c.Hosts() {
+	for _, host := range c.hosts {
 		for _, group := range host.Groups {
 			if v, ok := groups[group]; ok {
 				v.Hosts = append(v.Hosts, host)
@@ -145,7 +140,7 @@ func (c *Storage) updateGroups() {
 			}
 		}
 	}
-	for _, user := range c.Users() {
+	for _, user := range c.users {
 		for _, group := range user.Groups {
 			if v, ok := groups[group]; ok {
 				v.Users = append(v.Users, user)
@@ -155,7 +150,7 @@ func (c *Storage) updateGroups() {
 			}
 		}
 	}
-	c.Groups = groups
+	c.groups = groups
 }
 
 // GetUserByEmail get a user from config by email as we store them by key checksum
@@ -525,7 +520,7 @@ func (c *Storage) GetHost(alias string) *Host {
 func (c *Storage) DeleteGroup(label string) bool {
 	c.l.Lock()
 	defer c.l.Unlock()
-	if _, ok := c.Groups[label]; !ok {
+	if _, ok := c.groups[label]; !ok {
 		c.log.Errorf("group %s not found", label)
 		return false
 	}
@@ -538,7 +533,7 @@ func (c *Storage) DeleteGroup(label string) bool {
 		user.Groups = remove(user.Groups, label)
 	}
 
-	delete(c.Groups, label)
+	delete(c.groups, label)
 	c.log.Infof("deleted group %s", label)
 	c.Write()
 	return true
@@ -546,8 +541,9 @@ func (c *Storage) DeleteGroup(label string) bool {
 
 // UpdateGroup updates a group in the config
 // removing all users and hosts group labels then adding them again
-func (c *Storage) UpdateGroup(groupLabel string, users, hosts []string) {
+func (c *Storage) UpdateGroup(groupLabel string, hosts, users []string) {
 	c.l.Lock()
+	defer c.l.Unlock()
 	// loop through hosts and add groupLabel to host.Groups
 	for _, host := range c.hosts {
 		if !contains(host.Groups, groupLabel) {
@@ -573,8 +569,15 @@ func (c *Storage) UpdateGroup(groupLabel string, users, hosts []string) {
 		}
 	}
 	// update c.Groups.Users and c.Groups.Hosts
-	c.l.Unlock()
 	c.updateGroups()
+	c.Write()
+}
+
+func (c *Storage) AddGroup(label string, hosts, users []string) {
+	c.l.Lock()
+	c.groups[label] = Group{Name: label}
+	c.l.Unlock()
+	c.UpdateGroup(label, hosts, users)
 	c.Write()
 }
 
@@ -590,6 +593,15 @@ func (c *Storage) FromGroup(host *Host, email string) bool {
 		}
 	}
 	return false
+}
+
+func (c *Storage) GetGroup(id string) *Group {
+	c.l.Lock()
+	defer c.l.Unlock()
+	if g, ok := c.groups[id]; ok {
+		return &g
+	}
+	return nil
 }
 
 // StopSync stops Update() loop

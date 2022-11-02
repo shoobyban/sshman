@@ -10,7 +10,7 @@ func testConfig(key string, hosts map[string]*Host, users []*User, conn SFTP) *S
 	c := &Storage{
 		hosts:  map[string]*Host{},
 		users:  map[string]*User{},
-		Groups: map[string]Group{},
+		groups: map[string]Group{},
 		Conn:   conn,
 		log:    NewLog(false),
 	}
@@ -353,7 +353,7 @@ func TestUpdateGroup(t *testing.T) {
 		[]*User{
 			{Email: "foo@email", KeyType: "ssh-rsa", Key: "keydata", Name: "aroot", Groups: []string{"a"}},
 		}, &SFTPConn{mock: true})
-	cfg.UpdateGroup("a", []string{"b"}, []string{"c"})
+	cfg.UpdateGroup("a", []string{"c"}, []string{"b"})
 	h := cfg.GetHost("a")
 	if h == nil {
 		t.Errorf("host a not found")
