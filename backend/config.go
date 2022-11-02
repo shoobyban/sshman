@@ -1,6 +1,7 @@
 package backend
 
 type Config interface {
+	AddGroup(label string, users, hosts []string)
 	AddHost(host *Host, withUsers bool) error
 	AddUser(newuser *User, host string) error
 	AddUserByEmail(email string) bool
@@ -10,6 +11,7 @@ type Config interface {
 	DeleteUser(email string) bool
 	DeleteUserByID(id string) bool
 	FromGroup(host *Host, email string) bool
+	GetGroup(id string) *Group
 	GetGroups() map[string]LabelGroup
 	GetHost(alias string) *Host
 	GetHosts(group string) []*Host

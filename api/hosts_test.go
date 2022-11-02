@@ -45,7 +45,7 @@ func TestGetHostDetails(t *testing.T) {
 	// test Hosts.GetHostDetails method
 	cfg := backend.NewTestStorage()
 	testHosts := []backend.Host{
-		backend.Host{Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}},
+		{Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}},
 	}
 	cfg.AddHost(&testHosts[0], false)
 	h := HostsHandler{Prefix: ""}

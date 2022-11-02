@@ -39,7 +39,7 @@ func (h GroupsHandler) GetAllGroups(w http.ResponseWriter, r *http.Request) {
 // GetGroupDetails handler returns group details
 func (h GroupsHandler) GetGroupDetails(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	json.NewEncoder(w).Encode(h.Config(r).Groups[id])
+	json.NewEncoder(w).Encode(h.Config(r).GetGroup(id))
 }
 
 // CreateGroup handler creates a group and adds users and hosts to it
@@ -58,7 +58,7 @@ func (h GroupsHandler) UpdateGroup(w http.ResponseWriter, r *http.Request) {
 	}
 	id := chi.URLParam(r, "id")
 	json.NewDecoder(r.Body).Decode(&group)
-	h.Config(r).UpdateGroup(group.Label, group.Users, group.Hosts)
+	h.Config(r).UpdateGroup(group.Label, group.Hosts, group.Users)
 	if id != "" && group.Label != id {
 		h.Config(r).DeleteGroup(id)
 	}
