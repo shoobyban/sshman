@@ -22,13 +22,17 @@ This tool needs to be run from a host that will be able to access all hosts with
 
 There are two main resource entities in sshman: users and hosts. Users are identified by the public ssh key and labeled by their email address for simplicity, although email address is not used as an email so can be anything like sam-key-1 sam-key-2, useful when a user has multiple keys for different purposes (this is absolutely not necessary in most cases, but sshman supports it).
 
-![Users CRUD](screenshot1.png)
+![Users CRUD](docs/screenshot1.png)
 
 The main concept of sshman is group, organising users onto "group of hosts" or hosts by "group of users", like `live-hosts`, `staging-hosts`, `production`, or `{client1}`, `{client2}`, but you can also create "groups" for every email address or every host. Groups are like tagging, by tagging a user and a host with the same group name the user will be able to access the host.
 
 To add a host into the sshman configuration, provide an alias, an ssh `.pub` keys and groups that the host belongs to if already defined. Adding the host will initiate an auto-discovery functionality that will download all ssh keys from the host as newly defined users and create pseudo groups for recognised users that have access to that host.
 
-![Adding u user](screenshot2.png)
+![Adding u user](docs/screenshot2.png)
+
+### Configuration file
+
+Configuration is saved into `~/.ssh/.ssmman`, it is a JSON file with all hosts, users and groups. Probably configuration is not the right word for this.
 
 ## Usage
 
@@ -154,61 +158,46 @@ Note: Removing host from a group will remove all users that are on the host only
   - [x] Delete group should remove resources
 - [x] Test all CRUD (users, hosts, groups) together
 - [x] Re-read config with file watcher in web mode
+- [x] Screenshot with test data (not with sensitive data)
+- [x] Reuse stored ssh key for modifying user
+- [x] Adding host to download information without the need of running update
+- [x] Complete CRUD for missing use cases
+- [x] Web interface
+- [ ] Testing document for full coverage
+- [ ] Configuration into interface so testing can be done without isTest() style checks
+- [ ] All user functions should have unit tests
+- [ ] All host functions should have unit tests
+- [ ] All group functions should have unit tests
+- [ ] All config functions should have unit tests
+- [ ] All core functionality should have unit tests
 - [ ] Edge case: deleting user should delete the user from all hosts (unless canceled from changeset)
 - [ ] Misfeature: Changing keyfile on host does not upload new key with old and delete old
 - [ ] Misfeature: Adding host does not check if host config is working
 - [ ] Misfeature: Adding host with groups does not upload initial users from group
 - [ ] Misfeature: Modifying user groups does not upload / delete hosts
-- [x] Screenshot with test data (not with sensitive data)
 
 ### TODO For Next Release
 
-- [ ] Sync to host operation (changeset)
-  - [ ] should keep a list of todo ops (per server: user add or delete)
-  - [ ] display the ops on frontend
-  - [ ] ops should be grouped by hosts -> 1 op for host even if many user change
-  - [ ] ops for same host-user pair (add + delete) would apply the latest change
-  - [ ] apply button should run them, preparing undo op (cache old server authorized_keys files)
-  - [ ] undo op to upload cached authorized_keys and restore changeset
-  - [ ] on update or new host list new users on frontend and on cli
+- [ ] Web authentication
+- [ ] Delete host with editing ssh keys
+- [ ] Auto-group host specific users (when user is on several hosts, create a group for them, auto-merge groups when possible)
 - [ ] CLI to use API (not sure)
 - [ ] Web Interface Authentication (where to store creds?)
 - [ ] Updated At timestamps
 - [ ] Audit log
   - [ ] audit log logging all changes from changeset (sync op) on apply
 - [ ] Implement user "role" group of groups for RBAC level of abstraction (developers role = uat-servers+staging-servers group)
+- [ ] Testing connection after creating authorized_keys entry
 
 ### (Possible) Future Plans
 
-- [x] Reuse stored ssh key for modifying user
-- [x] Adding host to download information without the need of running update
-- [x] Tests, refactor for testability
-- [x] Complete CRUD for missing use cases
-- [x] Web interface
-  - [ ] Authentication
-  - [ ] Aria tags (at least tagging buttons better and connecting labels)
-- [ ] Testing connection after creating authorized_keys entry
-- [ ] More backend (currently .ssh/.sshman configuration file)
+- [ ] Changeset based operation (see [Future plans details](docs/Plans.md))
+- [ ] Web Aria tags (at least tagging buttons better and connecting labels)
+- [ ] More backend (currently `.ssh/.sshman` JSON configuration file)
 - [ ] Adding host key to server using password auth
 - [ ] Text UI based on Web frontend
-- [ ] State handling (see below)
-- [ ] Edit multiple items (see below)
-
-### State Handling TODO
-
-I've been using the systems for a while and I've noticed that the current version gets out of sync quite easy.
-
-The idea is to have 3 states: the host's read state (current files on host), the "stable" state (that's in theory we have in config) and a "staging" state (that we are clicking together).
-
-In theory stable and staging will make sense on bigger systems, so we could just have two states.
-
-I'm planning to have a Refresh (read state) and a Publish button / command.
-
-### Edit multiple items
-
-with checkboxes (removing them from master for now) when multiple items are selected an "Edit Selected" button will appear (implemented) by
-Add {itemtype} button. The editor will display [ _multiple values_ ] value for non-uniform values, as soon as editing is made (after save) these values
-will be updated for every edited item.
+- [ ] State handling (see [Future plans details](docs/Plans.md))
+- [ ] Edit multiple items (see [Future plans details](docs/Plans.md))
 
 ## Credits
 
