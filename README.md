@@ -1,4 +1,4 @@
-# SSH Manager - manage authorized_key file on remote hosts
+# SSH Manager - manage access through authorized_key files on remote hosts
 
 [![Build Status](https://github.com/shoobyban/sshman/actions/workflows/push.yaml/badge.svg?branch=main)](https://github.com/shoobyban/sshman/actions/workflows/push.yaml)
 [![Awesome GO](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/avelino/awesome-go)
