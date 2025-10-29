@@ -25,10 +25,11 @@ var dist embed.FS
 func ReadConfig(ilog *backend.ILog) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		log.Printf("[DEBUG] Creating config")
-		cfg := backend.ReadStorageWithLog(ilog)
-		cfg.WatchFile(func() {
+		cfg := backend.DefaultConfig()
+		cfg.SetLog(ilog)
+		cfg.Storage.Watch(func() {
 			//			cfg.Log().Infof("storage changed, reloading")
-			backend.ReadStorageWithLog(ilog)
+			cfg = backend.DefaultConfig()
 		})
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 			ctx := context.WithValue(r.Context(), api.ConfigKey, cfg)
@@ -71,7 +72,7 @@ var webCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 		if port == ":0" {
-			fmt.Println("Using port:", listener.Addr().(*net.TCPAddr).Port)
+			fmt.Println("Listening on http://localhost:", listener.Addr().(*net.TCPAddr).Port)
 			portfile, _ := cmd.Flags().GetString("portfile")
 			os.WriteFile(portfile, []byte(fmt.Sprint(listener.Addr().(*net.TCPAddr).Port)), 0644)
 		}

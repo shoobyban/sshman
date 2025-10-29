@@ -8,21 +8,21 @@ import (
 	"github.com/shoobyban/sshman/backend"
 )
 
-// HostsHandler is a struct for handling hosts
+// HostsHandler is a struct for handling hosts.
 type HostsHandler struct {
 	Prefix string
 }
 
-// Config returns a loaded configuration for the handler
-func (h HostsHandler) Config(r *http.Request) *backend.Storage {
+// Config returns a loaded configuration for the handler.
+func (h HostsHandler) Config(r *http.Request) backend.Config {
 	ctx := r.Context()
-	if cfg, ok := ctx.Value(ConfigKey).(*backend.Storage); ok {
+	if cfg, ok := ctx.Value(ConfigKey).(*backend.Data); ok {
 		return cfg
 	}
-	return backend.NewStorage(false)
+	return backend.DefaultConfig()
 }
 
-// AddRoutes adds hosthandler specific routes to the router
+// AddRoutes adds hosthandler specific routes to the router.
 func (h HostsHandler) AddRoutes(router *chi.Mux) {
 	router.Get(h.Prefix, h.GetAllHosts)
 	router.Get(h.Prefix+"/{id}", h.GetHostDetails)
@@ -33,23 +33,23 @@ func (h HostsHandler) AddRoutes(router *chi.Mux) {
 	router.Delete(h.Prefix+"/sync", h.StopSyncHandler)
 }
 
-// GetAllHosts returns all hosts
+// GetAllHosts returns all hosts.
 func (h HostsHandler) GetAllHosts(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(h.Config(r).Hosts())
 }
 
-// GetHostDetails returns host details
+// GetHostDetails returns host details.
 func (h HostsHandler) GetHostDetails(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	json.NewEncoder(w).Encode(h.Config(r).GetHost(id))
 }
 
-// CreateHost creates a new host
+// CreateHost creates a new host.
 func (h HostsHandler) CreateHost(w http.ResponseWriter, r *http.Request) {
 	h.UpdateHost(w, r)
 }
 
-// UpdateHost updates a host
+// UpdateHost updates a host.
 func (h HostsHandler) UpdateHost(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var host backend.Host
@@ -86,7 +86,7 @@ func (h HostsHandler) UpdateHost(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(host)
 }
 
-// DeleteHost deletes a host
+// DeleteHost deletes a host.
 func (h HostsHandler) DeleteHost(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	cfg := h.Config(r)

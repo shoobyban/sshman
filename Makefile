@@ -9,8 +9,8 @@ linux: frontend
 
 test: backend frontend
 	go test ./...
-	cd frontend && yarn lint
+	cd frontend && npm run lint
 
 frontend:
-	cd frontend && yarn && yarn build && cd ..
+	cd frontend && npm i && npm run build && cd ..
 	cp -R frontend/dist cmd/

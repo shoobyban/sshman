@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/shoobyban/sshman/backend"
 	"github.com/spf13/cobra"
@@ -20,29 +19,25 @@ sshman register host google my.google.com:22 myuser ~/.ssh/google.pub deploy hos
 `,
 	Run: func(_ *cobra.Command, args []string) {
 		if len(args) < 4 {
-			fmt.Print(`To register a host:
-sshman register host {alias} {host_address:port} {user} {~/.ssh/working_keyfile.pub} [group1 group2 ...]
-For example:
-sshman register host google my.google.com:22 myuser ~/.ssh/google.pub deploy hosting google
-`)
-			os.Exit(0)
+			fmt.Println(`Usage: sshman add host <alias> <host:port> <user> <keyfile> [groups...]`)
+			return
 		}
-		conf := backend.ReadStorage()
-		host := conf.GetHost(args[0])
+		cfg := backend.DefaultConfig()
+		host := cfg.GetHost(args[0])
 		oldgroups := []string{}
 		if host != nil {
-			fmt.Printf("Host already exists with this alias, overwrite [y/n]: ")
+			fmt.Printf("Host with alias %s already exists. Overwrite? [y/n]: ", args[0])
 			exitIfNo()
 			oldgroups = host.GetGroups()
 		}
-		h, err := conf.PrepareHost(args...)
+		h, err := cfg.PrepareHost(args...)
 		if err != nil {
-			fmt.Printf("Error: %v\n", err)
-			os.Exit(1)
+			fmt.Printf("Error preparing host: %v\n", err)
+			return
 		}
-		conf.AddHost(h, true)
-		host.UpdateGroups(conf, oldgroups)
-		conf.Update(args[0])
+		cfg.AddHost(h, true)
+		h.UpdateGroups(cfg, oldgroups)
+		cfg.Update(args[0])
 	},
 }
 

@@ -6,13 +6,14 @@ import (
 	"time"
 )
 
-func testConfig(key string, hosts map[string]*Host, users []*User, conn SFTP) *Storage {
-	c := &Storage{
-		hosts:  map[string]*Host{},
-		users:  map[string]*User{},
-		groups: map[string]Group{},
-		Conn:   conn,
-		log:    NewLog(false),
+func testConfig(key string, hosts map[string]*Host, users []*User, conn SFTP) *Data {
+	c := &Data{
+		hosts:   map[string]*Host{},
+		users:   map[string]*User{},
+		groups:  map[string]Group{},
+		Conn:    conn,
+		log:     NewLog(false),
+		Storage: &MemoryStorage{},
 	}
 	for a, h := range hosts {
 		h.Config = c

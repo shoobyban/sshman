@@ -11,7 +11,7 @@ var forceupdateCmd = &cobra.Command{
 	Short: "Write users on hosts",
 	Long:  `Loop through all hosts, upload all users to autorized_keys files`,
 	Run: func(_ *cobra.Command, _ []string) {
-		cfg := backend.ReadStorage()
+		cfg := backend.DefaultConfig()
 		var aliases []string
 		for a := range cfg.Hosts() {
 			aliases = append(aliases, a)

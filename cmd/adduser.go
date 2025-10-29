@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/shoobyban/sshman/backend"
 	"github.com/spf13/cobra"
@@ -16,23 +15,22 @@ var addUserCmd = &cobra.Command{
 	sshman add user email sshkey.pub {group1 group2 ...}`,
 	Run: func(_ *cobra.Command, args []string) {
 		if len(args) < 2 {
-			fmt.Println(`To add a user:
-			sshman add user email sshkey.pub {group1 group2 ...}`)
-			os.Exit(0)
+			fmt.Println(`Usage: sshman add user <email> <sshkey.pub> [group1 group2 ...]`)
+			return
 		}
-		conf := backend.ReadStorage()
-		_, u := conf.GetUserByEmail(args[0])
+		cfg := backend.DefaultConfig()
+		_, u := cfg.GetUserByEmail(args[0])
 		if u != nil {
-			fmt.Printf("User already exists with this email, overwrite [y/n]: ")
+			fmt.Printf("User with email %s already exists. Overwrite? [y/n]: ", args[0])
 			exitIfNo()
 		}
-		u, err := conf.PrepareUser(args[0], args[1], args[2:]...)
+		u, err := cfg.PrepareUser(args[0], args[1], args[2:]...)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			fmt.Printf("Error preparing user: %v\n", err)
+			return
 		}
-		conf.AddUser(u, "")
-		conf.AddUserToHosts(u)
+		cfg.AddUser(u, "")
+		cfg.AddUserToHosts(u)
 	},
 }
 

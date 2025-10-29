@@ -14,7 +14,7 @@ import (
 
 func TestGetAllUsers(t *testing.T) {
 	// test Users.GetAllUsers method
-	cfg := backend.NewTestStorage()
+	cfg := backend.NewData(&backend.MemoryStorage{})
 	testUsers := map[string]*backend.User{
 		"user1": {Email: "sam@test.com", KeyType: "dummy", Key: "key1", Groups: []string{"group1", "group2"}, Config: cfg},
 	}
@@ -40,7 +40,7 @@ func TestGetAllUsers(t *testing.T) {
 
 func TestGetUserDetails(t *testing.T) {
 	// test Users.GetUserDetails method
-	cfg := backend.NewTestStorage()
+	cfg := backend.NewData(&backend.MemoryStorage{})
 	testUsers := map[string]*backend.User{
 		"u1": {Email: "sam@test1.com", KeyType: "dummy", Key: "key1", Groups: []string{"group1", "group2"}},
 	}
@@ -68,7 +68,7 @@ func TestGetUserDetails(t *testing.T) {
 func TestCreateUser(t *testing.T) {
 	// test Users.CreateUser method
 	testUsers := map[string]*backend.User{}
-	cfg := backend.NewTestStorage()
+	cfg := backend.NewData(&backend.MemoryStorage{})
 	cfg.AddUser(testUsers["user1"], "")
 	u := UsersHandler{Prefix: "users"}
 	// mock http request
@@ -95,7 +95,7 @@ func TestCreateUser(t *testing.T) {
 
 func TestUpdateUser(t *testing.T) {
 	// test Users.UpdateUser method
-	cfg := backend.NewTestStorage()
+	cfg := backend.NewData(&backend.MemoryStorage{})
 	testUsers := map[string]*backend.User{
 		"user1": {Email: "sam@test1.com", KeyType: "dummy", Key: "key1", Groups: []string{"group1", "group2"}, Config: cfg},
 	}
@@ -129,7 +129,7 @@ func TestUpdateUser(t *testing.T) {
 
 func TestDeleteUser(t *testing.T) {
 	// test Users.DeleteUser method
-	cfg := backend.NewTestStorage()
+	cfg := backend.NewData(&backend.MemoryStorage{})
 	testUsers := []backend.User{
 		{Email: "sam@test1.com", KeyType: "dummy", Key: "key1", Groups: []string{"group1", "group2"}},
 	}

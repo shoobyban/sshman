@@ -10,26 +10,26 @@ import (
 	"github.com/shoobyban/sshman/backend"
 )
 
-// LogsHandler is a struct for streaming logs to frontend
+// LogsHandler is a struct for streaming logs to the frontend.
 type LogsHandler struct {
 	Prefix string
 }
 
-// Config returns a loaded configuration for the handler
-func (h LogsHandler) Config(r *http.Request) *backend.Storage {
+// Config returns a loaded configuration for the handler.
+func (h LogsHandler) Config(r *http.Request) backend.Config {
 	ctx := r.Context()
-	if cfg, ok := ctx.Value(ConfigKey).(*backend.Storage); ok {
+	if cfg, ok := ctx.Value(ConfigKey).(*backend.Data); ok {
 		return cfg
 	}
-	return &backend.Storage{}
+	return backend.DefaultConfig()
 }
 
-// AddRoutes adds logs handler specific routes to the router
+// AddRoutes adds logs handler specific routes to the router.
 func (h LogsHandler) AddRoutes(router *chi.Mux) {
 	router.Get(h.Prefix, h.GetLogs)
 }
 
-// GetLogs streams logs on a keep-alive connection to the frontend
+// GetLogs streams logs on a keep-alive connection to the frontend.
 func (h LogsHandler) GetLogs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")

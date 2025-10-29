@@ -13,8 +13,8 @@ var listUsersCmd = &cobra.Command{
 	Short: "List users",
 	Long:  `Lists registered users`,
 	Run: func(_ *cobra.Command, _ []string) {
-		conf := backend.ReadStorage()
-		for _, user := range conf.Users() {
+		cfg := backend.DefaultConfig()
+		for _, user := range cfg.Users() {
 			fmt.Printf("%-25s\t%v\n", user.Email, user.GetGroups())
 		}
 	},

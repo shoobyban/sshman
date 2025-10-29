@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 	"time"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetUsers(t *testing.T) {
@@ -31,7 +32,7 @@ func TestGetUsers(t *testing.T) {
 	}
 }
 
-func TestUpdateHostGroups(t *testing.T) {
+func TestUpdateHostGroupsBasic(t *testing.T) {
 	sftp := &SFTPConn{mock: true}
 	cfg := testConfig("foo", map[string]*Host{
 		"hosta": {Alias: "hosta", Host: "a:22", User: "aroot", Groups: []string{"groupa", "groupb"}, LastUpdated: time.Now()},
@@ -88,4 +89,67 @@ func TestHostMoveGroup(t *testing.T) {
 	if h.HasUser("foo@email") {
 		t.Errorf("host a have foo user")
 	}
+}
+
+func TestAddUserToHost(t *testing.T) {
+	host := &Host{
+		Alias: "test-host",
+		Users: []*User{},
+		LastUpdated: time.Now(),
+		Config: &Data{},
+	}
+
+	user := &User{
+		Email: "test@example.com",
+		KeyType: "rsa",
+		Key: "ssh-rsa AAAAB3...",
+		Name: "Test User",
+	}
+
+	err := host.AddUser(user)
+	assert.NoError(t, err)
+	assert.Contains(t, host.Users, user)
+}
+
+func TestRemoveUserFromHost(t *testing.T) {
+	host := &Host{
+		Alias: "test-host",
+		Users: []*User{
+			{
+				Email: "test@example.com",
+				KeyType: "rsa",
+				Key: "ssh-rsa AAAAB3...",
+				Name: "Test User",
+			},
+		},
+		LastUpdated: time.Now(),
+		Config: &Data{},
+	}
+
+	user := &User{
+		Email: "test@example.com",
+		KeyType: "rsa",
+		Key: "ssh-rsa AAAAB3...",
+		Name: "Test User",
+	}
+
+	err := host.RemoveUser(user)
+	assert.NoError(t, err)
+	assert.NotContains(t, host.Users, user)
+}
+
+func TestUpdateHostGroups(t *testing.T) {
+	host := &Host{
+		Alias: "test-host",
+		Groups: []string{"group1"},
+		Config: &Data{},
+	}
+
+	oldGroups := []string{"group1"}
+	newGroups := []string{"group2"}
+	host.SetGroups(newGroups)
+
+	success := host.UpdateGroups(host.Config, oldGroups)
+	assert.True(t, success)
+	assert.Equal(t, newGroups, host.GetGroups())
 }

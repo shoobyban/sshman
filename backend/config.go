@@ -25,6 +25,7 @@ type Config interface {
 	PrepareUser(email, filename string, groups ...string) (*User, error)
 	Regenerate(aliases ...string)
 	RemoveUserFromHosts(deluser *User) error
+	SetLog(log *ILog) *Data
 	SetHost(alias string, host *Host)
 	StopUpdate()
 	Update(aliases ...string)
@@ -33,6 +34,5 @@ type Config interface {
 	UpdateUser(newuser *User) error
 	UserExists(lsum string) bool
 	Users() map[string]*User
-	WatchFile(notify func())
 	Write()
 }

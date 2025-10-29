@@ -39,6 +39,13 @@ type SFTPMockHost struct {
 	File string
 }
 
+func MockConn(testHosts map[string]SFTPMockHost) *SFTPConn {
+	return &SFTPConn{
+		mock:      true,
+		testHosts: testHosts,
+	}
+}
+
 // Connect connects to the host using the given keyfile and user
 func (s *SFTPConn) Connect(keyfile, host, user string) error {
 	if strings.HasPrefix(keyfile, "~/") {

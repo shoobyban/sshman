@@ -10,7 +10,7 @@ import (
 	"github.com/shoobyban/sshman/backend"
 )
 
-// UsersHandler is the handler for users
+// UsersHandler is the handler for user-related operations
 type UsersHandler struct {
 	Prefix string
 }
@@ -18,10 +18,10 @@ type UsersHandler struct {
 // Config returns the config for the handler
 func (h UsersHandler) Config(r *http.Request) backend.Config {
 	ctx := r.Context()
-	if cfg, ok := ctx.Value(ConfigKey).(*backend.Storage); ok {
+	if cfg, ok := ctx.Value(ConfigKey).(*backend.Data); ok {
 		return cfg
 	}
-	return &backend.Storage{}
+	return backend.DefaultConfig()
 }
 
 // AddRoutes adds the routes for the handler
@@ -151,7 +151,7 @@ func (h UsersHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
-// DeleteUser deletes a user
+// DeleteUser deletes a user.
 func (h UsersHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	log.Printf("Deleting user %s", id)

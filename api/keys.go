@@ -10,21 +10,21 @@ import (
 	"github.com/shoobyban/sshman/backend"
 )
 
-// KeysHandler returns a list of ssh key filename from ~/.ssh
+// KeysHandler returns a list of ssh key filenames from ~/.ssh.
 type KeysHandler struct {
 	Prefix string
 }
 
-// Config returns a loaded configuration for the handler
-func (h KeysHandler) Config(r *http.Request) *backend.Storage {
+// Config returns a loaded configuration for the handler.
+func (h KeysHandler) Config(r *http.Request) backend.Config {
 	ctx := r.Context()
-	if cfg, ok := ctx.Value(ConfigKey).(*backend.Storage); ok {
+	if cfg, ok := ctx.Value(ConfigKey).(*backend.Data); ok {
 		return cfg
 	}
-	return &backend.Storage{}
+	return backend.DefaultConfig()
 }
 
-// AddRoutes adds keyhandler specific routes to the router
+// AddRoutes adds keyhandler specific routes to the router.
 func (h KeysHandler) AddRoutes(router *chi.Mux) {
 	router.Get(h.Prefix, h.GetAllKeys)
 	// router.Get(h.Prefix+"/{filename}", h.GetKeyDetails)
@@ -33,7 +33,7 @@ func (h KeysHandler) AddRoutes(router *chi.Mux) {
 	router.Post(h.Prefix, h.CreateKey)
 }
 
-// GetAllKeys returns a list of all ssh key files from ~/.ssh filtered by type={all|public|private}
+// GetAllKeys returns a list of all ssh key files from ~/.ssh filtered by type={all|public|private}.
 func (h KeysHandler) GetAllKeys(w http.ResponseWriter, r *http.Request) {
 
 	t := r.URL.Query().Get("type")
@@ -75,7 +75,7 @@ func (h KeysHandler) GetAllKeys(w http.ResponseWriter, r *http.Request) {
 	e.Encode(keys)
 }
 
-// CreateKey creates a new ssh key from uploaded file
+// CreateKey creates a new ssh key from an uploaded file.
 func (h KeysHandler) CreateKey(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
 		Filename string `json:"filename"`

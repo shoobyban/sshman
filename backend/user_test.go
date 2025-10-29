@@ -3,6 +3,7 @@ package backend
 import (
 	"testing"
 	"time"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMoveUserToGroup(t *testing.T) {
@@ -40,4 +41,41 @@ func TestMoveUserToGroup(t *testing.T) {
 	if hostb.HasUser(u.Email) {
 		t.Errorf("user is still on hostb")
 	}
+}
+
+func TestNewUser(t *testing.T) {
+	email := "test@example.com"
+	keytype := "rsa"
+	key := "ssh-rsa AAAAB3..."
+	name := "Test User"
+
+	user := NewUser(email, keytype, key, name)
+
+	assert.Equal(t, email, user.Email)
+	assert.Equal(t, keytype, user.KeyType)
+	assert.Equal(t, key, user.Key)
+	assert.Equal(t, name, user.Name)
+}
+
+func TestUpdateGroups(t *testing.T) {
+	// Use testConfig helper to create a minimal config
+	sftp := &SFTPConn{mock: true}
+	cfg := testConfig("foo", map[string]*Host{}, []*User{}, sftp)
+	user := NewUser("test@example.com", "rsa", "ssh-rsa AAAAB3...", "Test User")
+	user.Config = cfg
+
+	oldGroups := []string{"group1", "group2"}
+	newGroups := []string{"group2", "group3"}
+	user.SetGroups(newGroups)
+
+	err := user.UpdateGroups(cfg, oldGroups)
+	assert.NoError(t, err)
+}
+
+func TestGetAndSetGroups(t *testing.T) {
+	user := NewUser("test@example.com", "rsa", "ssh-rsa AAAAB3...", "Test User")
+	groups := []string{"group1", "group2"}
+
+	user.SetGroups(groups)
+	assert.Equal(t, groups, user.GetGroups())
 }

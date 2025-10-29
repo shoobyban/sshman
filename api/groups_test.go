@@ -21,7 +21,7 @@ func contains(slice []string, s string) bool {
 }
 
 func TestCreateGroup(t *testing.T) {
-	cfg := backend.NewTestStorage()
+	cfg := backend.NewData(&backend.MemoryStorage{})
 	cfg.AddHost(
 		&backend.Host{Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group2"}},
 		false)
@@ -45,7 +45,7 @@ func TestCreateGroup(t *testing.T) {
 }
 func TestUpdateGroup(t *testing.T) {
 
-	cfg := backend.NewTestStorage()
+	cfg := backend.NewData(&backend.MemoryStorage{})
 	cfg.AddHost(
 		&backend.Host{Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group2"}},
 		false)
@@ -75,7 +75,7 @@ func TestUpdateGroup(t *testing.T) {
 
 func TestDeleteGroup(t *testing.T) {
 
-	cfg := backend.NewTestStorage()
+	cfg := backend.NewData(&backend.MemoryStorage{})
 	cfg.AddHost(
 		&backend.Host{Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group2"}},
 		false)

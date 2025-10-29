@@ -16,7 +16,7 @@ import (
 
 func TestGetAllHosts(t *testing.T) {
 	// test Hosts.GetAllHosts method
-	cfg := backend.NewTestStorage()
+	cfg := backend.NewData(&backend.MemoryStorage{})
 	cfg.AddHost(
 		&backend.Host{Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}},
 		false)
@@ -43,7 +43,7 @@ func TestGetAllHosts(t *testing.T) {
 
 func TestGetHostDetails(t *testing.T) {
 	// test Hosts.GetHostDetails method
-	cfg := backend.NewTestStorage()
+	cfg := backend.NewData(&backend.MemoryStorage{})
 	testHosts := []backend.Host{
 		{Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}},
 	}
@@ -71,10 +71,14 @@ func TestGetHostDetails(t *testing.T) {
 
 func TestUpdateHost(t *testing.T) {
 	// test Hosts.UpdateHost method
-	cfg := backend.NewTestStorage()
+	cfg := backend.NewData(&backend.MemoryStorage{})
 	cfg.AddHost(
 		&backend.Host{Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}},
 		false)
+	cfg.Conn = backend.MockConn(map[string]backend.SFTPMockHost{
+		"a:22": {Host: "a:22", User: "test", File: "ssh-rsa foo foo\nssh-rsa bar2 bar2\n"},
+		"b:22": {Host: "b:22", User: "test", File: "ssh-rsa bar1 bar\nssh-rsa bar2 bar2\n"},
+	})
 	// mock http request
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodPut, "/host1",
@@ -91,7 +95,7 @@ func TestUpdateHost(t *testing.T) {
 		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
 	}
 
-	var host backend.Host
+	host := cfg.GetHost("host1")
 	json.NewDecoder(w.Body).Decode(&host)
 	if host.User != "user2" {
 		t.Errorf("Expected user2, got %s %#v", host.User, host)
@@ -100,7 +104,11 @@ func TestUpdateHost(t *testing.T) {
 
 // test Hosts.CreateHost method
 func TestCreateHost(t *testing.T) {
-	cfg := backend.NewTestStorage()
+	cfg := backend.NewData(&backend.MemoryStorage{})
+	cfg.Conn = backend.MockConn(map[string]backend.SFTPMockHost{
+		"a:22": {Host: "a:22", User: "test", File: "ssh-rsa foo foo\nssh-rsa bar2 bar2\n"},
+		"b:22": {Host: "b:22", User: "test", File: "ssh-rsa bar1 bar\nssh-rsa bar2 bar2\n"},
+	})
 	h := HostsHandler{Prefix: ""}
 	// mock http request
 	w := httptest.NewRecorder()
@@ -126,7 +134,7 @@ func TestDeleteHost(t *testing.T) {
 	testHosts := map[string]*backend.Host{
 		"host1": {Alias: "host1", Host: "host1.com", User: "user1", Groups: []string{"group1", "group2"}},
 	}
-	cfg := backend.NewTestStorage()
+	cfg := backend.NewData(&backend.MemoryStorage{})
 	cfg.AddHost(testHosts["host1"], false)
 	h := HostsHandler{Prefix: ""}
 	// mock http request

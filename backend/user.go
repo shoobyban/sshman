@@ -1,31 +1,38 @@
 package backend
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 // User holds the user information in the config
 type User struct {
-	KeyType string   `json:"type"`
-	Name    string   `json:"name"`
-	Email   string   `json:"email"`
-	Key     string   `json:"key"`
-	Groups  []string `json:"groups"`
-	Hosts   []string `json:"hosts"`
-	File    string   `json:"keyfile,omitempty"`
-	Config  Config   `json:"-"`
+	KeyType   string    `json:"type"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Key       string    `json:"key"`
+	Groups    []string  `json:"groups"`
+	Hosts     []string  `json:"hosts"`
+	File      string    `json:"keyfile,omitempty"`
+	Roles     []string  `json:"roles"`
+	UpdatedAt time.Time `json:"updatedAt"`
+	Config    Config    `json:"-"`
 }
 
 // NewUser creates a new user
 func NewUser(email, keytype, key, name string) *User {
 	return &User{
-		Email:   email,
-		KeyType: keytype,
-		Key:     key,
-		Name:    name,
+		Email:     email,
+		KeyType:   keytype,
+		Key:       key,
+		Name:      name,
+		UpdatedAt: time.Now(),
 	}
 }
 
 // UpdateGroups updates the user's groups based on old groups
 func (u *User) UpdateGroups(C Config, oldgroups []string) error {
+	u.UpdatedAt = time.Now()
 	added, removed := splitUpdates(oldgroups, u.Groups)
 	if u.Config == nil {
 		return fmt.Errorf("user has no config")
@@ -36,8 +43,23 @@ func (u *User) UpdateGroups(C Config, oldgroups []string) error {
 
 	// are there other groups that keep user on host
 	errors = processUserRemoved(removed, C, u, errors)
+	if errors != nil && u.Config != nil {
+		u.Config.Log().Infof("DEBUG: errors count=%d", len(errors.errors))
+		for i, e := range errors.errors {
+			u.Config.Log().Infof("DEBUG: errors[%d]=%v", i, e)
+		}
+	}
 	C.Write()
-	return errors
+	if errors != nil {
+		if u.Config != nil {
+			u.Config.Log().Infof("UpdateGroups returned errors: %s", errors.Error())
+		}
+		if len(errors.errors) == 0 {
+			return nil
+		}
+		return fmt.Errorf("UpdateGroups encountered errors: %s", errors.Error())
+	}
+	return nil
 }
 
 func processUserRemoved(removed []string, C Config, u *User, errors *Errors) *Errors {

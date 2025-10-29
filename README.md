@@ -1,14 +1,14 @@
-# SSH Manager - manage access through authorized_key files on remote hosts
+# SSH Manager - Manage Access Through Authorized Key Files on Remote Hosts
 
 [![Build Status](https://github.com/shoobyban/sshman/actions/workflows/push.yaml/badge.svg?branch=main)](https://github.com/shoobyban/sshman/actions/workflows/push.yaml)
 [![Awesome GO](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/avelino/awesome-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/shoobyban/sshman)](https://goreportcard.com/report/github.com/shoobyban/sshman)
 
-This is a simple tool that I came up after having to on-boarding and off-boarding developers on a wide of environments from AWS to 3rd party hosting providers.
+This is a simple tool I created to streamline the onboarding and offboarding of engineers across various environments, from AWS to third-party hosting providers.
 
-As every one of my creations this tool is solving _my_ problems. It does not warranty your problem will be solved, but in that highly unlikely event please let me know, fixes and pull requests, issues are all very welcome without again the promise that I'll do anything, I'm normally really busy, apologies.
+As with all my creations, this tool solves _my_ problem. While it may not solve yours, I welcome feedback, fixes, pull requests, and issues.
 
-**Caution**: Plan your group memberships carefully, keep your management key out of any groups so you don't accidentally remove management key from any host, locking yourself out.
+**Caution**: Plan your group memberships carefully. Keep your management key out of any groups to avoid accidentally removing it from a host, which could lock you out.
 
 ## Installation
 
@@ -16,136 +16,196 @@ As every one of my creations this tool is solving _my_ problems. It does not war
 $ go get github.com/shoobyban/sshman
 ```
 
-## How does it work?
+## How Does It Work?
 
-This tool needs to be run from a host that will be able to access all hosts with a working ssh key, one you don't share with anybody else. Configuration is saved into `~/.ssh/.ssmman`, if you need to move tool to any other host, copy this and the binary and you are set up. Configuration will not have any sensitive information.
+This tool must be run from a host that can access all other hosts using a working SSH key that is not shared with anyone else. Configuration is saved in `~/.ssh/.sshman`. If you need to move the tool to another host, copy this file and the binary, and you're set up. The configuration does not contain any sensitive information.
 
-There are two main resource entities in sshman: users and hosts. Users are identified by the public ssh key and labeled by their email address for simplicity, although email address is not used as an email so can be anything like sam-key-1 sam-key-2, useful when a user has multiple keys for different purposes (this is absolutely not necessary in most cases, but sshman supports it).
+There are two main resource entities in sshman: users and hosts. Users are identified by their public SSH key and labeled by their email address for simplicity. However, the email address is not used as an email and can be any identifier, such as `sam-key-1` or `sam-key-2`. This is useful when a user has multiple keys for different purposes, although it is not necessary in most cases.
 
 ![Users CRUD](docs/screenshot1.png)
 
-The main concept of sshman is group, organising users onto "group of hosts" or hosts by "group of users", like `live-hosts`, `staging-hosts`, `production`, or `{client1}`, `{client2}`, but you can also create "groups" for every email address or every host. Groups are like tagging, by tagging a user and a host with the same group name the user will be able to access the host.
+The main concept of sshman is the group, which organizes users into "groups of hosts" or hosts into "groups of users." Examples include `live-hosts`, `staging-hosts`, `production`, or `{client1}`, `{client2}`. Groups act as tags; by tagging a user and a host with the same group name, the user gains access to the host.
 
-To add a host into the sshman configuration, provide an alias, an ssh `.pub` keys and groups that the host belongs to if already defined. Adding the host will initiate an auto-discovery functionality that will download all ssh keys from the host as newly defined users and create pseudo groups for recognised users that have access to that host.
+To add a host to the sshman configuration, provide an alias, an SSH `.pub` key, and the groups the host belongs to (if already defined). Adding the host triggers an auto-discovery feature that downloads all SSH keys from the host as newly defined users and creates pseudo-groups for recognized users with access to that host.
 
-![Adding u user](docs/screenshot2.png)
+![Adding a User](docs/screenshot2.png)
 
-### Configuration file
+### Configuration File
 
-Configuration is saved into `~/.ssh/.ssmman`, it is a JSON file with all hosts, users and groups. Probably configuration is not the right word for this.
+Configuration is saved in `~/.ssh/.sshman`. It is a JSON file containing all hosts, users, and groups. "Configuration" might not be the best term for this file.
 
 ## Usage
 
 ### Adding Hosts
 
-First, you need hosts, that you can already access, with `~/.ssh/authorized_keys` files on the host. Password auth doesn't work yet, there are plans to support initial configuration through user+password.
+First, ensure you have hosts that you can already access with `~/.ssh/authorized_keys` files. Password authentication is not yet supported, but there are plans to add initial configuration through username and password.
 
-To add a host, the syntax is
+To add a host, use the following syntax:
 
-`sshman add host {alias} {host_address:port} {user} {~/.ssh/working_keyfile.pub} [group1 group2 ...]`
-
-Where groups are optional, can be provided later.
-
-Adding a host for example:
-
-```sh
-$ sshman add host google my.google.com:22 myuser ~/.ssh/google deploy hosting google
+```bash
+sshman add host --alias {alias} --address {host_address:port} --user {user} --key {~/.ssh/working_keyfile.pub} --groups group1,group2
 ```
 
-In this example `google` will be my alias, sshman will access `my.google.com` on port 22, with `myuser` user using `~/.ssh/google` private ssh key from the current user's folder, the host will belong to three groups: `deploy`, `hosting` and `google`. Sshman will save the given values into its configuration, access the host with the provided credentials, check for `~/.ssh/authorized_keys` file, download the users, cross-referencing them with the current user list, adding a new group when necessary.
-
-### Adding Users
-
-This is optional if you already have all the users on the hosts and you just want to be able to move them around, auto discovery will auto-add the users for you, but defining new users will require this step.
-
-Syntax is
-
-`sshman add user {email} {sshkey.pub} [group1 group2 ...]`
-
-Where groups are optional, can be provided later.
+Groups are optional and can be added later.
 
 For example:
 
-```sh
-$ sshman add user email@test.com ~/.ssh/user1.pub production-team staging-hosts
+```bash
+sshman add host --alias google --address my.google.com:22 --user myuser --key ~/.ssh/google --groups deploy,hosting,google
 ```
 
-`email@test.com` will be the label, it doesn't have to be an email address, but easier to identify and have secondary administrative value. `~/.ssh/user1.pub` will be read into the configuration and can be discarded right after this step if not used anywhere else. The user in this example will belong to the groups `production-team` and `staging-hosts`, if there are hosts in these groups the user's public ssh key information will be added to the `~/.ssh/authorized_keys` files for all hosts where the user's key was still not on.
+In this example, `google` is the alias. sshman accesses `my.google.com` on port 22 using the `myuser` user and the private SSH key located at `~/.ssh/google`. The host belongs to the `deploy`, `hosting`, and `google` groups. sshman saves these values in its configuration, accesses the host with the provided credentials, checks for the `~/.ssh/authorized_keys` file, downloads the users, and cross-references them with the current user list, adding new groups as necessary.
 
-### Auto Discovery users on added hosts
+### Adding Users
 
-To run auto discovery users on added hosts, or to refresh the configuration if any 3rd party has changed `~/.ssh/authorized_keys` files, run:
+Adding users is optional if all users are already on the hosts and you only need to manage them. Auto-discovery will automatically add users for you, but defining new users requires this step.
 
-```sh
-$ sshman update
+Syntax:
+
+```bash
+sshman add user --email {email} --key {sshkey.pub} --groups group1,group2
 ```
 
-### Listing who's on what host
+Groups are optional and can be added later.
 
-```sh
-$ sshman list auth
+For example:
+
+```bash
+sshman add user --email email@test.com --key ~/.ssh/user1.pub --groups production-team,staging-hosts
 ```
 
-This will display host alias -> email list mapping, easy to grep or add to reports.
+In this example, `email@test.com` is the label. It does not have to be an email address but is easier to identify and has secondary administrative value. The public key in `~/.ssh/user1.pub` is read into the configuration and can be discarded afterward if not used elsewhere. The user belongs to the `production-team` and `staging-hosts` groups. If there are hosts in these groups, the user's public SSH key is added to the `~/.ssh/authorized_keys` files of all relevant hosts.
 
-### Listing what user and host is in what group
+### Auto-Discovery of Users on Added Hosts
 
-Easier to explain this with an example scenario:
+To run auto-discovery of users on added hosts or refresh the configuration if any third party has changed `~/.ssh/authorized_keys` files, run:
 
-```sh
-$ sshman list groups
+```bash
+sshman update
+```
+
+### Listing Who's on What Host
+
+```bash
+sshman list auth
+```
+
+This command displays a mapping of host aliases to email lists, making it easy to grep or add to reports.
+
+### Listing What User and Host Belong to Which Group
+
+For example:
+
+```bash
+sshman list groups
 production-team hosts: [client1.live live2 host3 client1.uat]
 production-team users: [email1@test.com email2@company.com]
 dev-team hosts: [staging.test.com client1.staging]
 dev-team users: [junior1@test.com email1@test.com email2@company.com]
 ```
 
-Notice that group alias is in every line with "hosts" and "users" for using `grep` on the list.
+Each group alias is listed with its associated hosts and users, making it easy to filter using `grep`.
 
-### Listing added hosts
+### Listing Added Hosts
 
-Lists host aliases, what host/port, host is in what groups.
+Lists host aliases, their addresses, and the groups they belong to.
 
-```sh
-$ sshman list hosts
-client1.staging        	staging.client1.com:22              [production-team dev-team]
-client1.uat        	    uat.client1.com:22               	[production-team dev-team]
-client1.live        	www.client1.com:22               	[production-team]
+```bash
+sshman list hosts
+client1.staging         staging.client1.com:22              [production-team dev-team]
+client1.uat             uat.client1.com:22                  [production-team dev-team]
+client1.live            www.client1.com:22                  [production-team]
 ```
 
-### Listing added users with groups
+### Listing Added Users with Groups
 
-```sh
-$ sshman list users
+```bash
+sshman list users
 ```
 
-Will return a mapping of email to groups.
+This command returns a mapping of email addresses to groups.
 
-### Renaming users and hosts
+### Renaming Users and Hosts
 
-Rename a user (modify email) or host (modify alias).
+Rename a user (modify email) or host (modify alias):
 
-```sh
-$ ./sshman rename user oldemail@host.com newemail@host.com
+```bash
+sshman rename user --email oldemail@host.com --new-email newemail@host.com
 
-$ ./sshman rename host oldalias newalias
+sshman rename host --alias oldalias --new-alias newalias
 ```
 
-### Modifying user and host groupping
+### Modifying User and Host Grouping
 
-Modify user's groups, or remove groups from user to allow global access:
+Modify a user's groups or remove groups to allow global access:
 
-```sh
-$ ./sshman groups user email@host.com group1 group2
+```bash
+sshman groups user --email email@host.com --add group1 --remove group2
 ```
 
-Modify host groups or remove from all groups:
+Modify a host's groups or remove it from all groups:
 
-```sh
-$ ./sshman groups host hostalias group1 group2
+```bash
+sshman groups host --alias hostalias --add group1 --remove group2
 ```
 
-Note: Removing host from a group will remove all users that are on the host only because of that group. If the host is in another group, the users that are in both groups will not be removed.
+**Note:** Removing a host from a group removes all users who are on the host only because of that group. If the host is in another group, users in both groups are not removed.
+
+### Roles Management
+
+#### Assign a Role
+Assign a role to a user:
+
+```bash
+sshman roles assign --user <user_email> --role <role_name>
+```
+
+- `--user`: Specify the email of the user to assign the role to.
+- `--role`: Specify the role to assign.
+
+**Note:** Hosts cannot have roles. Use groups for managing host permissions.
+
+#### List Roles
+List all roles and their associated permissions:
+
+```bash
+sshman roles list
+```
+
+This command displays all roles and the permissions associated with each role.
+
+### Consistent Argument Structure
+
+All commands now use flags for specifying arguments, ensuring clarity and consistency. For example:
+- Use `--user` to specify a user email.
+- Use `--host` to specify a host alias.
+- Use `--role` to specify a role name.
+
+### Example Usage
+
+#### Adding a User
+
+```bash
+sshman add user --email user@example.com --key ~/.ssh/id_rsa.pub --groups group1,group2
+```
+
+#### Adding a Host
+
+```bash
+sshman add host --alias myhost --address myhost.com:22 --user myuser --key ~/.ssh/host_key.pub --groups group1,group2
+```
+
+#### Modifying Groups for a User
+
+```bash
+sshman groups user --email user@example.com --add group1 --remove group2
+```
+
+#### Modifying Groups for a Host
+
+```bash
+sshman groups host --alias myhost --add group1 --remove group2
+```
 
 ### Things To Fix Before Release
 
@@ -163,13 +223,13 @@ Note: Removing host from a group will remove all users that are on the host only
 - [x] Adding host to download information without the need of running update
 - [x] Complete CRUD for missing use cases
 - [x] Web interface
-- [ ] Testing document for full coverage
-- [ ] Configuration into interface so testing can be done without isTest() style checks
-- [ ] All user functions should have unit tests
-- [ ] All host functions should have unit tests
-- [ ] All group functions should have unit tests
-- [ ] All config functions should have unit tests
-- [ ] All core functionality should have unit tests
+- [ ] Full test coverage
+- [x] All user related functions should have unit tests
+- [ ] All user role related functions should have unit tests
+- [x] All host related functions should have unit tests
+- [ ] All host group related functions should have unit tests
+- [ ] All configuration handling functions should have unit tests
+- [ ] All other core functionality should have unit tests
 - [ ] Edge case: deleting user should delete the user from all hosts (unless canceled from changeset)
 - [ ] Misfeature: Changing keyfile on host does not upload new key with old and delete old
 - [ ] Misfeature: Adding host does not check if host config is working
@@ -201,10 +261,10 @@ Note: Removing host from a group will remove all users that are on the host only
 
 ## Credits
 
-Most of the credits go to the pain of being a CTO for 16+ years in small and mid-sized companies, where SSH key management is not solved.
+Most of the credit goes to the pain of being a CTO for 17+ years in small and mid-sized companies, where SSH key management is not solved.
 
-The project would have been much harder without the works of [Steve Francia](https://github.com/spf13) and all the cobra and viper contributors, the web UI relies on [Chi](https://github.com/go-chi/chi) and [Vue](https://github.com/vuejs/).
+The project would have been much harder without the work of [Steve Francia](https://github.com/spf13) and all the cobra and viper contributors, the web UI relies on [Chi](https://github.com/go-chi/chi) and [Vue](https://github.com/vuejs/).
 
-Web UI embedding wouldn't be working without [Gregor Best](https://github.com/farhaven), nerd-sniped him into helping me with a tricky bug on Gophers Slack.
+Web UI embedding wouldn't be working without [Gregor Best](https://github.com/farhaven), who nerd-sniped me into helping with a tricky bug on Gophers Slack.
 
 I love the Go community.

@@ -15,7 +15,7 @@ type Host struct {
 	Key         string              `json:"key"`
 	Protected   map[string]struct{} `json:"protected"`
 	Alias       string              `json:"alias"`
-	Config      *Storage            `json:"-"`
+	Config      *Data               `json:"-"`
 	Users       []*User             `json:"userlist"`
 	Groups      []string            `json:"groups"`
 	LastUpdated time.Time           `json:"last_updated"`
@@ -27,19 +27,26 @@ type Host struct {
 // returning user list, checksum and error
 func (h *Host) ReadUsers() ([]*User, string, error) {
 	lines, err := h.read()
-	sum := checksum(strings.Join(lines, "\n"))
 	if err != nil {
-		return nil, sum, err
+		return nil, "", err
 	}
+	sum := checksum(strings.Join(lines, "\n"))
 	var userlist []*User
 	for _, line := range lines {
-		parts := strings.Split(line, " ")
-		if len(parts) == 3 {
+		parts := strings.Fields(line)
+		if len(parts) >= 2 {
 			lsum := checksum(parts[1])
-			email := parts[2] + "@" + h.Alias
+			email := ""
+			if len(parts) > 2 {
+				email = parts[2] + "@" + h.Alias
+			}
 			user := h.Config.GetUserByKey(lsum)
 			if user == nil {
-				user = NewUser(email, parts[0], parts[1], parts[2])
+				name := ""
+				if len(parts) > 2 {
+					name = parts[2]
+				}
+				user = NewUser(email, parts[0], parts[1], name)
 				user.Config = h.Config
 			}
 			userlist = append(userlist, user)
@@ -71,50 +78,55 @@ func (h *Host) UpdateUsersList(userlist []*User) error {
 	return nil
 }
 
-// connects to host via ssh, downloads authorized_keys file content, updates Checksum field
-func (h *Host) read() ([]string, error) {
+func (h *Host) connectAndDo(action func() error) error {
 	if h.Config == nil {
-		return nil, fmt.Errorf("host is nil")
+		return fmt.Errorf("host is nil")
 	}
 	err := h.Config.Conn.Connect(h.Key, h.Host, h.User)
 	if err != nil {
-		return nil, fmt.Errorf("error connecting %s: %v", h.Alias, err)
+		return fmt.Errorf("error connecting %s: %v", h.Alias, err)
 	}
 	defer h.Config.Conn.Close()
-	b, err := h.Config.Conn.Read(AUTHFILE)
-	if err != nil {
-		return nil, fmt.Errorf("error reading authorized keys on %s: %v", h.Alias, err)
-	}
-	lines := deleteEmpty(strings.Split(string(b), "\n"))
-	h.Checksum = checksum(strings.Join(lines, "\n"))
-	return lines, nil
+	return action()
+}
+
+// connects to host via ssh, downloads authorized_keys file content, updates Checksum field
+func (h *Host) read() ([]string, error) {
+	var lines []string
+	err := h.connectAndDo(func() error {
+		b, err := h.Config.Conn.Read(AUTHFILE)
+		if err != nil {
+			return fmt.Errorf("error reading authorized keys on %s: %v", h.Alias, err)
+		}
+		lines = deleteEmpty(strings.Split(string(b), "\n"))
+		h.Checksum = checksum(strings.Join(lines, "\n"))
+		return nil
+	})
+	return lines, err
 }
 
 // connects to host via ssh, uploads new authorized_keys file, updates Modified, LastUpdated and Checksum field
 func (h *Host) write(lines []string) error {
-	ls, err := h.read()
-	if err != nil {
-		return fmt.Errorf("error connecting %s: %v", h.Alias, err)
-	}
-	if checksum(strings.Join(ls, "\n")) != h.Checksum {
-		return fmt.Errorf("host's authorized_keys file was modified since last update, please refresh hosts first")
-	}
-	if len(lines) == 0 {
-		return fmt.Errorf("no keys in new file for host '%s', host would be inaccessible", h.Alias)
-	}
-	err = h.Config.Conn.Connect(h.Key, h.Host, h.User)
-	if err != nil {
-		return fmt.Errorf("error connecting %s: %v", h.Alias, err)
-	}
-	defer h.Config.Conn.Close()
-	err = h.Config.Conn.Write(AUTHFILE, strings.Join(lines, "\n")+"\n")
-	if err != nil {
-		return err
-	}
-	h.LastUpdated = time.Now()
-	h.Modified = false
-	h.Checksum = checksum(strings.Join(lines, "\n"))
-	return nil
+	return h.connectAndDo(func() error {
+		ls, err := h.read()
+		if err != nil {
+			return fmt.Errorf("error connecting %s: %v", h.Alias, err)
+		}
+		if checksum(strings.Join(ls, "\n")) != h.Checksum {
+			return fmt.Errorf("host's authorized_keys file was modified since last update, please refresh hosts first")
+		}
+		if len(lines) == 0 {
+			return fmt.Errorf("no keys in new file for host '%s', host would be inaccessible", h.Alias)
+		}
+		err = h.Config.Conn.Write(AUTHFILE, strings.Join(lines, "\n")+"\n")
+		if err != nil {
+			return err
+		}
+		h.LastUpdated = time.Now()
+		h.Modified = false
+		h.Checksum = checksum(strings.Join(lines, "\n"))
+		return nil
+	})
 }
 
 // GetUsers is a getter for host's Users
@@ -153,6 +165,10 @@ func (h *Host) AddUser(u *User) error {
 		return fmt.Errorf("host was never read, can't update, please refresh hosts first")
 	}
 	h.Users = append(h.Users, u)
+	if h.Config == nil || h.Config.Conn == nil {
+		// No connection configured (likely in unit tests); don't attempt upload
+		return nil
+	}
 	return h.Upload()
 }
 
@@ -191,6 +207,10 @@ func (h *Host) RemoveUser(u *User) error {
 	}
 	h.Users = userlist
 	if h.Modified {
+		if h.Config == nil || h.Config.Conn == nil {
+			// No connection configured (likely in unit tests); don't attempt upload
+			return nil
+		}
 		return h.Upload()
 	}
 	return nil
@@ -209,7 +229,7 @@ func (h *Host) DueGroup(u *User) bool {
 }
 
 // UpdateGroups updates the host's groups based on old groups
-func (h *Host) UpdateGroups(cfg *Storage, oldgroups []string) bool {
+func (h *Host) UpdateGroups(cfg Config, oldgroups []string) bool {
 
 	added, removed := splitUpdates(oldgroups, h.Groups)
 	h.Config.Log().Infof("added: %v removed: %v", added, removed)
@@ -245,7 +265,7 @@ func processHostRemoved(removed []string, cfg Config, h *Host, success bool) boo
 	return success
 }
 
-func processHostAdded(added []string, cfg *Storage, h *Host) bool {
+func processHostAdded(added []string, cfg Config, h *Host) bool {
 	success := true
 	for _, group := range added {
 		users := cfg.GetUsers(group)
