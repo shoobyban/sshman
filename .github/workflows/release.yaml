@@ -21,8 +21,17 @@ jobs:
     - uses: actions/checkout@v2
       with:
         submodules: recursive
-    - uses: wangyoucao577/go-release-action@v1.19
+    - uses: actions/setup-go@v3
+      with:
+        go-version: '>=1.18.0'
+    - uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    - name: Build and release
+      uses: wangyoucao577/go-release-action@v1.19
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: ${{ matrix.goos }}
         goarch: ${{ matrix.goarch }}
+        build_command: "make build"
+        pre_command: "make frontend"
