@@ -15,6 +15,7 @@ var groupsUserCmd = &cobra.Command{
 $ ./sshman groups user email@host.com group1 group2
 `,
 	Run: func(_ *cobra.Command, args []string) {
+		fmt.Println("DEPRECATED: 'sshman groups user' is deprecated. Use 'sshman user groups' instead.")
 		cfg := backend.DefaultConfig()
 		if len(args) < 1 {
 			return

@@ -13,6 +13,7 @@ var delCmd = &cobra.Command{
 	Short: "Delete user by email",
 	Long:  `Check all hosts and delete user with given email`,
 	Run: func(_ *cobra.Command, args []string) {
+		fmt.Println("DEPRECATED: 'sshman del' is deprecated. Use 'sshman user remove' instead.")
 		cfg := backend.DefaultConfig()
 		for _, email := range args {
 			_, u := cfg.GetUserByEmail(email)

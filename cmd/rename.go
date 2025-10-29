@@ -15,5 +15,6 @@ $ ./sshman rename host oldalias newalias
 }
 
 func init() {
+	renameCmd.Deprecated = "use 'sshman user rename' or 'sshman host rename' instead"
 	rootCmd.AddCommand(renameCmd)
 }

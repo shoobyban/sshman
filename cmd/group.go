@@ -7,13 +7,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// listGroupsCmd represents the listGroups command
-var listGroupsCmd = &cobra.Command{
-	Use:   "groups",
-	Short: "List all groups",
-	Long:  `List all groups from users and hosts`,
+var groupCmd = &cobra.Command{
+	Use:   "group",
+	Short: "Manage groups",
+}
+
+var groupListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List groups",
 	Run: func(_ *cobra.Command, _ []string) {
-		fmt.Println("DEPRECATED: 'sshman list groups' is deprecated. Use 'sshman group list' instead.")
 		cfg := backend.DefaultConfig()
 		groups := cfg.GetGroups()
 		for label, grp := range groups {
@@ -23,5 +25,6 @@ var listGroupsCmd = &cobra.Command{
 }
 
 func init() {
-	listCmd.AddCommand(listGroupsCmd)
+	rootCmd.AddCommand(groupCmd)
+	groupCmd.AddCommand(groupListCmd)
 }

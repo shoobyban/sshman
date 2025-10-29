@@ -15,6 +15,7 @@ var groupsHostCmd = &cobra.Command{
 $ ./sshman groups host hostalias group1 group2
 `,
 	Run: func(_ *cobra.Command, args []string) {
+		fmt.Println("DEPRECATED: 'sshman groups host' is deprecated. Use 'sshman host groups' instead.")
 		cfg := backend.DefaultConfig()
 		if len(args) < 1 {
 			return

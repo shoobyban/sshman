@@ -13,6 +13,7 @@ var renameHostCmd = &cobra.Command{
 	Short: "Rename a host (modify host alias)",
 	Long:  `Modify a host alias in the configuration, keeping host data intact`,
 	Run: func(_ *cobra.Command, args []string) {
+		fmt.Println("DEPRECATED: 'sshman rename host' is deprecated. Use 'sshman host rename' instead.")
 		cfg := backend.DefaultConfig()
 		if len(args) < 2 {
 			return

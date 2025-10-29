@@ -2,9 +2,9 @@ package backend
 
 import (
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestGetUsers(t *testing.T) {
@@ -93,17 +93,17 @@ func TestHostMoveGroup(t *testing.T) {
 
 func TestAddUserToHost(t *testing.T) {
 	host := &Host{
-		Alias: "test-host",
-		Users: []*User{},
+		Alias:       "test-host",
+		Users:       []*User{},
 		LastUpdated: time.Now(),
-		Config: &Data{},
+		Config:      &Data{},
 	}
 
 	user := &User{
-		Email: "test@example.com",
+		Email:   "test@example.com",
 		KeyType: "rsa",
-		Key: "ssh-rsa AAAAB3...",
-		Name: "Test User",
+		Key:     "ssh-rsa AAAAB3...",
+		Name:    "Test User",
 	}
 
 	err := host.AddUser(user)
@@ -116,21 +116,21 @@ func TestRemoveUserFromHost(t *testing.T) {
 		Alias: "test-host",
 		Users: []*User{
 			{
-				Email: "test@example.com",
+				Email:   "test@example.com",
 				KeyType: "rsa",
-				Key: "ssh-rsa AAAAB3...",
-				Name: "Test User",
+				Key:     "ssh-rsa AAAAB3...",
+				Name:    "Test User",
 			},
 		},
 		LastUpdated: time.Now(),
-		Config: &Data{},
+		Config:      &Data{},
 	}
 
 	user := &User{
-		Email: "test@example.com",
+		Email:   "test@example.com",
 		KeyType: "rsa",
-		Key: "ssh-rsa AAAAB3...",
-		Name: "Test User",
+		Key:     "ssh-rsa AAAAB3...",
+		Name:    "Test User",
 	}
 
 	err := host.RemoveUser(user)
@@ -140,7 +140,7 @@ func TestRemoveUserFromHost(t *testing.T) {
 
 func TestUpdateHostGroups(t *testing.T) {
 	host := &Host{
-		Alias: "test-host",
+		Alias:  "test-host",
 		Groups: []string{"group1"},
 		Config: &Data{},
 	}

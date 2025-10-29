@@ -13,6 +13,7 @@ var renameUserCmd = &cobra.Command{
 	Short: "Rename a user (modify email)",
 	Long:  `Modify a user email in the configuration, keeping user data and hosts intact`,
 	Run: func(_ *cobra.Command, args []string) {
+		fmt.Println("DEPRECATED: 'sshman rename user' is deprecated. Use 'sshman user rename' instead.")
 		cfg := backend.DefaultConfig()
 		if len(args) < 2 {
 			return

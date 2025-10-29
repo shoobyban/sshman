@@ -18,6 +18,7 @@ For example:
 sshman register host google my.google.com:22 myuser ~/.ssh/google.pub deploy hosting google
 `,
 	Run: func(_ *cobra.Command, args []string) {
+		fmt.Println("DEPRECATED: 'sshman add host' is deprecated. Use 'sshman host add' instead.")
 		if len(args) < 4 {
 			fmt.Println(`Usage: sshman add host <alias> <host:port> <user> <keyfile> [groups...]`)
 			return

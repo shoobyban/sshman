@@ -13,6 +13,7 @@ var removeHostCmd = &cobra.Command{
 	Short: "Remove a host from config",
 	Long:  `Remove a host from the configuration`,
 	Run: func(_ *cobra.Command, args []string) {
+		fmt.Println("DEPRECATED: 'sshman remove host' is deprecated. Use 'sshman host remove' instead.")
 		cfg := backend.DefaultConfig()
 		if len(args) < 1 {
 			return

@@ -13,6 +13,7 @@ var listHostsCmd = &cobra.Command{
 	Short: "List hosts",
 	Long:  `Lists registered hosts`,
 	Run: func(_ *cobra.Command, _ []string) {
+		fmt.Println("DEPRECATED: 'sshman list hosts' is deprecated. Use 'sshman host list' instead.")
 		cfg := backend.DefaultConfig()
 		for alias, host := range cfg.Hosts() {
 			fmt.Printf("%-25s\t%-50s\t%v\n", alias, host.Host, host.GetGroups())

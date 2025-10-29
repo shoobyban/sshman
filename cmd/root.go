@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/shoobyban/sshman/backend"
 )
 
 // rootCmd represents the base command when called without any subcommands
@@ -20,31 +19,7 @@ var rootCmd = &cobra.Command{
 	},
 }
 
-// Add RBAC-related commands
-var rolesCmd = &cobra.Command{
-	Use:   "roles",
-	Short: "Manage roles and permissions",
-	Long:  `Add, remove, or list roles and their permissions`,
-}
-
-var assignRoleCmd = &cobra.Command{
-	Use:   "assign",
-	Short: "Assign a role to a user or host",
-	Long:  `Assign a specific role to a user or host to define their permissions`,
-}
-
-var listRolesCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List all roles and their permissions",
-	Long:  `Display all roles and the permissions associated with them`,
-	Run: func(_ *cobra.Command, _ []string) {
-		cfg := backend.DefaultConfig()
-		fmt.Println("Roles and their permissions:")
-		for name, role := range cfg.Roles() {
-			fmt.Printf("Role: %s\nPermissions: %v\n", name, role.Permissions)
-		}
-	},
-}
+// RBAC commands are defined in cmd/role.go (single `role` command)
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
@@ -55,63 +30,40 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initCorba)
 
-	// Add RBAC commands to the root command
-	// configure assignRoleCmd flags and handler
-	assignRoleCmd.Flags().String("user", "", "Specify the user email to assign the role to")
-	assignRoleCmd.Flags().String("host", "", "Specify the host alias to assign the role to")
-	assignRoleCmd.Flags().String("role", "", "Specify the role to assign")
-	assignRoleCmd.Run = func(cmd *cobra.Command, args []string) {
-		userEmail, err := cmd.Flags().GetString("user")
-		if err != nil {
-			fmt.Printf("Error getting user: %v\n", err)
-			return
-		}
-		hostAlias, err := cmd.Flags().GetString("host")
-		if err != nil {
-			fmt.Printf("Error getting host: %v\n", err)
-			return
-		}
-		roleName, err := cmd.Flags().GetString("role")
-		if err != nil {
-			fmt.Printf("Error getting role: %v\n", err)
-			return
-		}
+	// Global persistent flags
+	rootCmd.PersistentFlags().StringP("config", "c", "", "Path to configuration file")
+	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose output")
 
-		if userEmail == "" && hostAlias == "" {
-			fmt.Println("Error: --user or --host is required")
-			return
-		}
-		if roleName == "" {
-			fmt.Println("Error: --role is required")
-			return
-		}
+	// `role` command implementation lives in cmd/role.go and is registered there.
 
-		cfg := backend.DefaultConfig()
-		roles := cfg.Roles()
-		if _, exists := roles[roleName]; !exists {
-			fmt.Printf("Role %s does not exist\n", roleName)
-			return
-		}
-
-		if userEmail != "" {
-			_, user := cfg.GetUserByEmail(userEmail)
-			if user == nil {
-				fmt.Printf("User %s not found\n", userEmail)
-				return
-			}
-			user.Roles = append(user.Roles, roleName)
-			cfg.UpdateUser(user)
-			fmt.Printf("Assigned role %s to user %s\n", roleName, userEmail)
-		} else if hostAlias != "" {
-			fmt.Println("Error: Hosts cannot have roles. Use groups instead.")
-		} else {
-			fmt.Println("Error: Either --user or --host must be specified")
-		}
+	// Deprecate old top-level commands (they have been replaced by resource-oriented commands)
+	// Mark existing commands if present in this package by name. We cannot remove them immediately to preserve backward compatibility.
+	// The source files still register commands like addCmd, removeCmd, renameCmd, readCmd, groupsCmd, listCmd, webCmd, delCmd.
+	// Set the Deprecated field where possible.
+	if addCmd != nil {
+		addCmd.Deprecated = "use 'sshman user add' or 'sshman host add' instead"
 	}
-
-	rolesCmd.AddCommand(assignRoleCmd)
-	rolesCmd.AddCommand(listRolesCmd)
-	rootCmd.AddCommand(rolesCmd)
+	if removeCmd != nil {
+		removeCmd.Deprecated = "use 'sshman user remove' or 'sshman host remove' instead"
+	}
+	if renameCmd != nil {
+		renameCmd.Deprecated = "use 'sshman user rename' or 'sshman host rename' instead"
+	}
+	if readCmd != nil {
+		readCmd.Deprecated = "use 'sshman sync' instead"
+	}
+	if groupsCmd != nil {
+		groupsCmd.Deprecated = "use 'sshman user groups' or 'sshman host groups' instead"
+	}
+	if listCmd != nil {
+		listCmd.Deprecated = "use 'sshman user list', 'sshman host list', or 'sshman group list' instead"
+	}
+	if webCmd != nil {
+		webCmd.Deprecated = "use 'sshman web' (unchanged) or the UI instead"
+	}
+	if delCmd != nil {
+		delCmd.Deprecated = "use 'sshman user remove' instead"
+	}
 }
 
 func initCorba() {

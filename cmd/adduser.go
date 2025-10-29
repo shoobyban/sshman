@@ -14,6 +14,7 @@ var addUserCmd = &cobra.Command{
 	Long: `To add a user:
 	sshman add user email sshkey.pub {group1 group2 ...}`,
 	Run: func(_ *cobra.Command, args []string) {
+		fmt.Println("DEPRECATED: 'sshman add user' is deprecated. Use 'sshman user add' instead.")
 		if len(args) < 2 {
 			fmt.Println(`Usage: sshman add user <email> <sshkey.pub> [group1 group2 ...]`)
 			return

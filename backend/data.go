@@ -35,8 +35,6 @@ type LabelGroup struct {
 	Users []string `json:"users"`
 }
 
-
-
 // NewData creates a new storage with a logger
 func NewData(storage Storage) *Data {
 	return &Data{

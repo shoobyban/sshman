@@ -36,175 +36,273 @@ Configuration is saved in `~/.ssh/.sshman`. It is a JSON file containing all hos
 
 ## Usage
 
-### Adding Hosts
+This section provides a comprehensive overview of the `sshman` command-line interface.
 
-First, ensure you have hosts that you can already access with `~/.ssh/authorized_keys` files. Password authentication is not yet supported, but there are plans to add initial configuration through username and password.
+### Command Structure
 
-To add a host, use the following syntax:
+The CLI is organized around resources like `user`, `host`, and `group`, with actions such as `add`, `remove`, `list`, and `rename` as subcommands.
 
-```bash
-sshman add host --alias {alias} --address {host_address:port} --user {user} --key {~/.ssh/working_keyfile.pub} --groups group1,group2
+```
+sshman
+├── user
+│   ├── add <email> <sshkey.pub> [flags]
+│   ├── remove <email>
+│   ├── list
+│   ├── rename <old_email> <new_email>
+│   └── groups <email> [groups...]
+├── host
+│   ├── add <alias> <host:port> <user> <keyfile> [flags]
+│   ├── remove <alias>
+│   ├── list
+│   ├── rename <old_alias> <new_alias>
+│   └── groups <alias> [groups...]
+├── group
+│   └── list
+├── role
+│   ├── assign --user <email> --role <role>
+│   └── list
+├── sync
+├── tree - this command
+├── web
+└── version
 ```
 
-Groups are optional and can be added later.
+### Global Flags
 
-For example:
+- `--config <file>`: Path to the configuration file.
+- `--verbose`: Enable verbose output.
+
+### User Management (`sshman user`)
+
+#### Add a User
+
+To add a new user to the configuration:
 
 ```bash
-sshman add host --alias google --address my.google.com:22 --user myuser --key ~/.ssh/google --groups deploy,hosting,google
+sshman user add <email> <sshkey.pub> --group <group1> --group <group2>
 ```
 
-In this example, `google` is the alias. sshman accesses `my.google.com` on port 22 using the `myuser` user and the private SSH key located at `~/.ssh/google`. The host belongs to the `deploy`, `hosting`, and `google` groups. sshman saves these values in its configuration, accesses the host with the provided credentials, checks for the `~/.ssh/authorized_keys` file, downloads the users, and cross-references them with the current user list, adding new groups as necessary.
+- `<email>`: A unique identifier for the user (e.g., `email@test.com`).
+- `<sshkey.pub>`: Path to the user's public SSH key.
+- `--group`: (Optional, repeatable) The group(s) to which the user belongs.
 
-### Adding Users
-
-Adding users is optional if all users are already on the hosts and you only need to manage them. Auto-discovery will automatically add users for you, but defining new users requires this step.
-
-Syntax:
+**Example:**
 
 ```bash
-sshman add user --email {email} --key {sshkey.pub} --groups group1,group2
+sshman user add email@test.com ~/.ssh/user1.pub --group production-team --group staging-hosts
 ```
 
-Groups are optional and can be added later.
+#### Remove a User
 
-For example:
+To remove a user from the configuration and all associated hosts:
 
 ```bash
-sshman add user --email email@test.com --key ~/.ssh/user1.pub --groups production-team,staging-hosts
+sshman user remove <email>
 ```
 
-In this example, `email@test.com` is the label. It does not have to be an email address but is easier to identify and has secondary administrative value. The public key in `~/.ssh/user1.pub` is read into the configuration and can be discarded afterward if not used elsewhere. The user belongs to the `production-team` and `staging-hosts` groups. If there are hosts in these groups, the user's public SSH key is added to the `~/.ssh/authorized_keys` files of all relevant hosts.
-
-### Auto-Discovery of Users on Added Hosts
-
-To run auto-discovery of users on added hosts or refresh the configuration if any third party has changed `~/.ssh/authorized_keys` files, run:
+**Example:**
 
 ```bash
-sshman update
+sshman user remove email@test.com
 ```
 
-### Listing Who's on What Host
+#### List Users
+
+To list all registered users and their group memberships:
 
 ```bash
-sshman list auth
+sshman user list
 ```
 
-This command displays a mapping of host aliases to email lists, making it easy to grep or add to reports.
+**Example Output:**
 
-### Listing What User and Host Belong to Which Group
-
-For example:
-
-```bash
-sshman list groups
-production-team hosts: [client1.live live2 host3 client1.uat]
-production-team users: [email1@test.com email2@company.com]
-dev-team hosts: [staging.test.com client1.staging]
-dev-team users: [junior1@test.com email1@test.com email2@company.com]
+```
+email@test.com          [production-team staging-hosts]
+junior1@test.com        [dev-team]
 ```
 
-Each group alias is listed with its associated hosts and users, making it easy to filter using `grep`.
+#### Rename a User
 
-### Listing Added Hosts
-
-Lists host aliases, their addresses, and the groups they belong to.
+To change a user's email identifier:
 
 ```bash
-sshman list hosts
-client1.staging         staging.client1.com:22              [production-team dev-team]
-client1.uat             uat.client1.com:22                  [production-team dev-team]
+sshman user rename <old_email> <new_email>
+```
+
+**Example:**
+
+```bash
+sshman user rename email@test.com new-email@test.com
+```
+
+#### Manage User Groups
+
+To set or update a user's group memberships:
+
+```bash
+sshman user groups <email> [groups...]
+```
+
+- If groups are provided, the user's groups will be replaced with the new list.
+- If no groups are provided, the user will be removed from all groups.
+
+**Example:**
+
+```bash
+sshman user groups email@test.com production-team dev-team
+```
+
+### Host Management (`sshman host`)
+
+#### Add a Host
+
+To add a new host to the configuration:
+
+```bash
+sshman host add <alias> <host:port> <user> <keyfile> --group <group1>
+```
+
+- `<alias>`: A short, unique name for the host (e.g., `google`).
+- `<host:port>`: The host's address and SSH port.
+- `<user>`: The user to connect with.
+- `<keyfile>`: Path to the private SSH key for connecting to the host.
+- `--group`: (Optional, repeatable) The group(s) to which the host belongs.
+
+**Example:**
+
+```bash
+sshman host add google my.google.com:22 myuser ~/.ssh/google.pub --group deploy --group hosting
+```
+
+#### Remove a Host
+
+To remove a host from the configuration:
+
+```bash
+sshman host remove <alias>
+```
+
+**Example:**
+
+```bash
+sshman host remove google
+```
+
+#### List Hosts
+
+To list all registered hosts, their connection details, and group memberships:
+
+```bash
+sshman host list
+```
+
+**Example Output:**
+
+```
+google                  my.google.com:22                    [deploy hosting]
 client1.live            www.client1.com:22                  [production-team]
 ```
 
-### Listing Added Users with Groups
+#### Rename a Host
+
+To change a host's alias:
 
 ```bash
-sshman list users
+sshman host rename <old_alias> <new_alias>
 ```
 
-This command returns a mapping of email addresses to groups.
-
-### Renaming Users and Hosts
-
-Rename a user (modify email) or host (modify alias):
+**Example:**
 
 ```bash
-sshman rename user --email oldemail@host.com --new-email newemail@host.com
-
-sshman rename host --alias oldalias --new-alias newalias
+sshman host rename google google-prod
 ```
 
-### Modifying User and Host Grouping
+#### Manage Host Groups
 
-Modify a user's groups or remove groups to allow global access:
+To set or update a host's group memberships:
 
 ```bash
-sshman groups user --email email@host.com --add group1 --remove group2
+sshman host groups <alias> [groups...]
 ```
 
-Modify a host's groups or remove it from all groups:
+**Example:**
 
 ```bash
-sshman groups host --alias hostalias --add group1 --remove group2
+sshman host groups google deploy production
 ```
 
-**Note:** Removing a host from a group removes all users who are on the host only because of that group. If the host is in another group, users in both groups are not removed.
+### Group Management (`sshman group`)
 
-### Roles Management
+#### List Groups
 
-#### Assign a Role
-Assign a role to a user:
+To list all groups and their associated users and hosts:
 
 ```bash
-sshman roles assign --user <user_email> --role <role_name>
+sshman group list
 ```
 
-- `--user`: Specify the email of the user to assign the role to.
-- `--role`: Specify the role to assign.
+**Example Output:**
 
-**Note:** Hosts cannot have roles. Use groups for managing host permissions.
+```
+production-team hosts: [client1.live]
+production-team users: [email@test.com]
+dev-team hosts: [client1.staging]
+dev-team users: [junior1@test.com]
+```
+
+### Role Management (`sshman role`)
+
+#### Assign a Role to a User
+
+To assign a role to a user:
+
+```bash
+sshman role assign --user <email> --role <role_name>
+```
+
+**Note:** Roles can only be assigned to users, not hosts.
+
+**Example:**
+
+```bash
+sshman role assign --user email@test.com --role admin
+```
 
 #### List Roles
-List all roles and their associated permissions:
+
+To list all available roles and their permissions:
 
 ```bash
-sshman roles list
+sshman role list
 ```
 
-This command displays all roles and the permissions associated with each role.
+### Sync Configuration (`sshman sync`)
 
-### Consistent Argument Structure
-
-All commands now use flags for specifying arguments, ensuring clarity and consistency. For example:
-- Use `--user` to specify a user email.
-- Use `--host` to specify a host alias.
-- Use `--role` to specify a role name.
-
-### Example Usage
-
-#### Adding a User
+To refresh the local configuration by fetching users from the `authorized_keys` files on all registered hosts:
 
 ```bash
-sshman add user --email user@example.com --key ~/.ssh/id_rsa.pub --groups group1,group2
+sshman sync
 ```
 
-#### Adding a Host
+This command is useful if `authorized_keys` files have been modified by a third party.
+
+### Web UI (`sshman web`)
+
+To start the web interface:
 
 ```bash
-sshman add host --alias myhost --address myhost.com:22 --user myuser --key ~/.ssh/host_key.pub --groups group1,group2
+sshman web --port 8080
 ```
 
-#### Modifying Groups for a User
+- `--port`: (Optional) The port to run the web UI on.
+- `--bind`: (Optional) The IP address to bind to.
+
+### Version (`sshman version`)
+
+To display the version of `sshman`:
 
 ```bash
-sshman groups user --email user@example.com --add group1 --remove group2
-```
-
-#### Modifying Groups for a Host
-
-```bash
-sshman groups host --alias myhost --add group1 --remove group2
+sshman version
 ```
 
 ### Things To Fix Before Release

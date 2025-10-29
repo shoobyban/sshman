@@ -20,5 +20,6 @@ sshman list auth
 }
 
 func init() {
+	listCmd.Deprecated = "use 'sshman user list', 'sshman host list', or 'sshman group list' instead"
 	rootCmd.AddCommand(listCmd)
 }

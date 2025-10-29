@@ -21,5 +21,10 @@ sshman add host google my.google.com:22 myuser ~/.ssh/google.pub deploy hosting 
 }
 
 func init() {
+	// mark deprecated: prefer resource-oriented commands
+	addCmd.Deprecated = "use 'sshman user add' or 'sshman host add' instead"
+}
+
+func init() {
 	rootCmd.AddCommand(addCmd)
 }
