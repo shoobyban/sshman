@@ -7,3 +7,5 @@ _*
 frontend/test/reports
 sshman.port
 .vscode
+coverage.out
+frontend/yarn.lock
