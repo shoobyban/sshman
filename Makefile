@@ -3,8 +3,14 @@
 all: build
 
 # build is the default target, builds for the current OS/ARCH
-build: frontend
-	go build -o sshman .
+# By default the build target runs the frontend step. To skip the frontend
+# (for example when the frontend was already built and restored by CI), set
+# SKIP_FRONTEND=1 in the environment.
+build:
+	@if [ -z "$(SKIP_FRONTEND)" ] || [ "$(SKIP_FRONTEND)" != "1" ]; then \
+		$(MAKE) frontend; \
+	fi
+	GOOS=$(GOOS) GOARCH=$(GOARCH) go build -o $(BINARY_NAME)$(EXT) .
 
 # backend is an alias for build
 backend: build

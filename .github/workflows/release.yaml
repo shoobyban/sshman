@@ -27,8 +27,36 @@ jobs:
     - uses: actions/setup-node@v3
       with:
         node-version: '18'
-    - name: Build and release
-      uses: wangyoucao577/go-release-action@v1.19
+    - name: Build Frontend
+      run: |
+        cd frontend
+        npm install
+        npm run build
+        cd ..
+    - name: Build and Package
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+        GOPROXY: "https://proxy.golang.org,direct"
+      run: |
+        # Build the binary (Makefile handles the name and extension)
+        make build
+        
+        # Determine binary name after build
+        BINARY_NAME="sshman"
+        if [ "${{ matrix.goos }}" = "windows" ]; then
+          BINARY_NAME="sshman.exe"
+        fi
+        
+        # Package the binary
+        ASSET_NAME="sshman-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz"
+        tar -czvf "${ASSET_NAME}" ${BINARY_NAME}
+        
+        # Store asset path for the release step
+        echo "ASSET_PATH=${ASSET_NAME}" >> $GITHUB_ENV
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         goos: ${{ matrix.goos }}
