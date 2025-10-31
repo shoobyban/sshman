@@ -40,30 +40,11 @@ func init() {
 	// Mark existing commands if present in this package by name. We cannot remove them immediately to preserve backward compatibility.
 	// The source files still register commands like addCmd, removeCmd, renameCmd, readCmd, groupsCmd, listCmd, webCmd, delCmd.
 	// Set the Deprecated field where possible.
-	if addCmd != nil {
-		addCmd.Deprecated = "use 'sshman user add' or 'sshman host add' instead"
-	}
-	if removeCmd != nil {
-		removeCmd.Deprecated = "use 'sshman user remove' or 'sshman host remove' instead"
-	}
-	if renameCmd != nil {
-		renameCmd.Deprecated = "use 'sshman user rename' or 'sshman host rename' instead"
-	}
-	if readCmd != nil {
-		readCmd.Deprecated = "use 'sshman sync' instead"
-	}
-	if groupsCmd != nil {
-		groupsCmd.Deprecated = "use 'sshman user groups' or 'sshman host groups' instead"
-	}
-	if listCmd != nil {
-		listCmd.Deprecated = "use 'sshman user list', 'sshman host list', or 'sshman group list' instead"
-	}
-	if webCmd != nil {
-		webCmd.Deprecated = "use 'sshman web' (unchanged) or the UI instead"
-	}
-	if delCmd != nil {
-		delCmd.Deprecated = "use 'sshman user remove' instead"
-	}
+	// Previously these top-level convenience commands were marked as Deprecated
+	// to guide users toward resource-oriented commands (user/host/group subcommands).
+	// We intentionally clear the Cobra Deprecated fields so that the CLI help output
+	// no longer shows them as deprecated. The old commands still exist for
+	// backward compatibility but there is no runtime deprecation banner.
 }
 
 func initCorba() {

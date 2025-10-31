@@ -34,7 +34,8 @@ func (h GroupsHandler) AddRoutes(router *chi.Mux) {
 // GetAllGroups is a handler that returns all groups.
 func (h GroupsHandler) GetAllGroups(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewEncoder(w).Encode(h.Config(r).GetGroups()); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		details := err.Error()
+		JSONError(w, "Failed to list groups.", details, http.StatusInternalServerError, nil, true)
 	}
 }
 
@@ -42,7 +43,8 @@ func (h GroupsHandler) GetAllGroups(w http.ResponseWriter, r *http.Request) {
 func (h GroupsHandler) GetGroupDetails(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	if err := json.NewEncoder(w).Encode(h.Config(r).GetGroup(id)); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		details := err.Error()
+		JSONError(w, "Failed to get group.", details, http.StatusInternalServerError, map[string]interface{}{"group": id}, true)
 	}
 }
 
@@ -62,11 +64,12 @@ func (h GroupsHandler) UpdateGroup(w http.ResponseWriter, r *http.Request) {
 	}
 	id := chi.URLParam(r, "id")
 	if err := json.NewDecoder(r.Body).Decode(&group); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		details := err.Error()
+		JSONError(w, "Invalid request body.", details, http.StatusBadRequest, nil, true)
 		return
 	}
 	if group.Label == "" {
-		http.Error(w, "Label cannot be empty", http.StatusBadRequest)
+		JSONError(w, "Label cannot be empty.", "missing label in group payload", http.StatusBadRequest, nil, true)
 		return
 	}
 	h.Config(r).UpdateGroup(group.Label, group.Hosts, group.Users)
@@ -74,7 +77,8 @@ func (h GroupsHandler) UpdateGroup(w http.ResponseWriter, r *http.Request) {
 		h.Config(r).DeleteGroup(id)
 	}
 	if err := json.NewEncoder(w).Encode(group); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		details := err.Error()
+		JSONError(w, "Failed to encode response.", details, http.StatusInternalServerError, nil, true)
 	}
 }
 
@@ -84,6 +88,6 @@ func (h GroupsHandler) DeleteGroup(w http.ResponseWriter, r *http.Request) {
 	if h.Config(r).DeleteGroup(id) {
 		w.WriteHeader(http.StatusNoContent)
 	} else {
-		http.Error(w, "Group not found", http.StatusNotFound)
+		JSONError(w, "Group not found.", "no group with given id", http.StatusNotFound, map[string]interface{}{"group": id}, true)
 	}
 }

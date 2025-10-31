@@ -38,7 +38,7 @@ func (h LogsHandler) GetLogs(w http.ResponseWriter, r *http.Request) {
 
 	f, ok := w.(http.Flusher)
 	if !ok {
-		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
+		JSONError(w, "Streaming unsupported.", "streaming unsupported: response does not implement Flusher", http.StatusInternalServerError, nil, true)
 		return
 	}
 	wo := backend.LogWorker{}

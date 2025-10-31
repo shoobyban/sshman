@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -51,15 +52,17 @@ func (h UsersHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var user backend.User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		details := err.Error()
+		JSONError(w, "Invalid request body.", details, http.StatusBadRequest, nil, true)
 		return
 	}
 	cfg := h.Config(r)
 	if user.File != "" {
 		parts, err := backend.SplitParts(user.File)
 		if err != nil {
-			cfg.Log().Errorf("Invalid key format: %v", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			details := err.Error()
+			cfg.Log().Errorf("Invalid key format: %v", details)
+			JSONError(w, "Invalid key format.", details, http.StatusBadRequest, nil, true)
 			return
 		}
 		if user.Email == "" {
@@ -70,14 +73,15 @@ func (h UsersHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		user.Name = parts[2]
 		user.File = ""
 	}
-	if user.Email == "" || user.Key == "" || user.KeyType == "" || user.Name == "" {
-		cfg.Log().Errorf("Missing required fields: email: '%s' key: '%s' keytype: '%s' name: '%s'", user.Email, user.Key, user.KeyType, user.Name)
-		http.Error(w, "missing required fields", http.StatusBadRequest)
+		if user.Email == "" || user.Key == "" || user.KeyType == "" || user.Name == "" {
+		details := fmt.Sprintf("missing fields email:'%s' key:'%s' keytype:'%s' name:'%s'", user.Email, user.Key, user.KeyType, user.Name)
+		cfg.Log().Errorf("Missing required fields: %s", details)
+		JSONError(w, "Missing required fields.", details, http.StatusBadRequest, nil, true)
 		return
 	}
 	_, oldUser := cfg.GetUserByEmail(user.Email)
-	if oldUser != nil {
-		http.Error(w, "user already exists", http.StatusBadRequest)
+		if oldUser != nil {
+		JSONError(w, "User already exists.", "user with this email already exists", http.StatusBadRequest, nil, true)
 		return
 	}
 	cfg.AddUser(&user, "")
@@ -111,8 +115,9 @@ func (h UsersHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		cfg.Log().Infof("New keyfile: %s", user.File)
 		parts, err := backend.SplitParts(user.File)
 		if err != nil {
-			cfg.Log().Infof("Error splitting key: %v", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			details := err.Error()
+			cfg.Log().Infof("Error splitting key: %v", details)
+			JSONError(w, "Invalid key format.", details, http.StatusBadRequest, nil, true)
 			return
 		}
 		if user.Email == "" {
@@ -127,7 +132,7 @@ func (h UsersHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	oldUser := cfg.GetUser(id)
 	if oldUser == nil {
 		cfg.Log().Infof("User %s does not exist: %v", user.Email, cfg.Users())
-		http.Error(w, "user does not exist", http.StatusBadRequest)
+		JSONError(w, "User does not exist.", "no user with given id", http.StatusBadRequest, nil, true)
 		return
 	}
 	user.UpdateGroups(cfg, oldUser.Groups)
@@ -158,7 +163,7 @@ func (h UsersHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	cfg := h.Config(r)
 	user := cfg.GetUser(id)
 	if user == nil {
-		http.Error(w, "user does not exist", http.StatusBadRequest)
+		JSONError(w, "User does not exist.", "no user with given id", http.StatusBadRequest, nil, true)
 		return
 	}
 	if h.Config(r).DeleteUserByID(id) {

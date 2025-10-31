@@ -56,13 +56,14 @@ func (h HostsHandler) UpdateHost(w http.ResponseWriter, r *http.Request) {
 	cfg := h.Config(r)
 	err := json.NewDecoder(r.Body).Decode(&host)
 	if err != nil {
-		cfg.Log().Errorf("Can't decode host %s", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		details := err.Error()
+		cfg.Log().Errorf("Can't decode host %s", details)
+		JSONError(w, "Invalid request body.", details, http.StatusBadRequest, nil, true)
 		return
 	}
 	if host.Alias == "" {
 		cfg.Log().Errorf("Can't create host without alias")
-		http.Error(w, "Can't create host without alias", http.StatusBadRequest)
+		JSONError(w, "Can't create host without alias.", "missing alias field in host payload", http.StatusBadRequest, nil, true)
 		return
 	}
 	oldHost := cfg.GetHost(id)
@@ -76,8 +77,9 @@ func (h HostsHandler) UpdateHost(w http.ResponseWriter, r *http.Request) {
 	cfg.Write()
 	err = cfg.UpdateHost(&host)
 	if err != nil {
-		cfg.Log().Errorf("Can't read host users, %s", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		details := err.Error()
+		cfg.Log().Errorf("Can't read host users, %s", details)
+		JSONError(w, "Failed to update host.", details, http.StatusInternalServerError, map[string]interface{}{"host": host.Alias}, true)
 		return
 	}
 	if oldHost == nil {

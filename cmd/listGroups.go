@@ -12,8 +12,7 @@ var listGroupsCmd = &cobra.Command{
 	Use:   "groups",
 	Short: "List all groups",
 	Long:  `List all groups from users and hosts`,
-	Run: func(_ *cobra.Command, _ []string) {
-		fmt.Println("DEPRECATED: 'sshman list groups' is deprecated. Use 'sshman group list' instead.")
+		Run: func(_ *cobra.Command, _ []string) {
 		cfg := backend.DefaultConfig()
 		groups := cfg.GetGroups()
 		for label, grp := range groups {

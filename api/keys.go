@@ -43,8 +43,9 @@ func (h KeysHandler) GetAllKeys(w http.ResponseWriter, r *http.Request) {
 	home, _ := os.UserHomeDir()
 	files, err := os.ReadDir(home + "/.ssh")
 	if err != nil {
-		h.Config(r).Log().Errorf("Can't read ~/.ssh: %s", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		details := err.Error()
+		h.Config(r).Log().Errorf("Can't read ~/.ssh: %s", details)
+		JSONError(w, "Failed to read ~/.ssh directory.", details, http.StatusInternalServerError, nil, true)
 		return
 	}
 	var keys []string
@@ -83,22 +84,23 @@ func (h KeysHandler) CreateKey(w http.ResponseWriter, r *http.Request) {
 	}
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil {
-		h.Config(r).Log().Errorf("Can't decode key data %s", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		details := err.Error()
+		h.Config(r).Log().Errorf("Can't decode key data %s", details)
+		JSONError(w, "Invalid request body.", details, http.StatusBadRequest, nil, true)
 		return
 	}
 	if payload.Filename == "" {
-		http.Error(w, "No filename provided", http.StatusBadRequest)
+		JSONError(w, "No filename provided.", "missing filename in payload", http.StatusBadRequest, nil, true)
 		return
 	}
 
 	if payload.File == "" {
-		http.Error(w, "No file provided", http.StatusBadRequest)
+		JSONError(w, "No file provided.", "missing file content in payload", http.StatusBadRequest, nil, true)
 		return
 	}
 	// if file exists
 	if _, err := os.Stat(os.Getenv("HOME") + "/.ssh/" + payload.Filename); err == nil {
-		http.Error(w, "File already exists", http.StatusBadRequest)
+		JSONError(w, "File already exists.", "destination file already exists in ~/.ssh", http.StatusBadRequest, nil, true)
 		return
 	}
 	os.WriteFile(".ssh/"+payload.Filename, []byte(payload.File), 0600)

@@ -323,12 +323,13 @@ sshman version
 - [x] Web interface
 - [ ] Full test coverage
 - [x] All user related functions should have unit tests
-- [ ] All user role related functions should have unit tests
+- [x] All user role related functions should have unit tests
 - [x] All host related functions should have unit tests
-- [ ] All host group related functions should have unit tests
-- [ ] All configuration handling functions should have unit tests
+- [x] All host group related functions should have unit tests
+- [x] All configuration handling functions should have unit tests
 - [ ] All other core functionality should have unit tests
-- [ ] Edge case: deleting user should delete the user from all hosts (unless canceled from changeset)
+- [x] Edge case: deleting user should delete the user from all hosts (unless canceled from changeset)
+
 - [ ] Misfeature: Changing keyfile on host does not upload new key with old and delete old
 - [ ] Misfeature: Adding host does not check if host config is working
 - [ ] Misfeature: Adding host with groups does not upload initial users from group
@@ -361,7 +362,7 @@ sshman version
 
 Most of the credit goes to the pain of being a CTO for 17+ years in small and mid-sized companies, where SSH key management is not solved.
 
-The project would have been much harder without the work of [Steve Francia](https://github.com/spf13) and all the cobra and viper contributors, the web UI relies on [Chi](https://github.com/go-chi/chi) and [Vue](https://github.com/vuejs/).
+The project would have been much harder without the work of [Steve Francia](https://github.com/spf13) and all the cobra and viper contributors, the web UI relies on [Chi](https://github.com/go-chi/chi) and [React](https://github.com/facebook/react).
 
 Web UI embedding wouldn't be working without [Gregor Best](https://github.com/farhaven), who nerd-sniped me into helping with a tricky bug on Gophers Slack.
 

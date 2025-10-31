@@ -1,0 +1,368 @@
+openapi: 3.0.3
+info:
+  title: SSHMan API
+  version: "1.0.0"
+  description: API for managing hosts, users and groups for SSHMan
+servers:
+  - url: /api
+paths:
+  /hosts:
+    get:
+      summary: List hosts
+      responses:
+        '200':
+          description: Array of Host objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Host'
+    post:
+      summary: Create host
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HostCreate'
+      responses:
+        '200':
+          description: Created host
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Host'
+  /hosts/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get host details
+      responses:
+        '200':
+          description: Host details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Host'
+    put:
+      summary: Update host
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Host'
+      responses:
+        '200':
+          description: Updated host
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Host'
+    delete:
+      summary: Delete host
+      responses:
+        '204':
+          description: No content - deleted
+        '404':
+          description: Not found
+  /hosts/sync:
+    get:
+      summary: Trigger hosts sync
+      responses:
+        '200':
+          description: Sync triggered
+    delete:
+      summary: Stop hosts sync
+      responses:
+        '200':
+          description: Sync stopped
+  /groups:
+    get:
+      summary: List groups
+      responses:
+        '200':
+          description: Array of Group objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Group'
+    post:
+      summary: Create group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupUpdate'
+      responses:
+        '200':
+          description: Created group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupUpdate'
+  /groups/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get group details
+      responses:
+        '200':
+          description: Group details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Group'
+    put:
+      summary: Update group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GroupUpdate'
+      responses:
+        '200':
+          description: Updated group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupUpdate'
+    delete:
+      summary: Delete group
+      responses:
+        '204':
+          description: No content - deleted
+        '404':
+          description: Not found
+  /users:
+    get:
+      summary: List users
+      responses:
+        '200':
+          description: Array of User objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+    post:
+      summary: Create user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '200':
+          description: Created user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /users/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Get user details
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    put:
+      summary: Update user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    delete:
+      summary: Delete user
+      responses:
+        '204':
+          description: No content - deleted
+        '400':
+          description: Bad request - user does not exist
+  /keys:
+    get:
+      summary: List ssh key files from ~/.ssh
+      parameters:
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [all, public, private]
+          description: Filter by key type
+        - in: query
+          name: pretty
+          schema:
+            type: string
+          description: If set, pretty print JSON
+      responses:
+        '200':
+          description: List of key file paths
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+    post:
+      summary: Upload key file contents to server (writes to .ssh/filename)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filename:
+                  type: string
+                file:
+                  type: string
+              required: [filename, file]
+      responses:
+        '204':
+          description: No content - created
+  /logs:
+    get:
+      summary: Stream logs (SSE)
+      responses:
+        '200':
+          description: Server-Sent Events stream of log lines
+          content:
+            text/event-stream:
+              schema:
+                type: string
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        type:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        key:
+          type: string
+        groups:
+          type: array
+          items:
+            type: string
+        hosts:
+          type: array
+          items:
+            type: string
+        keyfile:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        updatedAt:
+          type: string
+          format: date-time
+    UserCreate:
+      allOf:
+        - $ref: '#/components/schemas/User'
+      required:
+        - email
+        - key
+        - type
+        - name
+    UserUpdate:
+      allOf:
+        - $ref: '#/components/schemas/User'
+      required:
+        - name
+        - email
+    Host:
+      type: object
+      properties:
+        host:
+          type: string
+        user:
+          type: string
+        key:
+          type: string
+        alias:
+          type: string
+        userlist:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        groups:
+          type: array
+          items:
+            type: string
+        last_updated:
+          type: string
+          format: date-time
+        checksum:
+          type: string
+        modified:
+          type: boolean
+    HostCreate:
+      allOf:
+        - $ref: '#/components/schemas/Host'
+      required:
+        - alias
+    Group:
+      type: object
+      properties:
+        label:
+          type: string
+        users:
+          type: array
+          items:
+            type: string
+        hosts:
+          type: array
+          items:
+            type: string
+    GroupUpdate:
+      type: object
+      properties:
+        label:
+          type: string
+        users:
+          type: array
+          items:
+            type: string
+        hosts:
+          type: array
+          items:
+            type: string
+      required: [label]
+

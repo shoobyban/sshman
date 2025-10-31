@@ -72,7 +72,7 @@ var webCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 		if port == ":0" {
-			fmt.Println("Listening on http://localhost:", listener.Addr().(*net.TCPAddr).Port)
+			fmt.Printf("Listening on http://localhost:%d\n", listener.Addr().(*net.TCPAddr).Port)
 			portfile, _ := cmd.Flags().GetString("portfile")
 			os.WriteFile(portfile, []byte(fmt.Sprint(listener.Addr().(*net.TCPAddr).Port)), 0644)
 		}
@@ -86,7 +86,6 @@ var webCmd = &cobra.Command{
 }
 
 func init() {
-	webCmd.Deprecated = "web UI command is supported but CLI structure has changed; use 'sshman web'"
 	rootCmd.AddCommand(webCmd)
 	webCmd.PersistentFlags().StringP("bind", "b", "0.0.0.0", "Bind to IP address for web UI. Can be 127.0.0.1, ::1, 192.160.0.2, etc.")
 	webCmd.PersistentFlags().StringP("port", "p", "dynamic", "Port for web UI. Can be a port number or 'dynamic' (without quotes). Defaults to dynamic address. Dynamic address will create a sshman.port file.")

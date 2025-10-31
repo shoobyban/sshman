@@ -12,6 +12,5 @@ var removeCmd = &cobra.Command{
 }
 
 func init() {
-	removeCmd.Deprecated = "use 'sshman user remove' or 'sshman host remove' instead"
 	rootCmd.AddCommand(removeCmd)
 }

@@ -16,6 +16,5 @@ $ ./sshman groups host hostalias group1 group2
 }
 
 func init() {
-	groupsCmd.Deprecated = "use 'sshman user groups' or 'sshman host groups' instead"
 	rootCmd.AddCommand(groupsCmd)
 }
