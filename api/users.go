@@ -2,10 +2,11 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/shoobyban/sshman/backend"
@@ -16,6 +17,13 @@ type UsersHandler struct {
 	Prefix string
 }
 
+func resolveUserIdentifier(cfg backend.Config, id string) (string, *backend.User) {
+	if user := cfg.GetUser(id); user != nil {
+		return id, user
+	}
+	return cfg.GetUserByEmail(id)
+}
+
 // Config returns the config for the handler
 func (h UsersHandler) Config(r *http.Request) backend.Config {
 	ctx := r.Context()
@@ -23,6 +31,68 @@ func (h UsersHandler) Config(r *http.Request) backend.Config {
 		return cfg
 	}
 	return backend.DefaultConfig()
+}
+
+func rollbackCreatedUser(cfg backend.Config, user *backend.User) {
+	if user == nil {
+		return
+	}
+	_ = cfg.RemoveUserFromHosts(user)
+	if id, existing := cfg.GetUserByEmail(user.Email); existing != nil {
+		cfg.DeleteUserByID(id)
+	}
+}
+
+func cloneUser(user *backend.User) *backend.User {
+	if user == nil {
+		return nil
+	}
+	cloned := *user
+	cloned.Groups = append([]string{}, user.Groups...)
+	cloned.Hosts = append([]string{}, user.Hosts...)
+	cloned.Roles = append([]string{}, user.Roles...)
+	return &cloned
+}
+
+func rollbackUpdatedUser(cfg backend.Config, original *backend.User, current *backend.User) {
+	if original == nil || current == nil {
+		return
+	}
+	if err := syncUserHostDiff(cfg, original, current.Hosts, original.Hosts); err != nil {
+		cfg.Log().Errorf("failed to roll back user host assignments for %s: %v", original.Email, err)
+	}
+}
+
+func syncUserHostDiff(cfg backend.Config, user *backend.User, currentHosts, desiredHosts []string) error {
+	changes := backend.Difference(currentHosts, desiredHosts)
+	var syncErrors []string
+
+	for _, removedAlias := range changes[0] {
+		removedHost := cfg.GetHost(removedAlias)
+		if removedHost == nil {
+			syncErrors = append(syncErrors, fmt.Sprintf("host %s not found", removedAlias))
+			continue
+		}
+		if err := removedHost.RemoveUser(user); err != nil {
+			syncErrors = append(syncErrors, fmt.Sprintf("error removing %s from %s: %v", user.Email, removedAlias, err))
+		}
+	}
+
+	for _, addedAlias := range changes[1] {
+		addedHost := cfg.GetHost(addedAlias)
+		if addedHost == nil {
+			syncErrors = append(syncErrors, fmt.Sprintf("host %s not found", addedAlias))
+			continue
+		}
+		if err := addedHost.AddUser(user); err != nil {
+			syncErrors = append(syncErrors, fmt.Sprintf("error adding %s to %s: %v", user.Email, addedAlias, err))
+		}
+	}
+
+	if len(syncErrors) > 0 {
+		return errors.New(strings.Join(syncErrors, "\n"))
+	}
+	return nil
 }
 
 // AddRoutes adds the routes for the handler
@@ -36,15 +106,14 @@ func (h UsersHandler) AddRoutes(router *chi.Mux) {
 
 // GetAllUsers returns all users
 func (h UsersHandler) GetAllUsers(w http.ResponseWriter, r *http.Request) {
-	users := h.Config(r).Users()
-	json.NewEncoder(w).Encode(users)
+	json.NewEncoder(w).Encode(userList(h.Config(r).Users()))
 }
 
 // GetUserDetails returns the details of a user
 func (h UsersHandler) GetUserDetails(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	user := h.Config(r).GetUser(id)
-	json.NewEncoder(w).Encode(user)
+	_, user := resolveUserIdentifier(h.Config(r), id)
+	json.NewEncoder(w).Encode(normalizeUser(user))
 }
 
 // CreateUser creates a new user
@@ -84,9 +153,17 @@ func (h UsersHandler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		JSONError(w, "User already exists.", "user with this email already exists", http.StatusBadRequest, nil, true)
 		return
 	}
-	cfg.AddUser(&user, "")
-	user.UpdateGroups(cfg, []string{})
-	json.NewEncoder(w).Encode(user)
+	if err := cfg.AddUser(&user, ""); err != nil {
+		JSONError(w, "Failed to create user.", err.Error(), http.StatusBadRequest, nil, true)
+		return
+	}
+	user.Config = cfg
+	if err := user.UpdateGroups(cfg, []string{}); err != nil {
+		rollbackCreatedUser(cfg, &user)
+		JSONError(w, "Failed to propagate user to hosts.", err.Error(), http.StatusConflict, nil, true)
+		return
+	}
+	json.NewEncoder(w).Encode(normalizeUser(&user))
 }
 
 // UpdateUser updates a user
@@ -95,20 +172,18 @@ func (h UsersHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("error reading body: %v", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		JSONError(w, "Invalid request body.", err.Error(), http.StatusBadRequest, nil, true)
 		return
 	}
 	if len(bodyBytes) == 0 {
-		log.Printf("no body")
-		http.Error(w, "empty body", http.StatusBadRequest)
+		JSONError(w, "Invalid request body.", "empty body", http.StatusBadRequest, nil, true)
 		return
 	}
 	cfg := h.Config(r)
 	err = json.Unmarshal(bodyBytes, &user)
 	if err != nil {
 		cfg.Log().Infof("Error decoding user: %v (%s)", err, string(bodyBytes))
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		JSONError(w, "Invalid request body.", err.Error(), http.StatusBadRequest, nil, true)
 		return
 	}
 	if user.File != "" {
@@ -129,44 +204,46 @@ func (h UsersHandler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 		user.File = ""
 	}
 	id := chi.URLParam(r, "id")
-	oldUser := cfg.GetUser(id)
+	_, oldUser := resolveUserIdentifier(cfg, id)
 	if oldUser == nil {
 		cfg.Log().Infof("User %s does not exist: %v", user.Email, cfg.Users())
 		JSONError(w, "User does not exist.", "no user with given id", http.StatusBadRequest, nil, true)
 		return
 	}
-	user.UpdateGroups(cfg, oldUser.Groups)
+	oldSnapshot := cloneUser(oldUser)
+	user.Config = cfg
+	if err := user.UpdateGroups(cfg, oldUser.Groups); err != nil {
+		rollbackUpdatedUser(cfg, oldSnapshot, &user)
+		JSONError(w, "Failed to propagate user to hosts.", err.Error(), http.StatusConflict, nil, true)
+		return
+	}
+	if err := syncUserHostDiff(cfg, &user, oldUser.Hosts, user.Hosts); err != nil {
+		rollbackUpdatedUser(cfg, oldSnapshot, &user)
+		JSONError(w, "Failed to update user host assignments.", err.Error(), http.StatusConflict, nil, true)
+		return
+	}
 	oldUser.Email = user.Email
 	oldUser.Name = user.Name
 	oldUser.Key = user.Key
 	oldUser.KeyType = user.KeyType
 	oldUser.Groups = user.Groups
-	diff := backend.Difference(oldUser.Hosts, user.Hosts)
-	for _, removedAlias := range diff[0] {
-		removedHost := cfg.GetHost(removedAlias)
-		removedHost.RemoveUser(&user)
-	}
-	for _, addedAlias := range diff[1] {
-		addedHost := cfg.GetHost(addedAlias)
-		addedHost.AddUser(&user)
-	}
 	oldUser.Hosts = user.Hosts
 	cfg.UpdateUser(oldUser)
 	cfg.Write()
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(normalizeUser(&user))
 }
 
 // DeleteUser deletes a user.
 func (h UsersHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	log.Printf("Deleting user %s", id)
 	cfg := h.Config(r)
-	user := cfg.GetUser(id)
+	cfg.Log().Infof("Deleting user %s", id)
+	resolvedID, user := resolveUserIdentifier(cfg, id)
 	if user == nil {
 		JSONError(w, "User does not exist.", "no user with given id", http.StatusBadRequest, nil, true)
 		return
 	}
-	if h.Config(r).DeleteUserByID(id) {
+	if h.Config(r).DeleteUserByID(resolvedID) {
 		w.WriteHeader(http.StatusNoContent)
 	} else {
 		w.WriteHeader(http.StatusNotFound)

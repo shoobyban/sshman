@@ -1,0 +1,11 @@
+.git
+.github
+build-artifacts-test
+cmd/dist
+frontend/dist
+frontend/node_modules
+logs
+release-artifacts
+sshman
+sshman-linux
+TOFIX.md.bak

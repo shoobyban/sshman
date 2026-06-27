@@ -1,4 +1,3 @@
 PermitRootLogin yes
 PubkeyAuthentication yes
 Subsystem       sftp    /usr/lib/ssh/sftp-server
-UsePAM yes

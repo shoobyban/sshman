@@ -2,8 +2,10 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/go-chi/chi"
@@ -13,6 +15,18 @@ import (
 // KeysHandler returns a list of ssh key filenames from ~/.ssh.
 type KeysHandler struct {
 	Prefix string
+}
+
+func safeSSHPath(filename string) (string, error) {
+	base := filepath.Base(filename)
+	if base == "." || base == "" || base != filename {
+		return "", fmt.Errorf("invalid filename")
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, ".ssh", base), nil
 }
 
 // Config returns a loaded configuration for the handler.
@@ -98,11 +112,19 @@ func (h KeysHandler) CreateKey(w http.ResponseWriter, r *http.Request) {
 		JSONError(w, "No file provided.", "missing file content in payload", http.StatusBadRequest, nil, true)
 		return
 	}
+	destination, err := safeSSHPath(payload.Filename)
+	if err != nil {
+		JSONError(w, "Invalid filename.", err.Error(), http.StatusBadRequest, nil, true)
+		return
+	}
 	// if file exists
-	if _, err := os.Stat(os.Getenv("HOME") + "/.ssh/" + payload.Filename); err == nil {
+	if _, err := os.Stat(destination); err == nil {
 		JSONError(w, "File already exists.", "destination file already exists in ~/.ssh", http.StatusBadRequest, nil, true)
 		return
 	}
-	os.WriteFile(".ssh/"+payload.Filename, []byte(payload.File), 0600)
+	if err := os.WriteFile(destination, []byte(payload.File), 0600); err != nil {
+		JSONError(w, "Failed to write key file.", err.Error(), http.StatusInternalServerError, nil, true)
+		return
+	}
 	w.WriteHeader(http.StatusNoContent)
 }

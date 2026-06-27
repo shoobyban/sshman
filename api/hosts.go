@@ -29,18 +29,22 @@ func (h HostsHandler) AddRoutes(router *chi.Mux) {
 	router.Delete(h.Prefix+"/{id}", h.DeleteHost)
 	router.Put(h.Prefix+"/{id}", h.UpdateHost)
 	router.Post(h.Prefix, h.CreateHost)
-	router.Get(h.Prefix+"/sync", h.SyncHandler)
+	router.Post(h.Prefix+"/sync", h.SyncHandler)
 	router.Delete(h.Prefix+"/sync", h.StopSyncHandler)
 }
 
 // GetAllHosts returns all hosts.
 func (h HostsHandler) GetAllHosts(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(h.Config(r).Hosts())
+	json.NewEncoder(w).Encode(hostList(h.Config(r).Hosts()))
 }
 
 // GetHostDetails returns host details.
 func (h HostsHandler) GetHostDetails(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+	if id == "sync" {
+		JSONError(w, "Host not found.", "sync is a reserved endpoint", http.StatusNotFound, map[string]interface{}{"host": id}, true)
+		return
+	}
 	json.NewEncoder(w).Encode(h.Config(r).GetHost(id))
 }
 
@@ -66,15 +70,14 @@ func (h HostsHandler) UpdateHost(w http.ResponseWriter, r *http.Request) {
 		JSONError(w, "Can't create host without alias.", "missing alias field in host payload", http.StatusBadRequest, nil, true)
 		return
 	}
-	oldHost := cfg.GetHost(id)
-	cfg.SetHost(host.Alias, &host)
-	if oldHost != nil { // for CreateHost handler
-		host.UpdateGroups(cfg, oldHost.Groups)
-		if host.Alias != id {
-			cfg.DeleteHost(id)
-		}
+	if host.Alias == "sync" {
+		JSONError(w, "Can't use reserved host alias.", "sync is reserved for the sync endpoint", http.StatusBadRequest, nil, true)
+		return
 	}
-	cfg.Write()
+	oldHost := cfg.GetHost(id)
+	if dataCfg, ok := cfg.(*backend.Data); ok {
+		host.Config = dataCfg
+	}
 	err = cfg.UpdateHost(&host)
 	if err != nil {
 		details := err.Error()
@@ -82,8 +85,24 @@ func (h HostsHandler) UpdateHost(w http.ResponseWriter, r *http.Request) {
 		JSONError(w, "Failed to update host.", details, http.StatusInternalServerError, map[string]interface{}{"host": host.Alias}, true)
 		return
 	}
+	cfg.SetHost(host.Alias, &host)
+	if oldHost != nil {
+		if !host.UpdateGroups(cfg, oldHost.Groups) {
+			JSONError(w, "Failed to propagate host group changes.", "host group propagation returned partial failure", http.StatusConflict, map[string]interface{}{"host": host.Alias}, true)
+			return
+		}
+		if host.Alias != id {
+			cfg.DeleteHost(id)
+		}
+	} else {
+		if !host.UpdateGroups(cfg, []string{}) {
+			cfg.DeleteHost(host.Alias)
+			JSONError(w, "Failed to propagate host group changes.", "host group propagation returned partial failure", http.StatusConflict, map[string]interface{}{"host": host.Alias}, true)
+			return
+		}
+	}
 	if oldHost == nil {
-		host.UpdateGroups(cfg, []string{})
+		cfg.Write()
 	}
 	json.NewEncoder(w).Encode(host)
 }

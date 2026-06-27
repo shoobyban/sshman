@@ -11,6 +11,29 @@ interface LogEntry {
   message: string;
 }
 
+interface RawLogEntry {
+  timestamp?: string;
+  level?: string;
+  type?: string;
+  message?: string;
+}
+
+function normalizeLogEntry(raw: RawLogEntry | string): LogEntry {
+  if (typeof raw === "string") {
+    return {
+      timestamp: new Date().toISOString(),
+      level: "INFO",
+      message: raw,
+    };
+  }
+
+  return {
+    timestamp: raw.timestamp || new Date().toISOString(),
+    level: raw.level || raw.type || "INFO",
+    message: raw.message || "",
+  };
+}
+
 export default function Logs() {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isPaused, setIsPaused] = useState(false);
@@ -27,18 +50,11 @@ export default function Logs() {
     eventSource.onmessage = (event) => {
       if (!isPaused) {
         try {
-          const logEntry: LogEntry = JSON.parse(event.data);
+          const logEntry = normalizeLogEntry(JSON.parse(event.data));
           setLogs((prev) => [...prev, logEntry].slice(-1000)); // Keep last 1000 logs
-        } catch (e) {
+        } catch {
           // If not JSON, treat as raw message
-          setLogs((prev) => [
-            ...prev,
-            {
-              timestamp: new Date().toISOString(),
-              level: "INFO",
-              message: event.data,
-            },
-          ].slice(-1000));
+          setLogs((prev) => [...prev, normalizeLogEntry(event.data)].slice(-1000));
         }
       }
     };
@@ -64,8 +80,8 @@ export default function Logs() {
       log.level.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getLevelColor = (level: string) => {
-    switch (level.toUpperCase()) {
+  const getLevelColor = (level?: string) => {
+    switch ((level || "INFO").toUpperCase()) {
       case "ERROR":
         return "text-destructive";
       case "WARN":
@@ -158,7 +174,7 @@ export default function Logs() {
                         {new Date(log.timestamp).toLocaleTimeString()}
                       </span>
                       <span className={cn("font-semibold", getLevelColor(log.level))}>
-                        [{log.level}]
+                        [{log.level || "INFO"}]
                       </span>
                       <span className="flex-1 text-foreground">{log.message}</span>
                     </div>

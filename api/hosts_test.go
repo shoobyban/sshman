@@ -31,13 +31,13 @@ func TestGetAllHosts(t *testing.T) {
 		t.Errorf("Expected status code %d, got %d", http.StatusOK, w.Code)
 	}
 
-	var hosts map[string]backend.Host
+	var hosts []backend.Host
 	json.NewDecoder(w.Body).Decode(&hosts)
 	if len(hosts) != 1 {
 		t.Errorf("Expected 1 hosts, got %d: %s", len(hosts), w.Body.String())
 	}
-	if hosts["host1"].User != "user1" {
-		t.Errorf("Expected user1, got %s", hosts["host1"].User)
+	if hosts[0].User != "user1" {
+		t.Errorf("Expected user1, got %s", hosts[0].User)
 	}
 }
 
@@ -126,6 +126,35 @@ func TestCreateHost(t *testing.T) {
 	json.NewDecoder(w.Body).Decode(&host)
 	if host.User != "user2" {
 		t.Errorf("Expected user2, got %s %#v", host.User, host)
+	}
+}
+
+func TestCreateHostDoesNotPersistOnReadFailure(t *testing.T) {
+	cfg := backend.NewData(&backend.MemoryStorage{})
+	conn := backend.MockConn(map[string]backend.SFTPMockHost{})
+	conn.SetError(true)
+	cfg.Conn = conn
+	h := HostsHandler{Prefix: ""}
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodPost, "/",
+		strings.NewReader(`{"alias": "host1", "host": "host1.com", "user": "user2", "groups": ["group1"]}`),
+	)
+	r = r.WithContext(context.WithValue(r.Context(), ConfigKey, cfg))
+	h.CreateHost(w, r)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("Expected status code %d, got %d %s", http.StatusInternalServerError, w.Code, w.Body.String())
+	}
+	if cfg.GetHost("host1") != nil {
+		t.Fatalf("expected host create failure not to persist host")
+	}
+
+	var resp ErrorResponse
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode error response: %v", err)
+	}
+	if resp.Error.Message == "" {
+		t.Fatalf("expected structured JSON error response")
 	}
 }
 

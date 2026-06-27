@@ -79,6 +79,7 @@ func processUserRemoved(removed []string, C Config, u *User, errors *Errors) *Er
 					errors.Add("Error removing %s from %s", u.Email, h.Alias)
 					continue
 				}
+				u.Hosts = remove(u.Hosts, h.Alias)
 				h.Config.Log().Infof("removed %s from %s %v\n", u.Email, h.Alias, h.Groups)
 				C.SetHost(h.Alias, h)
 			}
@@ -100,6 +101,9 @@ func processUserAdded(added []string, C Config, u *User) *Errors {
 					}
 					errors.Add("Error adding %s to %s: %v", u.Email, h.Alias, err)
 					continue
+				}
+				if !contains(u.Hosts, h.Alias) {
+					u.Hosts = append(u.Hosts, h.Alias)
 				}
 				h.Config.Log().Infof("added %s to %s %v\n", u.Email, h.Alias, h.Groups)
 				C.SetHost(h.Alias, h)

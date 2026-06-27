@@ -1,8 +1,10 @@
 package backend
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -245,6 +247,7 @@ func (c *Data) AddHost(host *Host, withUsers bool) error {
 	if _, ok := c.hosts[host.Alias]; ok {
 		return fmt.Errorf("Host %s already exists", host.Alias)
 	}
+	host.Config = c
 	c.hosts[host.Alias] = host
 	c.Write()
 	if withUsers {
@@ -305,6 +308,7 @@ func (c *Data) AddUser(newuser *User, host string) error {
 	if newuser == nil {
 		return fmt.Errorf("User is nil")
 	}
+	newuser.Config = c
 	lsum := checksum(newuser.Key)
 	if u, ok := c.users[lsum]; ok {
 		if host != "" {
@@ -334,6 +338,7 @@ func (c *Data) UpdateUser(newuser *User) error {
 	if newuser.Email == "" {
 		return fmt.Errorf("no email provided")
 	}
+	newuser.Config = c
 	oldKey, oldUser := c.GetUserByEmail(newuser.Email)
 	if oldUser == nil {
 		return fmt.Errorf("user %s not found", newuser.Email)
@@ -443,6 +448,15 @@ func (c *Data) GetGroups() map[string]LabelGroup {
 			}
 		}
 	}
+	for label, group := range groups {
+		if group.Hosts == nil {
+			group.Hosts = []string{}
+		}
+		if group.Users == nil {
+			group.Users = []string{}
+		}
+		groups[label] = group
+	}
 	return groups
 }
 
@@ -470,69 +484,106 @@ func (c *Data) GetHost(alias string) *Host {
 	return c.hosts[alias]
 }
 
-// DeleteGroup removes a group from the config, removing all users and hosts group labels
-func (c *Data) DeleteGroup(label string) bool {
-	c.l.Lock()
-	defer c.l.Unlock()
-	if _, ok := c.groups[label]; !ok {
-		c.log.Errorf("group %s not found", label)
-		return false
+func cloneStrings(values []string) []string {
+	if values == nil {
+		return nil
 	}
-	// loop through hosts and remove group from host
-	for _, host := range c.hosts {
-		host.Groups = remove(host.Groups, label)
-	}
-	// loop through users and remove group from user
-	for _, user := range c.users {
-		user.Groups = remove(user.Groups, label)
-	}
-
-	delete(c.groups, label)
-	c.log.Infof("deleted group %s", label)
-	c.Write()
-	return true
+	cloned := make([]string, len(values))
+	copy(cloned, values)
+	return cloned
 }
 
-// UpdateGroup updates a group in the config
-// removing all users and hosts group labels then adding them again
-func (c *Data) UpdateGroup(groupLabel string, hosts, users []string) {
+func (c *Data) applyGroupMembership(groupLabel string, hosts, users []string, requireExisting bool) error {
 	c.l.Lock()
-	defer c.l.Unlock()
-	// loop through hosts and add groupLabel to host.Groups
-	for _, host := range c.hosts {
-		if !contains(host.Groups, groupLabel) {
-			host.Groups = append(host.Groups, groupLabel)
+	if requireExisting {
+		if _, ok := c.groups[groupLabel]; !ok {
+			c.l.Unlock()
+			c.log.Errorf("group %s not found", groupLabel)
+			return fmt.Errorf("group %s not found", groupLabel)
 		}
 	}
-	// loop through users and add groupLabel to user.Groups
+
+	oldHostGroups := map[string][]string{}
+	oldUserGroups := map[string][]string{}
+	touchedHosts := []*Host{}
+	touchedUsers := []*User{}
+
+	for alias, host := range c.hosts {
+		previous := cloneStrings(host.Groups)
+		next := remove(cloneStrings(host.Groups), groupLabel)
+		if contains(hosts, alias) {
+			next = append(next, groupLabel)
+		}
+		next = deleteEmpty(next)
+		if strings.Join(previous, "\x00") != strings.Join(next, "\x00") {
+			oldHostGroups[alias] = previous
+			host.Groups = next
+			touchedHosts = append(touchedHosts, host)
+		}
+	}
+
 	for _, user := range c.users {
-		if !contains(user.Groups, groupLabel) {
-			user.Groups = append(user.Groups, groupLabel)
+		previous := cloneStrings(user.Groups)
+		next := remove(cloneStrings(user.Groups), groupLabel)
+		if contains(users, user.Email) {
+			next = append(next, groupLabel)
+		}
+		next = deleteEmpty(next)
+		if strings.Join(previous, "\x00") != strings.Join(next, "\x00") {
+			oldUserGroups[user.Email] = previous
+			user.Groups = next
+			touchedUsers = append(touchedUsers, user)
 		}
 	}
-	// loop through c.Users and remove item if not in users
-	for _, user := range c.users {
-		if !contains(users, user.Email) {
-			user.Groups = remove(user.Groups, groupLabel)
-		}
-	}
-	// loop through c.Hosts and remove item if not in servers
-	for _, host := range c.hosts {
-		if !contains(hosts, host.Alias) {
-			host.Groups = remove(host.Groups, groupLabel)
-		}
-	}
-	// update c.Groups.Users and c.Groups.Hosts
+
 	c.updateGroups()
+	c.l.Unlock()
+
+	var propagationErrors []string
+	for _, host := range touchedHosts {
+		if !host.UpdateGroups(c, oldHostGroups[host.Alias]) {
+			propagationErrors = append(propagationErrors, fmt.Sprintf("failed to propagate host group changes for %s", host.Alias))
+		}
+	}
+	for _, user := range touchedUsers {
+		if err := user.UpdateGroups(c, oldUserGroups[user.Email]); err != nil {
+			propagationErrors = append(propagationErrors, err.Error())
+		}
+	}
+
+	c.l.Lock()
+	if requireExisting {
+		delete(c.groups, groupLabel)
+	}
+	if len(hosts) > 0 || len(users) > 0 {
+		c.groups[groupLabel] = Group{Name: groupLabel}
+	}
+	c.updateGroups()
+	c.l.Unlock()
 	c.Write()
+
+	if len(propagationErrors) > 0 {
+		return errors.New(strings.Join(propagationErrors, "\n"))
+	}
+	return nil
 }
 
-func (c *Data) AddGroup(label string, hosts, users []string) {
-	c.l.Lock()
-	c.groups[label] = Group{Name: label}
-	c.l.Unlock()
-	c.UpdateGroup(label, hosts, users)
-	c.Write()
+// DeleteGroup removes a group from the config, removing all users and hosts group labels.
+func (c *Data) DeleteGroup(label string) error {
+	err := c.applyGroupMembership(label, []string{}, []string{}, true)
+	if err == nil {
+		c.log.Infof("deleted group %s", label)
+	}
+	return err
+}
+
+// UpdateGroup updates a group in the config, propagating host/user access changes.
+func (c *Data) UpdateGroup(groupLabel string, hosts, users []string) error {
+	return c.applyGroupMembership(groupLabel, hosts, users, false)
+}
+
+func (c *Data) AddGroup(label string, hosts, users []string) error {
+	return c.UpdateGroup(label, hosts, users)
 }
 
 // FromGroup returns true if user (by email) is in same group as host

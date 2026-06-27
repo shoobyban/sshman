@@ -42,6 +42,10 @@ func (m *JsonStorage) Load(data *Data) error {
 		host.Alias, host.Config = alias, data
 		data.hosts[alias] = host
 	}
+	for key, user := range data.users {
+		user.Config = data
+		data.users[key] = user
+	}
 	data.updateGroups()
 	return nil
 }

@@ -33,7 +33,7 @@ func (h GroupsHandler) AddRoutes(router *chi.Mux) {
 
 // GetAllGroups is a handler that returns all groups.
 func (h GroupsHandler) GetAllGroups(w http.ResponseWriter, r *http.Request) {
-	if err := json.NewEncoder(w).Encode(h.Config(r).GetGroups()); err != nil {
+	if err := json.NewEncoder(w).Encode(groupList(h.Config(r).GetGroups())); err != nil {
 		details := err.Error()
 		JSONError(w, "Failed to list groups.", details, http.StatusInternalServerError, nil, true)
 	}
@@ -42,7 +42,7 @@ func (h GroupsHandler) GetAllGroups(w http.ResponseWriter, r *http.Request) {
 // GetGroupDetails is a handler that returns group details.
 func (h GroupsHandler) GetGroupDetails(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if err := json.NewEncoder(w).Encode(h.Config(r).GetGroup(id)); err != nil {
+	if err := json.NewEncoder(w).Encode(groupDetails(id, h.Config(r).GetGroup(id))); err != nil {
 		details := err.Error()
 		JSONError(w, "Failed to get group.", details, http.StatusInternalServerError, map[string]interface{}{"group": id}, true)
 	}
@@ -72,9 +72,15 @@ func (h GroupsHandler) UpdateGroup(w http.ResponseWriter, r *http.Request) {
 		JSONError(w, "Label cannot be empty.", "missing label in group payload", http.StatusBadRequest, nil, true)
 		return
 	}
-	h.Config(r).UpdateGroup(group.Label, group.Hosts, group.Users)
+	if err := h.Config(r).UpdateGroup(group.Label, group.Hosts, group.Users); err != nil {
+		JSONError(w, "Failed to update group.", err.Error(), http.StatusConflict, map[string]interface{}{"group": group.Label}, true)
+		return
+	}
 	if id != "" && group.Label != id {
-		h.Config(r).DeleteGroup(id)
+		if err := h.Config(r).DeleteGroup(id); err != nil {
+			JSONError(w, "Failed to rename group.", err.Error(), http.StatusConflict, map[string]interface{}{"group": id}, true)
+			return
+		}
 	}
 	if err := json.NewEncoder(w).Encode(group); err != nil {
 		details := err.Error()
@@ -85,9 +91,13 @@ func (h GroupsHandler) UpdateGroup(w http.ResponseWriter, r *http.Request) {
 // DeleteGroup is a handler that deletes a group.
 func (h GroupsHandler) DeleteGroup(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if h.Config(r).DeleteGroup(id) {
-		w.WriteHeader(http.StatusNoContent)
-	} else {
-		JSONError(w, "Group not found.", "no group with given id", http.StatusNotFound, map[string]interface{}{"group": id}, true)
+	if err := h.Config(r).DeleteGroup(id); err != nil {
+		status := http.StatusConflict
+		if err.Error() == "group "+id+" not found" {
+			status = http.StatusNotFound
+		}
+		JSONError(w, "Failed to delete group.", err.Error(), status, map[string]interface{}{"group": id}, true)
+		return
 	}
+	w.WriteHeader(http.StatusNoContent)
 }

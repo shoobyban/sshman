@@ -1,0 +1,86 @@
+{
+  "key": "/sandbox-keys/sandbox_id_rsa",
+  "hosts": {
+    "bastion-1": {
+      "host": "host1:22",
+      "user": "root",
+      "key": "/sandbox-keys/sandbox_id_rsa",
+      "alias": "bastion-1",
+      "groups": [
+        "platform",
+        "production"
+      ]
+    },
+    "payments-api": {
+      "host": "host2:22",
+      "user": "root",
+      "key": "/sandbox-keys/sandbox_id_rsa",
+      "alias": "payments-api",
+      "groups": [
+        "payments",
+        "production"
+      ]
+    },
+    "analytics-worker": {
+      "host": "host3:22",
+      "user": "root",
+      "key": "/sandbox-keys/sandbox_id_rsa",
+      "alias": "analytics-worker",
+      "groups": [
+        "analytics",
+        "staging"
+      ]
+    }
+  },
+  "users": {
+    "alice-admin": {
+      "type": "ssh-ed25519",
+      "name": "Alice Admin",
+      "email": "alice@example.com",
+      "key": "AAAAC3NzaC1lZDI1NTE5AAAAIAliceExampleKeyForSandboxOnly000000000001",
+      "groups": [
+        "platform",
+        "production"
+      ],
+      "hosts": [
+        "bastion-1",
+        "payments-api"
+      ],
+      "roles": [
+        "admin"
+      ]
+    },
+    "bob-platform": {
+      "type": "ssh-rsa",
+      "name": "Bob Platform",
+      "email": "bob@example.com",
+      "key": "AAAAB3NzaC1yc2EAAAADAQABAAABAQDbobExampleKeyForSandboxOnly0000000002",
+      "groups": [
+        "platform",
+        "staging"
+      ],
+      "hosts": [
+        "bastion-1",
+        "analytics-worker"
+      ],
+      "roles": [
+        "user"
+      ]
+    },
+    "carol-data": {
+      "type": "ssh-ed25519",
+      "name": "Carol Data",
+      "email": "carol@example.com",
+      "key": "AAAAC3NzaC1lZDI1NTE5AAAAICarolExampleKeyForSandboxOnly000000000003",
+      "groups": [
+        "analytics"
+      ],
+      "hosts": [
+        "analytics-worker"
+      ],
+      "roles": [
+        "user"
+      ]
+    }
+  }
+}

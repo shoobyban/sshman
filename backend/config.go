@@ -1,12 +1,12 @@
 package backend
 
 type Config interface {
-	AddGroup(label string, users, hosts []string)
+	AddGroup(label string, users, hosts []string) error
 	AddHost(host *Host, withUsers bool) error
 	AddUser(newuser *User, host string) error
 	AddUserByEmail(email string) bool
 	AddUserToHosts(newuser *User)
-	DeleteGroup(label string) bool
+	DeleteGroup(label string) error
 	DeleteHost(alias string) bool
 	DeleteUser(email string) bool
 	DeleteUserByID(id string) bool
@@ -29,7 +29,7 @@ type Config interface {
 	SetHost(alias string, host *Host)
 	StopUpdate()
 	Update(aliases ...string)
-	UpdateGroup(groupLabel string, users, hosts []string)
+	UpdateGroup(groupLabel string, users, hosts []string) error
 	UpdateHost(host *Host) error
 	UpdateUser(newuser *User) error
 	UserExists(lsum string) bool

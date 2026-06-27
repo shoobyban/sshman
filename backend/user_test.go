@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"strings"
 	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
@@ -78,4 +79,23 @@ func TestGetAndSetGroups(t *testing.T) {
 
 	user.SetGroups(groups)
 	assert.Equal(t, groups, user.GetGroups())
+}
+
+func TestUpdateGroupsLoadsHostAndTracksHosts(t *testing.T) {
+	sftp := &SFTPConn{mock: true, testHosts: map[string]SFTPMockHost{
+		"a:22": {Host: "a:22", User: "test", File: "ssh-rsa existing existing\n"},
+	}}
+	cfg := testConfig("foo", map[string]*Host{
+		"hosta": {Alias: "hosta", Host: "a:22", User: "aroot", Groups: []string{"groupa"}},
+	}, []*User{}, sftp)
+
+	user := NewUser("test@example.com", "ssh-rsa", "ssh-rsa AAAAB3...", "Test User")
+	user.Config = cfg
+	user.Groups = []string{"groupa"}
+
+	err := user.UpdateGroups(cfg, []string{})
+	assert.NoError(t, err)
+	assert.Contains(t, user.Hosts, "hosta")
+	assert.True(t, cfg.GetHost("hosta").HasUser(user.Email))
+	assert.True(t, strings.Contains(sftp.GetHosts()["a:22"].File, "ssh-rsa AAAAB3... Test User"))
 }

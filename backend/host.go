@@ -90,17 +90,23 @@ func (h *Host) connectAndDo(action func() error) error {
 	return action()
 }
 
+func (h *Host) readFromActiveConnection() ([]string, error) {
+	b, err := h.Config.Conn.Read(AUTHFILE)
+	if err != nil {
+		return nil, fmt.Errorf("error reading authorized keys on %s: %v", h.Alias, err)
+	}
+	lines := deleteEmpty(strings.Split(string(b), "\n"))
+	h.Checksum = checksum(strings.Join(lines, "\n"))
+	return lines, nil
+}
+
 // connects to host via ssh, downloads authorized_keys file content, updates Checksum field
 func (h *Host) read() ([]string, error) {
 	var lines []string
 	err := h.connectAndDo(func() error {
-		b, err := h.Config.Conn.Read(AUTHFILE)
-		if err != nil {
-			return fmt.Errorf("error reading authorized keys on %s: %v", h.Alias, err)
-		}
-		lines = deleteEmpty(strings.Split(string(b), "\n"))
-		h.Checksum = checksum(strings.Join(lines, "\n"))
-		return nil
+		var err error
+		lines, err = h.readFromActiveConnection()
+		return err
 	})
 	return lines, err
 }
@@ -108,7 +114,7 @@ func (h *Host) read() ([]string, error) {
 // connects to host via ssh, uploads new authorized_keys file, updates Modified, LastUpdated and Checksum field
 func (h *Host) write(lines []string) error {
 	return h.connectAndDo(func() error {
-		ls, err := h.read()
+		ls, err := h.readFromActiveConnection()
 		if err != nil {
 			return fmt.Errorf("error connecting %s: %v", h.Alias, err)
 		}
@@ -159,10 +165,28 @@ func (h *Host) HasUser(email string) bool {
 	return false
 }
 
+func (h *Host) ensureLoadedForWrite() error {
+	if !h.LastUpdated.IsZero() {
+		return nil
+	}
+	if h.Config == nil || h.Config.Conn == nil {
+		return fmt.Errorf("host was never read, can't update, please refresh hosts first")
+	}
+	users, sum, err := h.ReadUsers()
+	if err != nil {
+		return err
+	}
+	h.Users = users
+	h.Checksum = sum
+	h.LastUpdated = time.Now()
+	h.Modified = false
+	return nil
+}
+
 // AddUser adds a user to the host's authorized_keys file
 func (h *Host) AddUser(u *User) error {
-	if h.LastUpdated.IsZero() {
-		return fmt.Errorf("host was never read, can't update, please refresh hosts first")
+	if err := h.ensureLoadedForWrite(); err != nil {
+		return err
 	}
 	h.Users = append(h.Users, u)
 	if h.Config == nil || h.Config.Conn == nil {
@@ -187,8 +211,8 @@ func (h *Host) Upload() error {
 
 // RemoveUser removes a user from the host's authorized_keys file
 func (h *Host) RemoveUser(u *User) error {
-	if h.LastUpdated.IsZero() {
-		return fmt.Errorf("host was never read, can't update, please refresh hosts first")
+	if err := h.ensureLoadedForWrite(); err != nil {
+		return err
 	}
 	if u == nil {
 		return fmt.Errorf("user is nil")

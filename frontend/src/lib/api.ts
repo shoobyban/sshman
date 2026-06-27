@@ -5,10 +5,7 @@ const API_BASE = import.meta.env.VITE_API_BASE || "/api";
 
 // Hosts
 export const getHosts = async (): Promise<Host[]> => {
-  const data = await apiFetch<Host[] | Record<string, Host>>(`${API_BASE}/hosts`);
-  // backend returns a map (object) of hosts, convert to array if needed
-  if (Array.isArray(data)) return data;
-  return Object.values(data);
+  return apiFetch<Host[]>(`${API_BASE}/hosts`);
 };
 
 export const getHost = async (id: string): Promise<Host> => {
@@ -38,14 +35,14 @@ export const deleteHost = async (id: string): Promise<void> => {
 };
 
 export const syncHosts = async (): Promise<void> => {
-  await apiFetch<void>(`${API_BASE}/hosts/sync`);
+  await apiFetch<void>(`${API_BASE}/hosts/sync`, {
+    method: "POST",
+  });
 };
 
 // Users
 export const getUsers = async (): Promise<User[]> => {
-  const data = await apiFetch<User[] | Record<string, User>>(`${API_BASE}/users`);
-  if (Array.isArray(data)) return data;
-  return Object.values(data);
+  return apiFetch<User[]>(`${API_BASE}/users`);
 };
 
 export const getUser = async (id: string): Promise<User> => {
@@ -76,10 +73,7 @@ export const deleteUser = async (id: string): Promise<void> => {
 
 // Groups
 export const getGroups = async (): Promise<Group[]> => {
-  const data = await apiFetch<Group[] | Record<string, Group>>(`${API_BASE}/groups`);
-  // backend returns a map of label => { label, hosts, users }
-  if (Array.isArray(data)) return data;
-  return Object.keys(data).map((k) => data[k]);
+  return apiFetch<Group[]>(`${API_BASE}/groups`);
 };
 
 export const getGroup = async (id: string): Promise<Group> => {

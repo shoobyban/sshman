@@ -1,0 +1,39 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: sandbox/app.Dockerfile
+    ports:
+      - "18080:8080"
+    volumes:
+      - sandbox-data:/app/.ssh
+      - sandbox-keys:/sandbox-keys
+    depends_on:
+      - host1
+      - host2
+      - host3
+
+  host1:
+    build:
+      context: .
+      dockerfile: sandbox/host.Dockerfile
+    volumes:
+      - sandbox-keys:/sandbox-keys
+
+  host2:
+    build:
+      context: .
+      dockerfile: sandbox/host.Dockerfile
+    volumes:
+      - sandbox-keys:/sandbox-keys
+
+  host3:
+    build:
+      context: .
+      dockerfile: sandbox/host.Dockerfile
+    volumes:
+      - sandbox-keys:/sandbox-keys
+
+volumes:
+  sandbox-data:
+  sandbox-keys:
