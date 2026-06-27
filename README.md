@@ -4,43 +4,75 @@
 [![Awesome GO](https://cdn.rawgit.com/sindresorhus/awesome/d7305f38d29fed78fa85652e3a63e154dd8e8829/media/badge.svg)](https://github.com/avelino/awesome-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/shoobyban/sshman)](https://goreportcard.com/report/github.com/shoobyban/sshman)
 
-This is a simple tool I created to streamline the onboarding and offboarding of engineers across various environments, from AWS to third-party hosting providers.
+I built this to make onboarding and offboarding engineers less tedious across a
+mix of environments: AWS boxes, third-party hosts, old servers nobody wants to
+touch, all of that.
 
-As with all my creations, this tool solves _my_ problem. While it may not solve yours, I welcome feedback, fixes, pull requests, and issues.
+It solves a very specific operational problem I kept running into. If that is
+also your problem, great. If not, you can still steal pieces of it.
 
 **Caution**: Plan your group memberships carefully. Keep your management key out of any groups to avoid accidentally removing it from a host, which could lock you out.
 
 ## Installation
 
 ```sh
-$ go get github.com/shoobyban/sshman
+$ go install github.com/shoobyban/sshman@latest
+```
+
+Requirements:
+
+- Go 1.25 or newer
+
+If you are building from a checkout instead of installing the released CLI,
+build the embedded frontend first:
+
+```sh
+make frontend
+go build ./...
 ```
 
 ## How Does It Work?
 
-This tool must be run from a host that can access all other hosts using a working SSH key that is not shared with anyone else. Configuration is saved in `~/.ssh/.sshman`. If you need to move the tool to another host, copy this file and the binary, and you're set up. The configuration does not contain any sensitive information.
+Run `sshman` from a machine that can already reach the rest of your fleet over
+SSH using a management key that is not shared with other people.
 
-There are two main resource entities in sshman: users and hosts. Users are identified by their public SSH key and labeled by their email address for simplicity. However, the email address is not used as an email and can be any identifier, such as `sam-key-1` or `sam-key-2`. This is useful when a user has multiple keys for different purposes, although it is not necessary in most cases.
+Configuration lives in `~/.ssh/.sshman`. If you move the tool to another
+machine, copy that file and the binary and you are most of the way there. The
+file stores hosts, users, and groups. It does not store private keys.
+
+The two main things in `sshman` are users and hosts. Users are keyed by their
+public SSH key and labeled with an email-like identifier. That identifier does
+not have to be a real email address. `sam-key-1` and `sam-key-2` work just as
+well if that fits how you manage keys.
 
 ![Users CRUD](docs/screenshot1.png)
 
-The main concept of sshman is the group, which organizes users into "groups of hosts" or hosts into "groups of users." Examples include `live-hosts`, `staging-hosts`, `production`, or `{client1}`, `{client2}`. Groups act as tags; by tagging a user and a host with the same group name, the user gains access to the host.
+The real center of the tool is the group. Groups are just tags shared between
+users and hosts. If a user and a host share a group name, that user should be
+on that host.
 
-To add a host to the sshman configuration, provide an alias, an SSH `.pub` key, and the groups the host belongs to (if already defined). Adding the host triggers an auto-discovery feature that downloads all SSH keys from the host as newly defined users and creates pseudo-groups for recognized users with access to that host.
+In practice that usually means groups like `production`, `staging`,
+`client1`, or `live-hosts`.
+
+When you add a host, `sshman` connects to it, reads its `authorized_keys`, and
+pulls that state back into the local config. That gives you a starting point
+instead of forcing you to rebuild access state by hand.
 
 ![Adding a User](docs/screenshot2.png)
 
 ### Configuration File
 
-Configuration is saved in `~/.ssh/.sshman`. It is a JSON file containing all hosts, users, and groups. "Configuration" might not be the best term for this file.
+`~/.ssh/.sshman` is a JSON snapshot of your known hosts, users, and groups. It
+is closer to a local state file than a classic config file.
 
 ## Usage
 
-This section provides a comprehensive overview of the `sshman` command-line interface.
+Here is the shape of the CLI.
 
 ### Command Structure
 
-The CLI is organized around resources like `user`, `host`, and `group`, with actions such as `add`, `remove`, `list`, and `rename` as subcommands.
+It is organized by resource: `user`, `host`, `group`, `role`, plus a few global
+commands.
 
 ```
 sshman
@@ -76,7 +108,7 @@ sshman
 
 #### Add a User
 
-To add a new user to the configuration:
+Add a user:
 
 ```bash
 sshman user add <email> <sshkey.pub> --group <group1> --group <group2>
@@ -94,7 +126,7 @@ sshman user add email@test.com ~/.ssh/user1.pub --group production-team --group 
 
 #### Remove a User
 
-To remove a user from the configuration and all associated hosts:
+Remove a user and clean them off managed hosts:
 
 ```bash
 sshman user remove <email>
@@ -108,7 +140,7 @@ sshman user remove email@test.com
 
 #### List Users
 
-To list all registered users and their group memberships:
+List users and their groups:
 
 ```bash
 sshman user list
@@ -123,7 +155,7 @@ junior1@test.com        [dev-team]
 
 #### Rename a User
 
-To change a user's email identifier:
+Rename a user identifier:
 
 ```bash
 sshman user rename <old_email> <new_email>
@@ -137,7 +169,7 @@ sshman user rename email@test.com new-email@test.com
 
 #### Manage User Groups
 
-To set or update a user's group memberships:
+Set or replace a user's groups:
 
 ```bash
 sshman user groups <email> [groups...]
@@ -156,7 +188,7 @@ sshman user groups email@test.com production-team dev-team
 
 #### Add a Host
 
-To add a new host to the configuration:
+Add a host:
 
 ```bash
 sshman host add <alias> <host:port> <user> <keyfile> --group <group1>
@@ -171,12 +203,12 @@ sshman host add <alias> <host:port> <user> <keyfile> --group <group1>
 **Example:**
 
 ```bash
-sshman host add google my.google.com:22 myuser ~/.ssh/google.pub --group deploy --group hosting
+sshman host add google my.google.com:22 myuser ~/.ssh/google --group deploy --group hosting
 ```
 
 #### Remove a Host
 
-To remove a host from the configuration:
+Remove a host:
 
 ```bash
 sshman host remove <alias>
@@ -190,7 +222,7 @@ sshman host remove google
 
 #### List Hosts
 
-To list all registered hosts, their connection details, and group memberships:
+List hosts, connection targets, and groups:
 
 ```bash
 sshman host list
@@ -205,7 +237,7 @@ client1.live            www.client1.com:22                  [production-team]
 
 #### Rename a Host
 
-To change a host's alias:
+Rename a host alias:
 
 ```bash
 sshman host rename <old_alias> <new_alias>
@@ -219,7 +251,7 @@ sshman host rename google google-prod
 
 #### Manage Host Groups
 
-To set or update a host's group memberships:
+Set or replace a host's groups:
 
 ```bash
 sshman host groups <alias> [groups...]
@@ -235,7 +267,7 @@ sshman host groups google deploy production
 
 #### List Groups
 
-To list all groups and their associated users and hosts:
+List groups and the users and hosts attached to them:
 
 ```bash
 sshman group list
@@ -254,7 +286,7 @@ dev-team users: [junior1@test.com]
 
 #### Assign a Role to a User
 
-To assign a role to a user:
+Assign a role to a user:
 
 ```bash
 sshman role assign --user <email> --role <role_name>
@@ -270,7 +302,7 @@ sshman role assign --user email@test.com --role admin
 
 #### List Roles
 
-To list all available roles and their permissions:
+List roles:
 
 ```bash
 sshman role list
@@ -278,55 +310,59 @@ sshman role list
 
 ### Sync Configuration (`sshman sync`)
 
-To refresh the local configuration by fetching users from the `authorized_keys` files on all registered hosts:
+Refresh local state from the remote hosts:
 
 ```bash
 sshman sync
 ```
 
-This command is useful if `authorized_keys` files have been modified by a third party.
+This is useful when somebody edits `authorized_keys` directly and you need to
+pull reality back into the local state file.
 
 ### Web UI (`sshman web`)
 
-To start the web interface:
+Start the web UI:
 
 ```bash
 sshman web --port 8080
 ```
 
 - `--port`: (Optional) The port to run the web UI on.
-- `--bind`: (Optional) The IP address to bind to.
+- `--bind`: (Optional) The IP address to bind to. Defaults to `127.0.0.1`.
+- `--allow-remote`: Required when binding to a non-loopback address such as
+  `0.0.0.0`.
+- `--enable-keys-api`: Exposes the `/api/keys` endpoint. Disabled by default.
+
+The web UI is an admin surface. It only listens on loopback by default so you
+do not accidentally expose host and user management to the network.
+
+To bind the web UI to all interfaces intentionally:
+
+```bash
+sshman web --bind 0.0.0.0 --allow-remote --port 8080
+```
+
+### Development Sandbox
+
+The repo includes a Docker sandbox for checking the embedded web UI and the SSH
+propagation flow without pointing the tool at real infrastructure.
+
+```bash
+docker compose -f docker-compose.sandbox.yml up --build -d
+```
+
+That starts:
+
+- the embedded app on <http://localhost:18080>
+- disposable SSH target containers seeded with sample hosts, users, and groups
 
 ### Version (`sshman version`)
 
-To display the version of `sshman`:
+Print the version:
 
 ```bash
 sshman version
 ```
-
-### Things To Fix Before Release
-
-- [x] Fix adding users
-- [x] Bug: Adding host on frontend does not add keyfile entry into storage, edit afterwards does
-- [x] Bug: Renaming host (alias) created a new entry, did not delete old
-- [x] Group editing
-  - [x] Add group should add users and groups
-  - [x] Update group should remove / add resources
-  - [x] Delete group should remove resources
-- [x] Test all CRUD (users, hosts, groups) together
-- [x] Re-read config with file watcher in web mode
-- [x] Screenshot with test data (not with sensitive data)
-- [x] Reuse stored ssh key for modifying user
-- [x] Adding host to download information without the need of running update
-- [x] Complete CRUD for missing use cases
-- [x] Web interface
-- [ ] Full test coverage
-- [x] All user related functions should have unit tests
-- [x] All user role related functions should have unit tests
-- [x] All host related functions should have unit tests
-- [x] All host group related functions should have unit tests
-- [x] All configuration handling functions should have unit tests
 - [ ] All other core functionality should have unit tests
 - [x] Edge case: deleting user should delete the user from all hosts (unless canceled from changeset)
 
